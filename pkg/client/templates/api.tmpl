@@ -1,0 +1,14 @@
+package {{ .Name | ToLower }}
+
+import (
+	"github.com/LiskHQ/lisk-engine/pkg/framework/blueprint"
+)
+
+type API struct {
+	blueprint.API
+	moduleID uint32
+}
+
+func (a *API) init(moduleID uint32) {
+	a.moduleID = moduleID
+}

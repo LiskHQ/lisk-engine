@@ -1,0 +1,32 @@
+package {{ .ModuleName | ToLower }}
+
+import (
+	"github.com/LiskHQ/lisk-engine/pkg/framework/blueprint"
+	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
+)
+
+//go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
+
+type {{.Name | ToCamel}}Params struct {
+}
+
+type {{.Name | ToCamel}}Command struct {
+	blueprint.Command
+	moduleID uint32
+}
+
+func (c *{{.Name | ToCamel}}Command) ID() uint32 {
+	return {{.ID}}
+}
+
+func (c *{{.Name | ToCamel}}Command) Name() string {
+	return "{{.Name | ToLower}}"
+}
+
+func (c *{{.Name | ToCamel}}Command) Verify(ctx *statemachine.TransactionVerifyContext) statemachine.VerifyResult {
+	return nil
+}
+
+func (c *{{.Name | ToCamel}}Command) Execute(ctx *statemachine.TransactionExecuteContext) error {
+	return nil
+}

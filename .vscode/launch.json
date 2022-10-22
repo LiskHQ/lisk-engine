@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+		{
+			"name": "Launch file",
+			"type": "go",
+			"request": "launch",
+			"mode": "debug",
+			"program": "${file}"
+		},
+		{
+			"name": "Run engine",
+			"type": "go",
+			"request": "launch",
+			"mode": "debug",
+			"program": "${workspaceRoot}/cmd/lengine",
+			"console": "integratedTerminal",
+			"args": ["start", "-s", "~/.lisk/dpos-mainchain/tmp/sockets/abi.ipc", "-c", "${workspaceRoot}/cmd/debug/app/config.json"]
+		},
+		{
+			"name": "Run test app",
+			"type": "go",
+			"request": "launch",
+			"mode": "debug",
+			"program": "${workspaceRoot}/cmd/debug/app",
+			"args": ["start"]
+		},
+		{
+			"name": "Run glisk",
+			"type": "go",
+			"request": "launch",
+			"mode": "debug",
+			"program": "${workspaceRoot}/cmd/glisk"
+		}
+	]
+}

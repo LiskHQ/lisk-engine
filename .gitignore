@@ -1,0 +1,8 @@
+vendor
+*.db
+
+.DS_Store
+*.out
+*.test
+.tmp
+testdata

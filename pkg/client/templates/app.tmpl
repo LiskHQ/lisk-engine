@@ -1,0 +1,56 @@
+package main
+
+import (
+	"encoding/json"
+	"io/ioutil"
+	"os"
+	"path"
+
+	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
+	"github.com/LiskHQ/lisk-engine/pkg/client"
+	"github.com/LiskHQ/lisk-engine/pkg/framework/config"
+	"github.com/LiskHQ/lisk-engine/pkg/framework/preset"
+)
+
+type starter struct{}
+
+func (s *starter) GetApplication(commandConfig *config.ApplicationConfig) (client.Application, error) {
+	config := &config.ApplicationConfig{}
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	configFile, err := os.ReadFile(path.Join(wd, "./config.json"))
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(configFile, config); err != nil {
+		return nil, err
+	}
+	if err := config.InsertDefault(); err != nil {
+		return nil, err
+	}
+
+	// Overwrite command input
+	config.Merge(commandConfig)
+
+	presetApp := preset.NewPresetApplication(config)
+	return presetApp.App, nil
+}
+
+func (s *starter) GetGenesisBlock(commandConfig *config.ApplicationConfig) ([]byte, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	genesisFile, err := os.ReadFile(path.Join(wd, "./genesis_block.json"))
+	if err != nil {
+		panic(err)
+	}
+	block := &blockchain.Block{}
+	if err := json.Unmarshal(genesisFile, block); err != nil {
+		panic(err)
+	}
+
+	return block.Encode()
+}

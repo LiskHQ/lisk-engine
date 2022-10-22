@@ -1,0 +1,505 @@
+{
+    "validBlock": {
+        "header": {
+            "id": "113b0e08823559a2cb41faa4afb4adc69e699b64871251812e22a3ec2c833dae",
+            "version": 2,
+            "timestamp": 0,
+            "height": 1,
+            "previousBlockID": "41246b971db46daf1e2be72d467be3e10193dfe6ea405b0c5fc5dd58e31c4573",
+            "generatorAddress": "lsk349uwdt5g7k8q66e9qwv6ad2oktsre7v46g8eo",
+            "transactionRoot": "5e9bcd18d79db968fb06741ee312634ba9f705f818b4bddfd883ffda772df05a",
+            "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "assetRoot": "9220d2ec1b44a778c9a3368bba3d06a82fbf694833616b7453a7afe9096b3bcf",
+            "stateRoot": "656f9a282e0fc1055972aa50801d46f19927f2aa6da19997b6a1694b504db5c8",
+            "maxHeightPrevoted": 0,
+            "maxHeightGenerated": 0,
+            "validatorsHash": "ff6336a65bad12a23b6ba942cbc401c545d3678567964dea323ee8e57d43eeaa",
+            "aggregateCommit": {
+                "height": 1,
+                "aggregationBits": "7b54e78d105536a3fe07eed4cbcdb2191a35be3cb4a7cdd0147775d9e1f65c87",
+                "certificateSignature": "0340f89e202b49299ab24379c52a906c7b1058c954f9bd2c8fd9a11487a82646"
+            },
+            "signature": "05a53658f231480d63cb3c4ebc2327b8932db780497511fdbe063b20437294048388e8ba0bc2d6c7680d398f5335667afda027e55bff4f42ddc1e8403b49f8dc"
+        },
+        "assets": [
+            {
+                "module": "auth",
+                "data": "f25113f28eea6f673b4b44d57241d8bba534b4646a6d1c22a608d4929a05275d3c482e43185d91fb017c4cb4195313265816945a3f88bebdd66953004a4905097efa9e7cd26bcbcfe603b1bf4eaa4b01d884961e27b12614eabc3521bb0fd951588b0cc4"
+            },
+            {
+                "module": "dpos",
+                "data": "d0d384b56c14092ba4a02b81337cd4ef43b836640b6e9cc2805a4644993fdb31d8ec772da4d170f802d16312c507d542de173779b86a3705b4c5bff33a4fab4ae72d9ec2d9b44d50a4681fda1574562367d335ee2f551503e6a8f733e3c850df9e582bfc"
+            }
+        ],
+        "transactions": [
+            {
+                "id": "422c585eb68523242ac1879b7b47024f379e8837b85b421075d0aa09ab90b325",
+                "module": "auth",
+                "command": "transfer",
+                "nonce": "34",
+                "fee": "10000000000000000000",
+                "senderPublicKey": "19f030821f25e7d71509d8d04c2d0094ea8f1dd3bd58472b4922142134227136",
+                "params": "dc2814d42868a2847b6aef714274abf1dbcaad44924a73a8636953d600b5b8ef572badbc56ece7dba5ac3ecf896b3da52924c1f365dff29b208e8e02505d7daa0f252d3e76b8263581c39bf4907802c9fe8c248d48e50e4a44385506ea6b8ff094329ce2",
+                "signatures": [
+                    "fee6bcd63f7a7b60802eb8cc2bc4d6b4de9f8c1e18a8b2c344d2bca3ccdfc712386326d19d8fe22c9eca6212ccf69b30d06e952cc29f360b10f0c7de2ae043ed",
+                    "5bea050e312dc10979506818b8c1958befd98834a6b3ebe6e6c47389d5e077f5b209a9a1871848304a5a76b66c6be43abca0c70d57ee5d572b7e759a69df8a0a"
+                ]
+            },
+            {
+                "id": "3228b7eca6ab5488922044f990e883ce6e4ce9a636829b604da10bf46136ba51",
+                "module": "auth",
+                "command": "register",
+                "nonce": "2",
+                "fee": "10000000000000000000",
+                "senderPublicKey": "dd687f839665613d698cab0324c5055f55b794c3b8bd604dc9a01680ba95c227",
+                "params": "bcbde4be556d863cd442715e7d1b7ca459e6bf6fc500724d97e5c27fa76aa66ec0d68abebf6f91214d2f9df8c15f3957883b6e1b09c52d101e9fda6e43e12b74acf29018d827ac7266cdb4a55337f184e4171d3a0c112a69a92fc3d0b25a6450ece19cd1",
+                "signatures": [
+                    "7666087f890ae2d6d4472b5c82caa2de77073383ab067aad7515cda63b5a1ebb4fe36266089e84c2dacecf984ecfbbf13b29f116fd89fe69410e5fead1cdd3a8"
+                ]
+            }
+        ]
+    },
+    "invalidBlocks": [
+        {
+            "block": {
+                "header": {
+                    "id": "c72954ff238637bcbce65b7eee02e7a2fdea9e29a5c0663b593587a1a21aa358",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "1c20",
+                    "generatorAddress": "lskk3s5r44vtenbv49g6dcq2qfhsgjpnxgodbhozh",
+                    "transactionRoot": "fe43d66afa4a9a5c4f9c9da89f4ffb52635c8f342e7ffb731d68e36c5982072a",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "231870739958ee5db14df585cbf51e084bed1d204c69ced1fbc579e4993c6c15",
+                    "stateRoot": "bcfd433a0c59b3e928e18fb61b15ece7529865793b646394b62f6194ec9a853c",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "56abeaeeb5359e699ed41faf72cebf29eb3922d9b60b2ad1e3c68470986618b6",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "ce3d256d020066eab59cf5252ac76cbb04acbe40123a23a32670ff9e52770496",
+                        "certificateSignature": "df2dd31525cbcb90db19752646b9b9028667a8bda4aa90bd5c4254e71a36b85c"
+                    },
+                    "signature": "58fce0db24e3025185ed76046d18671d2cd6431c0fdf9b35bd8a502c5bae25fb75b0b16680bcc750ae11744bca04ca2c929b03c7b188f8e99c68b7953d1abcca"
+                },
+                "assets": [
+                    {
+                        "module": "auth",
+                        "data": "7cc99f8735b70d397c59af3c697fd70925d7ddadd8fb0d00c5305f91eaf6324826ec87a65fbf82adf6425c81ef40ef878d6b1fba8a3af7fd0efadd3065c03751fd1a2fe525f1de8a9c3d06d961b83cc628302b3dbf1818ba8a254512657a71e1c2bbec5f"
+                    },
+                    {
+                        "module": "dpos",
+                        "data": "3c2b1a5946e83da6b5475b1b835bea8d7f948975ccb6d559e62a163e01e8139582c61c9f5e5f68de4820d42fee243afce57641389946c2c37a49f9c9e122d9d275f888ce2b08ce636671f3df8802754f201db03bc7d8915ee8f2fe32b01c5fc6b2b4d5dd"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "73ddbd6f632135be6f63061e13f1731a67d72570f8e6506d7e378a5bb576427c",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "6e8113966f1184af8a114b51598b3d1fb38df0a48fc2442c4521fcc95df13e83",
+                        "params": "bcb11c994b93ac4975d1e949cc93a7ad3d8b99cb31925edae6cba6d29fcf9b9b549b60b67347dfe6096dd06639d86799b158738b558258a8ddcbd046ab4cd778706c180a8ef2ce0b5bae5dc95feeecbd3d84b54ba4a7c9443f8f4f5ffdfe3f0151e6c406",
+                        "signatures": [
+                            "af9f8c60ef9c0ebc01971e531996089a58fd154abfb219cd993f24e62b63b30192201b4ca56e9f23fd7af40a7dc5eb14d5d563f9bee567af40716d32b9b4e5d0",
+                            "b28a9879a54210064a1083bfc1d34a3aa419e166074d94f567f55e106bee406136259ba000deecb2410ece12a97ecfa101d0c8c7bc5db67b39acbb43ef976369"
+                        ]
+                    },
+                    {
+                        "id": "40bb96ef5f8ceea06d258ed180718a0dce2ece3d5c26d2711d7936fc4f7d4dc4",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "dd8634a5e1bb68e2a197283142ccc2d469e18bacd5407481e63a08d4b8667766",
+                        "params": "4961532e8ef98cf2d39921e20b988f8f07955d87ab3bbc079421ac609276481d02b734c266d69e63dcfbf124d799c0871402433ee5dc3c7af80d04b4b8d31fa2eab45a3e4d5867e893c76e8d855d5fb53e3449b9853b6ee46e27c0daf81abcdc63e45b43",
+                        "signatures": [
+                            "d9c3937878863379398305d67042764ddb9bfe3fdd48ee139ec12f4d6f283b2c7aa2b35d8b14d58b2193c0e0faa65f3e44987d1628cc62fbad3efdbe792c77ff"
+                        ]
+                    }
+                ]
+            },
+            "err": "previous block id must be 32 bytes but received 1c20"
+        },
+        {
+            "block": {
+                "header": {
+                    "id": "c72954ff238637bcbce65b7eee02e7a2fdea9e29a5c0663b593587a1a21aa358",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "1c2d09132c12fea06c3b130907aa4fddd7b7747b26467568a1e4b88ef6d785a7",
+                    "generatorAddress": "",
+                    "transactionRoot": "fe43d66afa4a9a5c4f9c9da89f4ffb52635c8f342e7ffb731d68e36c5982072a",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "231870739958ee5db14df585cbf51e084bed1d204c69ced1fbc579e4993c6c15",
+                    "stateRoot": "bcfd433a0c59b3e928e18fb61b15ece7529865793b646394b62f6194ec9a853c",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "56abeaeeb5359e699ed41faf72cebf29eb3922d9b60b2ad1e3c68470986618b6",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "ce3d256d020066eab59cf5252ac76cbb04acbe40123a23a32670ff9e52770496",
+                        "certificateSignature": "df2dd31525cbcb90db19752646b9b9028667a8bda4aa90bd5c4254e71a36b85c"
+                    },
+                    "signature": "58fce0db24e3025185ed76046d18671d2cd6431c0fdf9b35bd8a502c5bae25fb75b0b16680bcc750ae11744bca04ca2c929b03c7b188f8e99c68b7953d1abcca"
+                },
+                "assets": [
+                    {
+                        "module": "auth",
+                        "data": "7cc99f8735b70d397c59af3c697fd70925d7ddadd8fb0d00c5305f91eaf6324826ec87a65fbf82adf6425c81ef40ef878d6b1fba8a3af7fd0efadd3065c03751fd1a2fe525f1de8a9c3d06d961b83cc628302b3dbf1818ba8a254512657a71e1c2bbec5f"
+                    },
+                    {
+                        "module": "dpos",
+                        "data": "3c2b1a5946e83da6b5475b1b835bea8d7f948975ccb6d559e62a163e01e8139582c61c9f5e5f68de4820d42fee243afce57641389946c2c37a49f9c9e122d9d275f888ce2b08ce636671f3df8802754f201db03bc7d8915ee8f2fe32b01c5fc6b2b4d5dd"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "73ddbd6f632135be6f63061e13f1731a67d72570f8e6506d7e378a5bb576427c",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "6e8113966f1184af8a114b51598b3d1fb38df0a48fc2442c4521fcc95df13e83",
+                        "params": "bcb11c994b93ac4975d1e949cc93a7ad3d8b99cb31925edae6cba6d29fcf9b9b549b60b67347dfe6096dd06639d86799b158738b558258a8ddcbd046ab4cd778706c180a8ef2ce0b5bae5dc95feeecbd3d84b54ba4a7c9443f8f4f5ffdfe3f0151e6c406",
+                        "signatures": [
+                            "af9f8c60ef9c0ebc01971e531996089a58fd154abfb219cd993f24e62b63b30192201b4ca56e9f23fd7af40a7dc5eb14d5d563f9bee567af40716d32b9b4e5d0",
+                            "b28a9879a54210064a1083bfc1d34a3aa419e166074d94f567f55e106bee406136259ba000deecb2410ece12a97ecfa101d0c8c7bc5db67b39acbb43ef976369"
+                        ]
+                    },
+                    {
+                        "id": "40bb96ef5f8ceea06d258ed180718a0dce2ece3d5c26d2711d7936fc4f7d4dc4",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "dd8634a5e1bb68e2a197283142ccc2d469e18bacd5407481e63a08d4b8667766",
+                        "params": "4961532e8ef98cf2d39921e20b988f8f07955d87ab3bbc079421ac609276481d02b734c266d69e63dcfbf124d799c0871402433ee5dc3c7af80d04b4b8d31fa2eab45a3e4d5867e893c76e8d855d5fb53e3449b9853b6ee46e27c0daf81abcdc63e45b43",
+                        "signatures": [
+                            "d9c3937878863379398305d67042764ddb9bfe3fdd48ee139ec12f4d6f283b2c7aa2b35d8b14d58b2193c0e0faa65f3e44987d1628cc62fbad3efdbe792c77ff"
+                        ]
+                    }
+                ]
+            },
+            "err": "generator address must be 20 bytes but received "
+        },
+        {
+            "block": {
+                "header": {
+                    "id": "c72954ff238637bcbce65b7eee02e7a2fdea9e29a5c0663b593587a1a21aa358",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "1c2d09132c12fea06c3b130907aa4fddd7b7747b26467568a1e4b88ef6d785a7",
+                    "generatorAddress": "lskk3s5r44vtenbv49g6dcq2qfhsgjpnxgodbhozh",
+                    "transactionRoot": "fe43d66afa4a9a5c4f9c9da89f4ffb52635c8f342e7ffb731d68e36c5982072a",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "231870739958ee5db14df585cbf51e084bed1d204c69ced1fbc579e4993c6c15",
+                    "stateRoot": "bcfd433a0c59b3e928e18fb61b15ece7529865793b646394b62f6194ec9a853c",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "56abeaeeb5359e699ed41faf72cebf29eb3922d9b60b2ad1e3c68470986618b6",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "ce3d256d020066eab59cf5252ac76cbb04acbe40123a23a32670ff9e52770496",
+                        "certificateSignature": "df2dd31525cbcb90db19752646b9b9028667a8bda4aa90bd5c4254e71a36b85c"
+                    },
+                    "signature": "fce0db24e3025185ed76046d18671d2cd6431c0fdf9b35bd8a502c5bae25fb75b0b16680bcc750ae11744bca04ca2c929b03c7b188f8e99c68b7953d1abcca"
+                },
+                "assets": [
+                    {
+                        "module": "auth",
+                        "data": "7cc99f8735b70d397c59af3c697fd70925d7ddadd8fb0d00c5305f91eaf6324826ec87a65fbf82adf6425c81ef40ef878d6b1fba8a3af7fd0efadd3065c03751fd1a2fe525f1de8a9c3d06d961b83cc628302b3dbf1818ba8a254512657a71e1c2bbec5f"
+                    },
+                    {
+                        "module": "dpos",
+                        "data": "3c2b1a5946e83da6b5475b1b835bea8d7f948975ccb6d559e62a163e01e8139582c61c9f5e5f68de4820d42fee243afce57641389946c2c37a49f9c9e122d9d275f888ce2b08ce636671f3df8802754f201db03bc7d8915ee8f2fe32b01c5fc6b2b4d5dd"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "73ddbd6f632135be6f63061e13f1731a67d72570f8e6506d7e378a5bb576427c",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "6e8113966f1184af8a114b51598b3d1fb38df0a48fc2442c4521fcc95df13e83",
+                        "params": "bcb11c994b93ac4975d1e949cc93a7ad3d8b99cb31925edae6cba6d29fcf9b9b549b60b67347dfe6096dd06639d86799b158738b558258a8ddcbd046ab4cd778706c180a8ef2ce0b5bae5dc95feeecbd3d84b54ba4a7c9443f8f4f5ffdfe3f0151e6c406",
+                        "signatures": [
+                            "af9f8c60ef9c0ebc01971e531996089a58fd154abfb219cd993f24e62b63b30192201b4ca56e9f23fd7af40a7dc5eb14d5d563f9bee567af40716d32b9b4e5d0",
+                            "b28a9879a54210064a1083bfc1d34a3aa419e166074d94f567f55e106bee406136259ba000deecb2410ece12a97ecfa101d0c8c7bc5db67b39acbb43ef976369"
+                        ]
+                    },
+                    {
+                        "id": "40bb96ef5f8ceea06d258ed180718a0dce2ece3d5c26d2711d7936fc4f7d4dc4",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "dd8634a5e1bb68e2a197283142ccc2d469e18bacd5407481e63a08d4b8667766",
+                        "params": "4961532e8ef98cf2d39921e20b988f8f07955d87ab3bbc079421ac609276481d02b734c266d69e63dcfbf124d799c0871402433ee5dc3c7af80d04b4b8d31fa2eab45a3e4d5867e893c76e8d855d5fb53e3449b9853b6ee46e27c0daf81abcdc63e45b43",
+                        "signatures": [
+                            "d9c3937878863379398305d67042764ddb9bfe3fdd48ee139ec12f4d6f283b2c7aa2b35d8b14d58b2193c0e0faa65f3e44987d1628cc62fbad3efdbe792c77ff"
+                        ]
+                    }
+                ]
+            },
+            "err": "block signature must not be empty"
+        },
+        {
+            "block": {
+                "header": {
+                    "id": "577b298efe4411e8c335c2bc1b403fb429c3bc288547e5b31028e8c85ac7fc68",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "31a79ffb565bc8c5be0dd4dc831e52a7dccf514c52f6f968448a9041799efd3f",
+                    "generatorAddress": "lskvgdw9y2atqp53ukysya5o2x8rfsbkt85jyt373",
+                    "transactionRoot": "aa438ac169b862bb7ea767b571be820bc16f5f3c93fc33c1bce5a3eddc9f794d",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "c086faecbb0fca3b9fc38534343a6bc34064d60d6397ba1cfcb8627b3f29ccf4",
+                    "stateRoot": "0c27f2a6514ec205e5df0d5d842c77be54cc2f39b70dccdb41b086773b515e19",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "a13739569893e932ba580cc08a0a345f048cb1121928570f847b9d2530cefdbd",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "f509242b510841810a39b2272902b5cf4c08470abac8a8b0bcef7062a4a20fab",
+                        "certificateSignature": "2183374c9552fc18da48c25d34efc552f22038efbb7ae5b329d0201d22ac190f"
+                    },
+                    "signature": "952cb43d480c2883f77936271687161447c1e06b4a6648051acc227c283d0ae625ffc506ba34865ae3a32d97c88e8e1567bcfbd02c21f0f9c4a35dcbe1a08c9a"
+                },
+                "assets": [
+                    {
+                        "module": "auth",
+                        "data": "b04d425a393b8b97c0dd8d9b1970ffccac0a19ba0e0ab276e9c48eb7dbf30fdb01637decbdbd62ffb832b247e59e0737e3341a160f500f8f0bf6af4cdda1b06f6bd0d78107ecd653485034f4ffdbfaa57301cd35978710017c9fc7db6f137546f7f340e8"
+                    },
+                    {
+                        "module": "dpos",
+                        "data": "961c5e7e4b0cd92dc7e5b69739abaee93dbb9a37b54936f2262df44aafa5c30714f2df55a5b46a1d674ef393815aa1828d741353c480f364fb24f8a68a8166153ff900a0b4f1aafdabb4158c5c482278da3f3fc83e81b8924ab03b72b7b147e7033efc3a"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "c56b88cfcefce0fa07cd7ba733064543698b54aaa4a953a2cd27254848f6521e",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "41c416a5012d7ffa5bf9b6d8c216e66355d4762f760fdf6087764c1105009ad1",
+                        "params": "d7e4e7bcf4911bd704c47457cbaae6a4d4901ed5ac0cc2826f1e916aa55fda7a6d2d74cc8563d0d1cff57d30726f5b2df137673056fedceffaaa4463ec76341953f46b67a09f51b352012caeb84eec843d85606105b48426e054bc88ae7b905ad345b49e",
+                        "signatures": [
+                            "f37339d44fcc09e05837c877c27160819bdb951706588b22195d27248561ba87f6bb8734c3e42a0e7550c3c4c3e1dbd7d17e51527271d57040f2b3375a91addc",
+                            "364ee9eb98c6622bd55d737ba3f86ea3fbf19ab345aa420afc37a8137110743c4486b429118db91195eaa3f854c485732a829950f834dc891e3403d45a8d1611"
+                        ]
+                    },
+                    {
+                        "id": "738c66391731298c4658171f1090e2042e8275875ac96c47c29c0c010940b116",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "38c39dcedd4b383133f7a517c149bcbd95197ac3f54f0081e0a76c9ea302d33b",
+                        "params": "75baf7ee33fd5f412171179649a41e1fc3c9ef7fd54a26e172ad7de825839844ddadcd6c1c67f3c01434660c1439459409f8ec53bbe049928e612966a241bcf3839a6b3d627c168f350e9cfbb93eedcec1d03243cf4f474117692630bc14650d3012e998",
+                        "signatures": [
+                            "a3e8759ed31e9ac5d76d6e5338d72818c41204564dfb7ff6c0a31e954f7ced1800365796e0e42f236405cdf55511b5648701153673b2a58148b25463b1a9efb5"
+                        ]
+                    }
+                ]
+            },
+            "err": "transaction root must match the payload"
+        },
+        {
+            "block": {
+                "header": {
+                    "id": "577b298efe4411e8c335c2bc1b403fb429c3bc288547e5b31028e8c85ac7fc68",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "31a79ffb565bc8c5be0dd4dc831e52a7dccf514c52f6f968448a9041799efd3f",
+                    "generatorAddress": "lskvgdw9y2atqp53ukysya5o2x8rfsbkt85jyt373",
+                    "transactionRoot": "d3438ac169b862bb7ea767b571be820bc16f5f3c93fc33c1bce5a3eddc9f794d",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "c086faecbb0fca3b9fc38534343a6bc34064d60d6397ba1cfcb8627b3f29ccf4",
+                    "stateRoot": "0c27f2a6514ec205e5df0d5d842c77be54cc2f39b70dccdb41b086773b515e19",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "a13739569893e932ba580cc08a0a345f048cb1121928570f847b9d2530cefdbd",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "f509242b510841810a39b2272902b5cf4c08470abac8a8b0bcef7062a4a20fab",
+                        "certificateSignature": "2183374c9552fc18da48c25d34efc552f22038efbb7ae5b329d0201d22ac190f"
+                    },
+                    "signature": "952cb43d480c2883f77936271687161447c1e06b4a6648051acc227c283d0ae625ffc506ba34865ae3a32d97c88e8e1567bcfbd02c21f0f9c4a35dcbe1a08c9a"
+                },
+                "assets": [
+                    {
+                        "module": "dpos",
+                        "data": "961c5e7e4b0cd92dc7e5b69739abaee93dbb9a37b54936f2262df44aafa5c30714f2df55a5b46a1d674ef393815aa1828d741353c480f364fb24f8a68a8166153ff900a0b4f1aafdabb4158c5c482278da3f3fc83e81b8924ab03b72b7b147e7033efc3a"
+                    },
+                    {
+                        "module": "auth",
+                        "data": "b04d425a393b8b97c0dd8d9b1970ffccac0a19ba0e0ab276e9c48eb7dbf30fdb01637decbdbd62ffb832b247e59e0737e3341a160f500f8f0bf6af4cdda1b06f6bd0d78107ecd653485034f4ffdbfaa57301cd35978710017c9fc7db6f137546f7f340e8"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "c56b88cfcefce0fa07cd7ba733064543698b54aaa4a953a2cd27254848f6521e",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "41c416a5012d7ffa5bf9b6d8c216e66355d4762f760fdf6087764c1105009ad1",
+                        "params": "d7e4e7bcf4911bd704c47457cbaae6a4d4901ed5ac0cc2826f1e916aa55fda7a6d2d74cc8563d0d1cff57d30726f5b2df137673056fedceffaaa4463ec76341953f46b67a09f51b352012caeb84eec843d85606105b48426e054bc88ae7b905ad345b49e",
+                        "signatures": [
+                            "f37339d44fcc09e05837c877c27160819bdb951706588b22195d27248561ba87f6bb8734c3e42a0e7550c3c4c3e1dbd7d17e51527271d57040f2b3375a91addc",
+                            "364ee9eb98c6622bd55d737ba3f86ea3fbf19ab345aa420afc37a8137110743c4486b429118db91195eaa3f854c485732a829950f834dc891e3403d45a8d1611"
+                        ]
+                    },
+                    {
+                        "id": "738c66391731298c4658171f1090e2042e8275875ac96c47c29c0c010940b116",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "38c39dcedd4b383133f7a517c149bcbd95197ac3f54f0081e0a76c9ea302d33b",
+                        "params": "75baf7ee33fd5f412171179649a41e1fc3c9ef7fd54a26e172ad7de825839844ddadcd6c1c67f3c01434660c1439459409f8ec53bbe049928e612966a241bcf3839a6b3d627c168f350e9cfbb93eedcec1d03243cf4f474117692630bc14650d3012e998",
+                        "signatures": [
+                            "a3e8759ed31e9ac5d76d6e5338d72818c41204564dfb7ff6c0a31e954f7ced1800365796e0e42f236405cdf55511b5648701153673b2a58148b25463b1a9efb5"
+                        ]
+                    }
+                ]
+            },
+            "err": "assets must be sorted by module"
+        },
+        {
+            "block": {
+                "header": {
+                    "id": "577b298efe4411e8c335c2bc1b403fb429c3bc288547e5b31028e8c85ac7fc68",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "31a79ffb565bc8c5be0dd4dc831e52a7dccf514c52f6f968448a9041799efd3f",
+                    "generatorAddress": "lskvgdw9y2atqp53ukysya5o2x8rfsbkt85jyt373",
+                    "transactionRoot": "d3438ac169b862bb7ea767b571be820bc16f5f3c93fc33c1bce5a3eddc9f794d",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "c086faecbb0fca3b9fc38534343a6bc34064d60d6397ba1cfcb8627b3f29ccf4",
+                    "stateRoot": "0c27f2a6514ec205e5df0d5d842c77be54cc2f39b70dccdb41b086773b515e19",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "a13739569893e932ba580cc08a0a345f048cb1121928570f847b9d2530cefdbd",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "f509242b510841810a39b2272902b5cf4c08470abac8a8b0bcef7062a4a20fab",
+                        "certificateSignature": "2183374c9552fc18da48c25d34efc552f22038efbb7ae5b329d0201d22ac190f"
+                    },
+                    "signature": "952cb43d480c2883f77936271687161447c1e06b4a6648051acc227c283d0ae625ffc506ba34865ae3a32d97c88e8e1567bcfbd02c21f0f9c4a35dcbe1a08c9a"
+                },
+                "assets": [
+                    {
+                        "module": "auth",
+                        "data": "b04d425a393b8b97c0dd8d9b1970ffccac0a19ba0e0ab276e9c48eb7dbf30fdb01637decbdbd62ffb832b247e59e0737e3341a160f500f8f0bf6af4cdda1b06f6bd0d78107ecd653485034f4ffdbfaa57301cd35978710017c9fc7db6f137546f7f340e8"
+                    },
+                    {
+                        "module": "auth",
+                        "data": "961c5e7e4b0cd92dc7e5b69739abaee93dbb9a37b54936f2262df44aafa5c30714f2df55a5b46a1d674ef393815aa1828d741353c480f364fb24f8a68a8166153ff900a0b4f1aafdabb4158c5c482278da3f3fc83e81b8924ab03b72b7b147e7033efc3a"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "c56b88cfcefce0fa07cd7ba733064543698b54aaa4a953a2cd27254848f6521e",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "41c416a5012d7ffa5bf9b6d8c216e66355d4762f760fdf6087764c1105009ad1",
+                        "params": "d7e4e7bcf4911bd704c47457cbaae6a4d4901ed5ac0cc2826f1e916aa55fda7a6d2d74cc8563d0d1cff57d30726f5b2df137673056fedceffaaa4463ec76341953f46b67a09f51b352012caeb84eec843d85606105b48426e054bc88ae7b905ad345b49e",
+                        "signatures": [
+                            "f37339d44fcc09e05837c877c27160819bdb951706588b22195d27248561ba87f6bb8734c3e42a0e7550c3c4c3e1dbd7d17e51527271d57040f2b3375a91addc",
+                            "364ee9eb98c6622bd55d737ba3f86ea3fbf19ab345aa420afc37a8137110743c4486b429118db91195eaa3f854c485732a829950f834dc891e3403d45a8d1611"
+                        ]
+                    },
+                    {
+                        "id": "738c66391731298c4658171f1090e2042e8275875ac96c47c29c0c010940b116",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "38c39dcedd4b383133f7a517c149bcbd95197ac3f54f0081e0a76c9ea302d33b",
+                        "params": "75baf7ee33fd5f412171179649a41e1fc3c9ef7fd54a26e172ad7de825839844ddadcd6c1c67f3c01434660c1439459409f8ec53bbe049928e612966a241bcf3839a6b3d627c168f350e9cfbb93eedcec1d03243cf4f474117692630bc14650d3012e998",
+                        "signatures": [
+                            "a3e8759ed31e9ac5d76d6e5338d72818c41204564dfb7ff6c0a31e954f7ced1800365796e0e42f236405cdf55511b5648701153673b2a58148b25463b1a9efb5"
+                        ]
+                    }
+                ]
+            },
+            "err": "assets module must be unique"
+        },
+        {
+            "block": {
+                "header": {
+                    "id": "577b298efe4411e8c335c2bc1b403fb429c3bc288547e5b31028e8c85ac7fc68",
+                    "version": 2,
+                    "timestamp": 0,
+                    "height": 1,
+                    "previousBlockID": "31a79ffb565bc8c5be0dd4dc831e52a7dccf514c52f6f968448a9041799efd3f",
+                    "generatorAddress": "lskvgdw9y2atqp53ukysya5o2x8rfsbkt85jyt373",
+                    "transactionRoot": "d3438ac169b862bb7ea767b571be820bc16f5f3c93fc33c1bce5a3eddc9f794d",
+                    "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "assetRoot": "aa86faecbb0fca3b9fc38534343a6bc34064d60d6397ba1cfcb8627b3f29ccf4",
+                    "stateRoot": "0c27f2a6514ec205e5df0d5d842c77be54cc2f39b70dccdb41b086773b515e19",
+                    "maxHeightPrevoted": 0,
+                    "maxHeightGenerated": 0,
+                    "validatorsHash": "9220d2ec1b44a778c9a3368bba3d06a82fbf694833616b7453a7afe9096b3bcf",
+                    "aggregateCommit": {
+                        "height": 1,
+                        "aggregationBits": "f509242b510841810a39b2272902b5cf4c08470abac8a8b0bcef7062a4a20fab",
+                        "certificateSignature": "2183374c9552fc18da48c25d34efc552f22038efbb7ae5b329d0201d22ac190f"
+                    },
+                    "signature": "952cb43d480c2883f77936271687161447c1e06b4a6648051acc227c283d0ae625ffc506ba34865ae3a32d97c88e8e1567bcfbd02c21f0f9c4a35dcbe1a08c9a"
+                },
+                "assets": [
+                    {
+                        "module": "auth",
+                        "data": "b04d425a393b8b97c0dd8d9b1970ffccac0a19ba0e0ab276e9c48eb7dbf30fdb01637decbdbd62ffb832b247e59e0737e3341a160f500f8f0bf6af4cdda1b06f6bd0d78107ecd653485034f4ffdbfaa57301cd35978710017c9fc7db6f137546f7f340e8"
+                    },
+                    {
+                        "module": "dpos",
+                        "data": "961c5e7e4b0cd92dc7e5b69739abaee93dbb9a37b54936f2262df44aafa5c30714f2df55a5b46a1d674ef393815aa1828d741353c480f364fb24f8a68a8166153ff900a0b4f1aafdabb4158c5c482278da3f3fc83e81b8924ab03b72b7b147e7033efc3a"
+                    }
+                ],
+                "transactions": [
+                    {
+                        "id": "c56b88cfcefce0fa07cd7ba733064543698b54aaa4a953a2cd27254848f6521e",
+                        "module": "auth",
+                        "command": "transfer",
+                        "nonce": "34",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "41c416a5012d7ffa5bf9b6d8c216e66355d4762f760fdf6087764c1105009ad1",
+                        "params": "d7e4e7bcf4911bd704c47457cbaae6a4d4901ed5ac0cc2826f1e916aa55fda7a6d2d74cc8563d0d1cff57d30726f5b2df137673056fedceffaaa4463ec76341953f46b67a09f51b352012caeb84eec843d85606105b48426e054bc88ae7b905ad345b49e",
+                        "signatures": [
+                            "f37339d44fcc09e05837c877c27160819bdb951706588b22195d27248561ba87f6bb8734c3e42a0e7550c3c4c3e1dbd7d17e51527271d57040f2b3375a91addc",
+                            "364ee9eb98c6622bd55d737ba3f86ea3fbf19ab345aa420afc37a8137110743c4486b429118db91195eaa3f854c485732a829950f834dc891e3403d45a8d1611"
+                        ]
+                    },
+                    {
+                        "id": "738c66391731298c4658171f1090e2042e8275875ac96c47c29c0c010940b116",
+                        "module": "auth",
+                        "command": "register",
+                        "nonce": "2",
+                        "fee": "10000000000000000000",
+                        "senderPublicKey": "38c39dcedd4b383133f7a517c149bcbd95197ac3f54f0081e0a76c9ea302d33b",
+                        "params": "75baf7ee33fd5f412171179649a41e1fc3c9ef7fd54a26e172ad7de825839844ddadcd6c1c67f3c01434660c1439459409f8ec53bbe049928e612966a241bcf3839a6b3d627c168f350e9cfbb93eedcec1d03243cf4f474117692630bc14650d3012e998",
+                        "signatures": [
+                            "a3e8759ed31e9ac5d76d6e5338d72818c41204564dfb7ff6c0a31e954f7ced1800365796e0e42f236405cdf55511b5648701153673b2a58148b25463b1a9efb5"
+                        ]
+                    }
+                ]
+            },
+            "err": "assets root must match the assets"
+        }
+    ]
+}

@@ -1,0 +1,87 @@
+package {{ .Name | ToLower }}
+
+import (
+	"github.com/LiskHQ/lisk-engine/pkg/framework/blueprint"
+	"github.com/LiskHQ/lisk-engine/pkg/framework/config"
+	"github.com/LiskHQ/lisk-engine/pkg/generator"
+	"github.com/LiskHQ/lisk-engine/pkg/rpc"
+	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
+)
+
+type Module struct {
+	blueprint.Module
+	api      *API
+	endpoint *Endpoint
+}
+
+func NewModule() *Module {
+	return &Module{
+		api:      &API{},
+		endpoint: &Endpoint{},
+	}
+}
+
+func (m *Module) ID() uint32 {
+	return {{.ID}}
+}
+
+func (m *Module) Name() string {
+	return "{{.Name | ToLower}}"
+}
+
+func (m *Module) API() *API {
+	return m.api
+}
+
+func (m *Module) Endpoint() statemachine.Endpoint {
+	return m.endpoint
+}
+func (m *Module) Init(cfg []byte) error {
+	m.api.init(m.ID())
+	m.endpoint.init(m.ID())
+	return nil
+}
+
+func (m *Module) GetCommand(name string) (statemachine.Command, bool) {
+	return nil, false
+}
+
+func (m *Module) InitBlock(ctx generator.BlockGenContext) error {
+	return nil
+}
+
+func (m *Module) SealBlock(ctx generator.BlockGenContext) error {
+	return nil
+}
+
+func (m *Module) VerifyAssets(ctx statemachine.BlockVerifyContext) error {
+	return nil
+}
+
+func (m *Module) VerifyTransaction(ctx *statemachine.TransactionVerifyContext) statemachine.VerifyResult {
+	return statemachine.NewVerifyResultOK()
+}
+
+func (m *Module) InitGenesisState(ctx *statemachine.GenesisBlockProcessingContext) error {
+	return nil
+}
+
+func (m *Module) FinalizeGenesisState(ctx *statemachine.GenesisBlockProcessingContext) error {
+	return nil
+}
+
+func (m *Module) BeforeTransactionsExecute(ctx statemachine.BlockExecuteContext) error {
+	return nil
+}
+
+func (m *Module) AfterTransactionsExecute(ctx statemachine.BlockAfterExecuteContext) error {
+	return nil
+}
+
+func (m *Module) BeforeCommandExecute(ctx *statemachine.TransactionExecuteContext) error {
+	return nil
+}
+
+func (m *Module) AfterCommandExecute(ctx *statemachine.TransactionExecuteContext) error {
+	return nil
+}

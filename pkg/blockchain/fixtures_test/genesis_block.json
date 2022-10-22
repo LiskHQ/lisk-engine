@@ -1,0 +1,260 @@
+{
+  "validBlock": {
+    "header": {
+      "id": "",
+      "version": 0,
+      "timestamp": 1640077506,
+      "height": 0,
+      "previousBlockID": "",
+      "generatorAddress": "lskzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz5fw596",
+      "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "assetRoot": "528c16c4360d8c5d3c022b284a47855c06c5e2b3e81ab8221429353232dd189a",
+      "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+      "maxHeightPrevoted": 0,
+      "maxHeightGenerated": 0,
+      "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+      "aggregateCommit": {
+        "height": 0,
+        "aggregationBits": "",
+        "certificateSignature": ""
+      },
+      "signature": ""
+    },
+    "assets": [
+      {
+        "module": "dpos",
+        "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+      },
+      {
+        "module": "transfer",
+        "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+      }
+    ],
+    "transactions": []
+  },
+  "invalidBlocks": [
+    {
+      "block": {
+        "header": {
+          "id": "",
+          "version": 2,
+          "timestamp": 1640077506,
+          "height": 0,
+          "previousBlockID": "",
+          "generatorAddress": "lskzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz5fw596",
+          "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "assetRoot": "528c16c4360d8c5d3c022b284a47855c06c5e2b3e81ab8221429353232dd189a",
+          "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+          "maxHeightPrevoted": 0,
+          "maxHeightGenerated": 0,
+          "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+          "aggregateCommit": {
+            "height": 0,
+            "aggregationBits": "",
+            "certificateSignature": ""
+          },
+          "signature": ""
+        },
+        "assets": [
+          {
+            "module": "dpos",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          },
+          {
+            "module": "transfer",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          }
+        ],
+        "transactions": []
+      },
+      "err": "genesis block version must be 0"
+    },
+    {
+      "block": {
+        "header": {
+          "id": "",
+          "version": 0,
+          "timestamp": 1640077506,
+          "height": 0,
+          "previousBlockID": "",
+          "generatorAddress": "lskzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz5fw596",
+          "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b800",
+          "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "assetRoot": "528c16c4360d8c5d3c022b284a47855c06c5e2b3e81ab8221429353232dd189a",
+          "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+          "maxHeightPrevoted": 0,
+          "maxHeightGenerated": 0,
+          "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+          "aggregateCommit": {
+            "height": 0,
+            "aggregationBits": "",
+            "certificateSignature": ""
+          },
+          "signature": ""
+        },
+        "assets": [
+          {
+            "module": "dpos",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          },
+          {
+            "module": "transfer",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          }
+        ],
+        "transactions": []
+      },
+      "err": "genesis block transaction root must be empty hash"
+    },
+    {
+      "block": {
+        "header": {
+          "id": "",
+          "version": 0,
+          "timestamp": 1640077506,
+          "height": 0,
+          "previousBlockID": "",
+          "generatorAddress": "lskpt99nmobrwkbebeqetwk2g83vvm5fbhbabcg4y",
+          "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "assetRoot": "528c16c4360d8c5d3c022b284a47855c06c5e2b3e81ab8221429353232dd189a",
+          "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+          "maxHeightPrevoted": 0,
+          "maxHeightGenerated": 0,
+          "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+          "aggregateCommit": {
+            "height": 0,
+            "aggregationBits": "",
+            "certificateSignature": ""
+          },
+          "signature": ""
+        },
+        "assets": [
+          {
+            "module": "dpos",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          },
+          {
+            "module": "transfer",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          }
+        ],
+        "transactions": []
+      },
+      "err": "genesis block generator address must be zero address"
+    },
+    {
+      "block": {
+        "header": {
+          "id": "",
+          "version": 0,
+          "timestamp": 1640077506,
+          "height": 0,
+          "previousBlockID": "",
+          "generatorAddress": "lskzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz5fw596",
+          "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "assetRoot": "528c16c4360d8c5d3c022b284a47855c06c5e2b3e81ab8221429353232dd189a",
+          "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+          "maxHeightPrevoted": 0,
+          "maxHeightGenerated": 0,
+          "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+          "aggregateCommit": {
+            "height": 0,
+            "aggregationBits": "",
+            "certificateSignature": ""
+          },
+          "signature": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f93030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9"
+        },
+        "assets": [
+          {
+            "module": "dpos",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          },
+          {
+            "module": "transfer",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          }
+        ],
+        "transactions": []
+      },
+      "err": "genesis block signature must be empty"
+    },
+    {
+      "block": {
+        "header": {
+          "id": "",
+          "version": 0,
+          "timestamp": 1640077506,
+          "height": 0,
+          "previousBlockID": "",
+          "generatorAddress": "lskzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz5fw596",
+          "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "assetRoot": "528c16c4360d8c5d3c022b284a47855c06c5e2b3e81ab8221429353232dd189a",
+          "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+          "maxHeightPrevoted": 0,
+          "maxHeightGenerated": 0,
+          "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+          "aggregateCommit": {
+            "height": 0,
+            "aggregationBits": "",
+            "certificateSignature": ""
+          },
+          "signature": ""
+        },
+        "assets": [
+          {
+            "module": "transfer",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          },
+          {
+            "module": "dpos",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          }
+        ],
+        "transactions": []
+      },
+      "err": "assets must be sorted by module"
+    },
+    {
+      "block": {
+        "header": {
+          "id": "",
+          "version": 0,
+          "timestamp": 1640077506,
+          "height": 0,
+          "previousBlockID": "",
+          "generatorAddress": "lskzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz5fw596",
+          "transactionRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "eventRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "assetRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stateRoot": "92c5ddf5f922343b3bdffc2be97ed88bdd9c265c2f71ce98d75cc2c731005569",
+          "maxHeightPrevoted": 0,
+          "maxHeightGenerated": 0,
+          "validatorsHash": "3030d20b6578b6abe2cbcff34c7dd0e241ebb5c28e765e083b4cc0126bc101f9",
+          "aggregateCommit": {
+            "height": 0,
+            "aggregationBits": "",
+            "certificateSignature": ""
+          },
+          "signature": ""
+        },
+        "assets": [
+          {
+            "module": "dpos",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          },
+          {
+            "module": "transfer",
+            "data": "0a240a1405f286ecc61f17506609bca19c265e01d296b686120408001000188080e983b1de160a240a141b46f6c283cfe7c5f56e15ed21cbb07e75957e59120408001000188080e983b1de160a240a144360deeea7769e8ce25b585cc6271217ae3ad102120408001000188080e983b1de160a240a14a2af22fe2e827ce5e6f5f85e01e056149908901c120408001000188080e983b1de160a240a14a88535a42d7292ac815b4ef72ad6d0d41411d1c5120408001000188080e983b1de16120a08001080808d93f5d77122020801"
+          }
+        ],
+        "transactions": []
+      },
+      "err": "asset root must match the assets"
+    }
+  ]
+}
