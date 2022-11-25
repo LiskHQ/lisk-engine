@@ -49,6 +49,24 @@ func TestConnect(t *testing.T) {
 	}
 }
 
+func TestPing(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	p1, _ := Create(logger, context.Background())
+	p2, _ := Create(logger, context.Background())
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	_ = p1.Connect(*p2AddrInfo)
+	rtt, err := p1.Ping(p2.ID())
+	if err != nil {
+		t.Fatalf("error while sending a protocol message %v", err)
+	}
+
+	if len(rtt) != numOfPingMessages {
+		t.Fatalf("invalid ping response length, got %v, want %v", len(rtt), numOfPingMessages)
+	}
+}
+
 type TestMessageReceive struct {
 	msg  string
 	done chan any

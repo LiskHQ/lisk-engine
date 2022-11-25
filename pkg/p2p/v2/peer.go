@@ -3,11 +3,13 @@ package p2p_v2
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	ma "github.com/multiformats/go-multiaddr"
@@ -83,6 +85,29 @@ func (p Peer) P2PAddrs() ([]ma.Multiaddr, error) {
 // ConnectedPeers returns a list of all connected peers.
 func (p Peer) ConnectedPeers() []peer.ID {
 	return p.host.Network().Peers()
+}
+
+// Ping a peer.
+func (p Peer) Ping(peer peer.ID) (rtt []time.Duration, err error) {
+	ps := ping.NewPingService(p.host)
+	ch := ps.Ping(p.ctx, peer)
+
+	p.logger.Infof("sending %d ping messages to %v", numOfPingMessages, peer)
+	for i := 0; i < numOfPingMessages; i++ {
+		select {
+		case pingRes := <-ch:
+			if pingRes.Error != nil {
+				return rtt, pingRes.Error
+			}
+			p.logger.Infof("pinged %v in %v", peer, pingRes.RTT)
+			rtt = append(rtt, pingRes.RTT)
+		case <-p.ctx.Done():
+			return rtt, errors.New("ping canceled")
+		case <-time.After(time.Second * pingTimeout):
+			return rtt, errors.New("ping timeout")
+		}
+	}
+	return rtt, nil
 }
 
 // sendProtoMessage sends a message to a peer using a stream.
