@@ -1,9 +1,10 @@
-package p2p_v2
+package p2p
 
 import (
 	"errors"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPeerInfoFromMultiAddrs(t *testing.T) {
@@ -61,22 +62,14 @@ func TestPeerInfoFromMultiAddrs(t *testing.T) {
 			peer, err := PeerInfoFromMultiAddr(tt.addr)
 
 			if tt.want.err == nil {
-				if err != nil {
-					t.Errorf("got %v, want %v", err, tt.want.err)
-				}
+				assert.Nil(t, err)
 			} else {
-				if strings.Contains(err.Error(), tt.want.err.Error()) != true {
-					t.Errorf("got %v, want %v", err, tt.want.err)
-				}
+				assert.Contains(t, err.Error(), tt.want.err.Error())
 				return // if error occurs skip the rest of body because it must not be checked
 			}
 
-			if peer.ID.String() != tt.want.id {
-				t.Errorf("got %s, want %s", peer.ID.String(), tt.want.id)
-			}
-			if peer.Addrs[0].String() != tt.want.addr {
-				t.Errorf("got %s, want %s", peer.Addrs[0].String(), tt.want.addr)
-			}
+			assert.Equal(t, tt.want.id, peer.ID.String())
+			assert.Equal(t, tt.want.addr, peer.Addrs[0].String())
 		})
 	}
 }

@@ -22,7 +22,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	node, err := p2p.Create(logger, ctx)
+	node, err := p2p.NewPeer(ctx, logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.PeerSecurityTLS)
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("libp2p node addresses:", addrs)
+	logger.Infof("libp2p node addresses: %v", addrs)
 
 	// if a remote peer has been passed on the command line, connect to it
 	// and send it 5 ping messages, otherwise wait for a signal to stop
@@ -63,10 +63,10 @@ func main() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 		<-ch
-		fmt.Println("Received signal, shutting down a node...")
+		logger.Infof("received signal, shutting down a node...")
 	}
 
-	if err := node.Stop(); err != nil {
+	if err := node.Close(); err != nil {
 		panic(err)
 	}
 }

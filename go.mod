@@ -8,6 +8,9 @@ require (
 	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-zeromq/zmq4 v0.14.1
 	github.com/gorilla/websocket v1.5.0
+	github.com/libp2p/go-libp2p v0.23.4
+	github.com/libp2p/go-libp2p-core v0.20.1
+	github.com/multiformats/go-multiaddr v0.7.0
 	github.com/oklog/ulid v1.3.1
 	github.com/stretchr/testify v1.8.0
 	github.com/supranational/blst v0.3.4
@@ -62,9 +65,7 @@ require (
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
-	github.com/libp2p/go-libp2p v0.23.4 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.2.0 // indirect
-	github.com/libp2p/go-libp2p-core v0.20.1 // indirect
 	github.com/libp2p/go-msgio v0.2.0 // indirect
 	github.com/libp2p/go-nat v0.1.0 // indirect
 	github.com/libp2p/go-netroute v0.2.0 // indirect
@@ -85,7 +86,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
-	github.com/multiformats/go-multiaddr v0.7.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.1.1 // indirect

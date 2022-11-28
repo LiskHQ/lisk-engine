@@ -1,4 +1,4 @@
-package p2p_v2
+package p2p
 
 import (
 	"context"
@@ -20,6 +20,15 @@ import (
 const numOfPingMessages = 5 // Number of sent ping messages in Ping service.
 const pingTimeout = 5       // Ping service timeout in seconds.
 
+// Peer security option type.
+type PeerSecurityOption uint8
+
+const (
+	PeerSecurityNone  PeerSecurityOption = iota // Do not support any security.
+	PeerSecurityTLS                             // Support TLS connections.
+	PeerSecurityNoise                           // Support Noise connections.
+)
+
 // Peer type - a p2p node.
 type Peer struct {
 	logger log.Logger
@@ -28,17 +37,31 @@ type Peer struct {
 	*MessageProtocol
 }
 
-// Create a peer with a libp2p host and message protocol.
-func Create(logger log.Logger, ctx context.Context) (*Peer, error) {
-	host, err := libp2p.New(
-		// Multiple listen addresses
-		libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"),
-		// Support TLS connections
-		libp2p.Security(libp2ptls.ID, libp2ptls.New),
-		// Support Noise connections
-		libp2p.Security(noise.ID, noise.New),
-		// Support any other default transports (TCP, QUIC, WS)
-		libp2p.DefaultTransports)
+// NewPeer creates a peer with a libp2p host and message protocol.
+func NewPeer(ctx context.Context, logger log.Logger, addrs []string, security PeerSecurityOption) (*Peer, error) {
+	opts := []libp2p.Option{
+		// Support default transports (TCP, QUIC, WS)
+		libp2p.DefaultTransports,
+	}
+
+	if len(addrs) == 0 {
+		opts = append(opts, libp2p.NoListenAddrs)
+	} else {
+		opts = append(opts, libp2p.ListenAddrStrings(addrs...))
+	}
+
+	switch security {
+	case PeerSecurityNone:
+		opts = append(opts, libp2p.NoSecurity)
+	case PeerSecurityTLS:
+		opts = append(opts, libp2p.Security(libp2ptls.ID, libp2ptls.New))
+	case PeerSecurityNoise:
+		opts = append(opts, libp2p.Security(noise.ID, noise.New))
+	default:
+		opts = append(opts, libp2p.NoSecurity)
+	}
+
+	host, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +71,8 @@ func Create(logger log.Logger, ctx context.Context) (*Peer, error) {
 	return p, nil
 }
 
-// Stop a peer.
-func (p *Peer) Stop() error {
+// Close a peer.
+func (p *Peer) Close() error {
 	err := p.host.Close()
 	if err != nil {
 		return err

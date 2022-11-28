@@ -1,4 +1,4 @@
-package p2p_v2
+package p2p
 
 import (
 	"context"
@@ -7,64 +7,48 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreate(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p, err := Create(logger, context.Background())
-	if err != nil {
-		t.Fatalf("error while creating a new peer: %v", err)
-	}
-	if p.host == nil {
-		t.Fatalf("host is nil")
-	}
-	if p.MessageProtocol == nil {
-		t.Fatalf("message protocol is nil")
-	}
+	p, err := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	assert.Nil(t, err)
+	assert.NotNil(t, p.host)
+	assert.NotNil(t, p.MessageProtocol)
 }
 
 func TestClose(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p, _ := Create(logger, context.Background())
+	p, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	err := p.host.Close()
-	if err != nil {
-		t.Fatalf("error while closing a peer: %v", err)
-	}
+	assert.Nil(t, err)
 }
 
 func TestConnect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p1, _ := Create(logger, context.Background())
-	p2, _ := Create(logger, context.Background())
+	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	err := p1.Connect(*p2AddrInfo)
-	if err != nil {
-		t.Fatalf("error while connecting to a peer: %v", err)
-	}
-	if p1.ConnectedPeers()[0] != p2.ID() {
-		t.Fatalf("wrong peer connection, got %v, want %v", p2.ID(), p1.host.Network().Peers()[0])
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, p2.ID(), p1.ConnectedPeers()[0])
 }
 
 func TestPing(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p1, _ := Create(logger, context.Background())
-	p2, _ := Create(logger, context.Background())
+	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	_ = p1.Connect(*p2AddrInfo)
 	rtt, err := p1.Ping(p2.ID())
-	if err != nil {
-		t.Fatalf("error while sending a protocol message %v", err)
-	}
-
-	if len(rtt) != numOfPingMessages {
-		t.Fatalf("invalid ping response length, got %v, want %v", len(rtt), numOfPingMessages)
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, numOfPingMessages, len(rtt))
 }
 
 type TestMessageReceive struct {
@@ -83,17 +67,15 @@ func TestSendProtoMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	tmr := TestMessageReceive{done: make(chan any)}
 
-	p1, _ := Create(logger, context.Background())
-	p2, _ := Create(logger, context.Background())
+	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2.host.SetStreamHandler(messageProtocolID, tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	_ = p1.Connect(*p2AddrInfo)
 	err := p1.sendProtoMessage(p2.ID(), messageProtocolID, "Test protocol message")
-	if err != nil {
-		t.Fatalf("error while sending a protocol message %v", err)
-	}
+	assert.Nil(t, err)
 
 	select {
 	case <-tmr.done:
@@ -102,7 +84,5 @@ func TestSendProtoMessage(t *testing.T) {
 		t.Fatalf("timeout occurs, message was not delivered to a peer")
 	}
 
-	if tmr.msg != "Test protocol message" {
-		t.Fatalf("message was not delivered to a peer")
-	}
+	assert.Contains(t, tmr.msg, "Test protocol message")
 }

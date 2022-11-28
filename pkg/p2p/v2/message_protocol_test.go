@@ -1,4 +1,4 @@
-package p2p_v2
+package p2p
 
 import (
 	"context"
@@ -6,33 +6,30 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewMessageProtocol(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p, _ := Create(logger, context.Background())
+	p, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 
 	mp := NewMessageProtocol(p)
-	if mp.peer != p {
-		t.Fatalf("unexpected peer, got %v, want %v", mp.peer.ID(), p.ID())
-	}
+	assert.Equal(t, p, mp.peer)
 }
 
 func TestSendMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	tmr := TestMessageReceive{done: make(chan any)}
 
-	p1, _ := Create(logger, context.Background())
-	p2, _ := Create(logger, context.Background())
+	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2.host.SetStreamHandler(messageProtocolID, tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	_ = p1.Connect(*p2AddrInfo)
 	err := p1.SendMessage(p2.ID(), "Test protocol message")
-	if err != nil {
-		t.Fatalf("error while sending a protocol message %v", err)
-	}
+	assert.Nil(t, err)
 
 	select {
 	case <-tmr.done:
@@ -41,7 +38,5 @@ func TestSendMessage(t *testing.T) {
 		t.Fatalf("timeout occurs, message was not delivered to a peer")
 	}
 
-	if tmr.msg != "Test protocol message" {
-		t.Fatalf("message was not delivered to a peer")
-	}
+	assert.Contains(t, tmr.msg, "Test protocol message")
 }
