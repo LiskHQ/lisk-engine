@@ -26,6 +26,9 @@ run.lengine:
 run.testapp:
 	cd ./cmd/debug/app && go run . start
 
+run.testnode:
+	cd ./cmd/debug/p2p/v2 && go run . $(addr)
+
 generate.codec:
 	go generate ./...
 
