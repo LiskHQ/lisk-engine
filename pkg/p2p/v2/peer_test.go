@@ -33,9 +33,22 @@ func TestConnect(t *testing.T) {
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	err := p1.Connect(*p2AddrInfo)
+	err := p1.Connect(context.Background(), *p2AddrInfo)
 	assert.Nil(t, err)
 	assert.Equal(t, p2.ID(), p1.ConnectedPeers()[0])
+}
+
+func TestPingMultiTimes(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	_ = p1.Connect(context.Background(), *p2AddrInfo)
+	rtt, err := p1.PingMultiTimes(context.Background(), p2.ID())
+	assert.Nil(t, err)
+	assert.Equal(t, numOfPingMessages, len(rtt))
 }
 
 func TestPing(t *testing.T) {
@@ -45,10 +58,9 @@ func TestPing(t *testing.T) {
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	_ = p1.Connect(*p2AddrInfo)
-	rtt, err := p1.Ping(p2.ID())
+	_ = p1.Connect(context.Background(), *p2AddrInfo)
+	_, err := p1.Ping(context.Background(), p2.ID())
 	assert.Nil(t, err)
-	assert.Equal(t, numOfPingMessages, len(rtt))
 }
 
 type TestMessageReceive struct {
@@ -73,8 +85,8 @@ func TestSendProtoMessage(t *testing.T) {
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	_ = p1.Connect(*p2AddrInfo)
-	err := p1.sendProtoMessage(p2.ID(), messageProtocolID, "Test protocol message")
+	_ = p1.Connect(context.Background(), *p2AddrInfo)
+	err := p1.sendProtoMessage(context.Background(), p2.ID(), messageProtocolID, "Test protocol message")
 	assert.Nil(t, err)
 
 	select {

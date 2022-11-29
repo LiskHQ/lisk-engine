@@ -40,10 +40,10 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		if err := node.Connect(*peer); err != nil {
+		if err := node.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		rtt, err := node.Ping(peer.ID)
+		rtt, err := node.PingMultiTimes(ctx, peer.ID)
 		if err != nil {
 			panic(err)
 		}
@@ -53,7 +53,7 @@ func main() {
 			sum += i
 		}
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
-		err = node.SendMessage(peer.ID, fmt.Sprintf("Average RTT with you: %v", avg))
+		err = node.SendMessage(ctx, peer.ID, fmt.Sprintf("Average RTT with you: %v", avg))
 		if err != nil {
 			panic(err)
 		}

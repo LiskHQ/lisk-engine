@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"context"
 	"io"
 
 	"github.com/libp2p/go-libp2p/core/network"
@@ -35,6 +36,6 @@ func (mp *MessageProtocol) onMessageReceive(s network.Stream) {
 }
 
 // SendMessage sends a message to a peer using a message protocol.
-func (mp *MessageProtocol) SendMessage(id peer.ID, msg string) error {
-	return mp.peer.sendProtoMessage(id, messageProtocolID, msg)
+func (mp *MessageProtocol) SendMessage(ctx context.Context, id peer.ID, msg string) error {
+	return mp.peer.sendProtoMessage(ctx, id, messageProtocolID, msg)
 }
