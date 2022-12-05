@@ -5,6 +5,8 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
+type PeerAddrInfo = peer.AddrInfo
+
 // PeerInfoFromMultiAddr returns a peer info from multi address as string.
 func PeerInfoFromMultiAddr(s string) (*peer.AddrInfo, error) {
 	addr, err := ma.NewMultiaddr(s)

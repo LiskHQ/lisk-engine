@@ -32,7 +32,6 @@ const (
 // Peer type - a p2p node.
 type Peer struct {
 	logger log.Logger
-	ctx    context.Context
 	host   host.Host
 	*MessageProtocol
 }
@@ -65,7 +64,7 @@ func NewPeer(ctx context.Context, logger log.Logger, addrs []string, security Pe
 	if err != nil {
 		return nil, err
 	}
-	p := &Peer{logger: logger, ctx: ctx, host: host}
+	p := &Peer{logger: logger, host: host}
 	p.MessageProtocol = NewMessageProtocol(p)
 	p.logger.Infof("peer successfully created")
 	return p, nil
@@ -82,8 +81,8 @@ func (p *Peer) Close() error {
 }
 
 // Connect to a peer.
-func (p *Peer) Connect(peer peer.AddrInfo) error {
-	return p.host.Connect(p.ctx, peer)
+func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
+	return p.host.Connect(ctx, peer)
 }
 
 // ID returns a peers's identifier.
@@ -110,10 +109,10 @@ func (p Peer) ConnectedPeers() []peer.ID {
 	return p.host.Network().Peers()
 }
 
-// Ping a peer.
-func (p Peer) Ping(peer peer.ID) (rtt []time.Duration, err error) {
-	ps := ping.NewPingService(p.host)
-	ch := ps.Ping(p.ctx, peer)
+// PingMultiTimes tries to send ping request to a peer for five times.
+func (p Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Duration, err error) {
+	pingService := ping.NewPingService(p.host)
+	ch := pingService.Ping(ctx, peer)
 
 	p.logger.Infof("sending %d ping messages to %v", numOfPingMessages, peer)
 	for i := 0; i < numOfPingMessages; i++ {
@@ -124,7 +123,7 @@ func (p Peer) Ping(peer peer.ID) (rtt []time.Duration, err error) {
 			}
 			p.logger.Infof("pinged %v in %v", peer, pingRes.RTT)
 			rtt = append(rtt, pingRes.RTT)
-		case <-p.ctx.Done():
+		case <-ctx.Done():
 			return rtt, errors.New("ping canceled")
 		case <-time.After(time.Second * pingTimeout):
 			return rtt, errors.New("ping timeout")
@@ -133,9 +132,29 @@ func (p Peer) Ping(peer peer.ID) (rtt []time.Duration, err error) {
 	return rtt, nil
 }
 
+// Ping tries to send a ping request to a peer.
+func (p Peer) Ping(ctx context.Context, peer peer.ID) (rtt time.Duration, err error) {
+	pingService := ping.NewPingService(p.host)
+	ch := pingService.Ping(ctx, peer)
+
+	p.logger.Infof("sending ping messages to %v", peer)
+	select {
+	case pingRes := <-ch:
+		if pingRes.Error != nil {
+			return rtt, pingRes.Error
+		}
+		p.logger.Infof("pinged %v in %v", peer, pingRes.RTT)
+		return pingRes.RTT, nil
+	case <-ctx.Done():
+		return rtt, errors.New("ping canceled")
+	case <-time.After(time.Second * pingTimeout):
+		return rtt, errors.New("ping timeout")
+	}
+}
+
 // sendProtoMessage sends a message to a peer using a stream.
-func (p *Peer) sendProtoMessage(id peer.ID, pId protocol.ID, msg string) error {
-	s, err := p.host.NewStream(p.ctx, id, pId)
+func (p *Peer) sendProtoMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg string) error {
+	s, err := p.host.NewStream(ctx, id, pId)
 	if err != nil {
 		return err
 	}

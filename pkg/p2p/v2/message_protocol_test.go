@@ -27,8 +27,8 @@ func TestSendMessage(t *testing.T) {
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	_ = p1.Connect(*p2AddrInfo)
-	err := p1.SendMessage(p2.ID(), "Test protocol message")
+	_ = p1.Connect(context.Background(), *p2AddrInfo)
+	err := p1.SendMessage(context.Background(), p2.ID(), "Test protocol message")
 	assert.Nil(t, err)
 
 	select {
