@@ -9,7 +9,7 @@ Please follow the instructions to install `testground` [here](https://docs.testg
 ### Requirements
 After installing the `testground` you need to have running `testground daemon` by the following command:
 ```bash
-$ testground deamon
+$ testground daemon
 ```
 
 ## Import testplan
