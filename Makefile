@@ -2,6 +2,8 @@
 
 PKGS=$(shell go list ./... | grep -v "/vendor/")
 
+.PHONY: test
+
 glisk:
 	go install ./cmd/glisk
 	@echo "glisk installed"
@@ -28,6 +30,9 @@ run.testapp:
 
 run.testnode:
 	cd ./cmd/debug/p2p/v2 && go run . $(addr)
+
+run.testnat:
+	cd ./cmd/debug/p2p/v2/nat && go run . $(addr)
 
 generate.codec:
 	go generate ./...

@@ -13,7 +13,8 @@ import (
 
 func TestCreate(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p, err := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	conf := Config{DummyConfigurationFeatureEnable: true}
+	p, err := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	assert.Nil(t, err)
 	assert.NotNil(t, p.host)
 	assert.NotNil(t, p.MessageProtocol)
@@ -21,15 +22,17 @@ func TestCreate(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	conf := Config{DummyConfigurationFeatureEnable: true}
+	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	err := p.host.Close()
 	assert.Nil(t, err)
 }
 
 func TestConnect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	conf := Config{DummyConfigurationFeatureEnable: true}
+	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -40,8 +43,9 @@ func TestConnect(t *testing.T) {
 
 func TestPingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	conf := Config{DummyConfigurationFeatureEnable: true}
+	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -53,8 +57,9 @@ func TestPingMultiTimes(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	conf := Config{DummyConfigurationFeatureEnable: true}
+	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -77,10 +82,11 @@ func (tmr *TestMessageReceive) onMessageReceive(s network.Stream) {
 
 func TestSendProtoMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
+	conf := Config{DummyConfigurationFeatureEnable: true}
 	tmr := TestMessageReceive{done: make(chan any)}
 
-	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2.host.SetStreamHandler(messageProtocolID, tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())

@@ -9,7 +9,6 @@ require (
 	github.com/go-zeromq/zmq4 v0.14.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/libp2p/go-libp2p v0.23.4
-	github.com/libp2p/go-libp2p-core v0.20.1
 	github.com/multiformats/go-multiaddr v0.7.0
 	github.com/oklog/ulid v1.3.1
 	github.com/stretchr/testify v1.8.0
