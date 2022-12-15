@@ -53,7 +53,7 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, logger log.Log
 		if err := nat.enableAutoNAT(p); err != nil {
 			logger.Errorf("Failed to enable peer AutoNAT feature: %v", err)
 		}
-		p.logger.Infof("NAT status: %v", nat.status())
+		p.logger.Debugf("NAT status: %v", nat.status())
 	}
 
 	sub, err := p.host.EventBus().Subscribe([]interface{}{new(event.EvtLocalReachabilityChanged), new(event.EvtNATDeviceTypeChanged)})
@@ -68,10 +68,10 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, logger log.Log
 		// TODO - remove this timer event after testing
 		case <-t.C:
 			if conf.DummyConfigurationFeatureEnable {
-				p.logger.Infof("NAT status: %v", nat.status())
+				p.logger.Debugf("NAT status: %v", nat.status())
 			}
 			addrs, _ := p.P2PAddrs()
-			p.logger.Infof("My listen addresses: %v", addrs)
+			p.logger.Debugf("My listen addresses: %v", addrs)
 			for _, connectedPeer := range p.ConnectedPeers() {
 				err = p.SendMessage(ctx, connectedPeer, fmt.Sprintf("Sending message to %v", connectedPeer))
 				if err != nil {
@@ -81,15 +81,15 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, logger log.Log
 			t.Reset(10 * time.Second)
 		case e := <-sub.Out():
 			if ev, ok := e.(event.EvtLocalReachabilityChanged); ok {
-				p.logger.Infof("New NAT event received. Local reachability changed: %v", ev.Reachability.String())
+				p.logger.Debugf("New NAT event received. Local reachability changed: %v", ev.Reachability.String())
 				if ev.Reachability == network.ReachabilityPublic {
-					logger.Infof("We are publicly reachable and are not behind NAT")
+					logger.Debugf("We are publicly reachable and are not behind NAT")
 				} else if ev.Reachability == network.ReachabilityPrivate {
-					logger.Infof("We are not publicly reachable and are behind NAT")
+					logger.Debugf("We are not publicly reachable and are behind NAT")
 				}
 			}
 			if ev, ok := e.(event.EvtNATDeviceTypeChanged); ok {
-				p.logger.Infof("New NAT event received. NAT device type changed: %v", ev)
+				p.logger.Debugf("New NAT event received. NAT device type changed: %v", ev)
 			}
 		case <-ctx.Done():
 			logger.Infof("NAT traversal service stopped")

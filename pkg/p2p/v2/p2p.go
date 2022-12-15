@@ -3,7 +3,9 @@ package p2p
 
 import (
 	"context"
+	"errors"
 	"sync"
+	"time"
 
 	"github.com/libp2p/go-libp2p/core/event"
 
@@ -32,6 +34,7 @@ func NewP2P() *P2P {
 
 // Start function starts a P2P and all other related services.
 func (p2p *P2P) Start(logger log.Logger) error {
+	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// TODO - get configuration from config file (GH issue #14)
@@ -51,13 +54,28 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.wg.Add(1)
 	go p2pService(ctx, &p2p.wg, logger, peer)
 
+	logger.Infof("P2P module successfully started")
 	return nil
 }
 
 // Stop function stops a P2P.
 func (p2p *P2P) Stop() error {
 	p2p.cancel()
-	p2p.wg.Wait()
+
+	waitCh := make(chan struct{})
+	go func() {
+		p2p.wg.Wait()
+		close(waitCh)
+	}()
+
+	select {
+	case <-waitCh:
+		// All services stopped successfully. Nothing to do.
+	case <-time.After(time.Second * 5):
+		return errors.New("P2P module failed to stop")
+	}
+
+	p2p.logger.Infof("P2P module successfully stopped")
 	return nil
 }
 
@@ -75,22 +93,22 @@ func p2pService(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, p *P
 		select {
 		case e := <-sub.Out():
 			if ev, ok := e.(event.EvtPeerIdentificationFailed); ok {
-				p.logger.Infof("New P2P event received. Peer identification failed: %v", ev)
+				p.logger.Debugf("New P2P event received. Peer identification failed: %v", ev)
 			}
 			if ev, ok := e.(event.EvtLocalProtocolsUpdated); ok {
-				p.logger.Infof("New P2P event received. Local protocols updated: %v", ev)
+				p.logger.Debugf("New P2P event received. Local protocols updated: %v", ev)
 			}
 			if ev, ok := e.(event.EvtLocalAddressesUpdated); ok {
-				p.logger.Infof("New P2P event received. Local addresses updated: %v", ev)
+				p.logger.Debugf("New P2P event received. Local addresses updated: %v", ev)
 			}
 			if ev, ok := e.(event.EvtPeerConnectednessChanged); ok {
-				p.logger.Infof("New P2P event received. Peer connectedness changed: %v", ev)
+				p.logger.Debugf("New P2P event received. Peer connectedness changed: %v", ev)
 			}
 			if ev, ok := e.(event.EvtPeerProtocolsUpdated); ok {
-				p.logger.Infof("New P2P event received. Peer protocols updated: %v", ev)
+				p.logger.Debugf("New P2P event received. Peer protocols updated: %v", ev)
 			}
 			if ev, ok := e.(event.EvtPeerIdentificationCompleted); ok {
-				p.logger.Infof("New P2P event received. Peer identification completed: %v", ev)
+				p.logger.Debugf("New P2P event received. Peer identification completed: %v", ev)
 			}
 		case <-ctx.Done():
 			logger.Infof("P2P service stopped")

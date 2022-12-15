@@ -32,7 +32,7 @@ func (mp *MessageProtocol) onMessageReceive(s network.Stream) {
 		return
 	}
 	s.Close()
-	mp.peer.logger.Infof("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
+	mp.peer.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 }
 
 // SendMessage sends a message to a peer using a message protocol.

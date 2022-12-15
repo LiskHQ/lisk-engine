@@ -165,14 +165,14 @@ func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Dur
 	pingService := ping.NewPingService(p.host)
 	ch := pingService.Ping(ctx, peer)
 
-	p.logger.Infof("Sending %d ping messages to %v", numOfPingMessages, peer)
+	p.logger.Debugf("Sending %d ping messages to %v", numOfPingMessages, peer)
 	for i := 0; i < numOfPingMessages; i++ {
 		select {
 		case pingRes := <-ch:
 			if pingRes.Error != nil {
 				return rtt, pingRes.Error
 			}
-			p.logger.Infof("Pinged %v in %v", peer, pingRes.RTT)
+			p.logger.Debugf("Pinged %v in %v", peer, pingRes.RTT)
 			rtt = append(rtt, pingRes.RTT)
 		case <-ctx.Done():
 			return rtt, errors.New("ping canceled")
@@ -188,13 +188,13 @@ func (p *Peer) Ping(ctx context.Context, peer peer.ID) (rtt time.Duration, err e
 	pingService := ping.NewPingService(p.host)
 	ch := pingService.Ping(ctx, peer)
 
-	p.logger.Infof("Sending ping messages to %v", peer)
+	p.logger.Debugf("Sending ping messages to %v", peer)
 	select {
 	case pingRes := <-ch:
 		if pingRes.Error != nil {
 			return rtt, pingRes.Error
 		}
-		p.logger.Infof("Pinged %v in %v", peer, pingRes.RTT)
+		p.logger.Debugf("Pinged %v in %v", peer, pingRes.RTT)
 		return pingRes.RTT, nil
 	case <-ctx.Done():
 		return rtt, errors.New("ping canceled")
@@ -228,7 +228,7 @@ func peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
 
 	go func() {
 		defer close(peerChan)
-		// TODO - get list of peers from a Peer list or some other peer book
+		// TODO - get list of peers from a Peer list or some other peer book (GH issue #31)
 		testAddr, _ := PeerInfoFromMultiAddr("/ip4/159.223.230.202/tcp/4455/p2p/12D3KooWJapB9gVB2eD2D5RTWdRyFaub9jv9DEELZoSMBPeTimzy")
 		// TODO - this is an example of how to construct AddrInfo and send it to the channel
 		// peerChan <- peer.AddrInfo{ID: r.ID(), Addrs: r.Addrs()}
