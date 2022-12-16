@@ -8,7 +8,7 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
 type Downloader struct {

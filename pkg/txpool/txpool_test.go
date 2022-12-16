@@ -14,7 +14,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/db"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
 

@@ -15,7 +15,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
 type abiMock struct {

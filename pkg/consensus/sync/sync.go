@@ -14,7 +14,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/collection/ints"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/validator"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen

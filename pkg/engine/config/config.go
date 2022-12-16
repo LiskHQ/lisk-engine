@@ -9,7 +9,7 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/collection/strings"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
 var (
@@ -291,10 +291,10 @@ func (c *NetworkConfig) InsertDefault() error {
 
 type NetworkIPs []NetworkIP
 
-func (n NetworkIPs) GetP2PAddress() []*addressbook.Address {
-	addresses := make([]*addressbook.Address, len(n))
+func (n NetworkIPs) GetP2PAddress() []*p2p.Address {
+	addresses := make([]*p2p.Address, len(n))
 	for i, addr := range n {
-		addresses[i] = addressbook.NewAddress(addr.IP, addr.Port)
+		addresses[i] = p2p.NewAddress(addr.IP, addr.Port)
 	}
 	return addresses
 }
