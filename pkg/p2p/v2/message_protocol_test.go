@@ -11,7 +11,8 @@ import (
 
 func TestNewMessageProtocol(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	p, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	conf := Config{DummyConfigurationFeatureEnable: true}
+	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 
 	mp := NewMessageProtocol(p)
 	assert.Equal(t, p, mp.peer)
@@ -19,10 +20,11 @@ func TestNewMessageProtocol(t *testing.T) {
 
 func TestSendMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
+	conf := Config{DummyConfigurationFeatureEnable: true}
 	tmr := TestMessageReceive{done: make(chan any)}
 
-	p1, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2.host.SetStreamHandler(messageProtocolID, tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())

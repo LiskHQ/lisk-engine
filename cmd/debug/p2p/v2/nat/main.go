@@ -1,4 +1,4 @@
-// p2p runs P2P client against specified node for debugging and demonstration purpose.
+// nat runs P2P client against specified node for debugging and testing NAT functionality of libp2p library.
 package main
 
 import (
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
 func main() {
@@ -22,14 +22,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	conf := p2p.Config{DummyConfigurationFeatureEnable: true}
-
-	node, err := p2p.NewPeer(ctx, logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.PeerSecurityTLS)
+	p2p := p2pLib.NewP2P()
+	err = p2p.Start(logger)
 	if err != nil {
 		panic(err)
 	}
 
-	addrs, err := node.P2PAddrs()
+	addrs, err := p2p.P2PAddrs()
 	if err != nil {
 		panic(err)
 	}
@@ -38,14 +37,14 @@ func main() {
 	// if a remote peer has been passed on the command line, connect to it
 	// and send it 5 ping messages, otherwise wait for a signal to stop
 	if len(os.Args) > 1 {
-		peer, err := p2p.PeerInfoFromMultiAddr(os.Args[1])
+		peer, err := p2pLib.PeerInfoFromMultiAddr(os.Args[1])
 		if err != nil {
 			panic(err)
 		}
-		if err := node.Connect(ctx, *peer); err != nil {
+		if err := p2p.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		rtt, err := node.PingMultiTimes(ctx, peer.ID)
+		rtt, err := p2p.PingMultiTimes(ctx, peer.ID)
 		if err != nil {
 			panic(err)
 		}
@@ -55,20 +54,21 @@ func main() {
 			sum += i
 		}
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
-		err = node.SendMessage(ctx, peer.ID, fmt.Sprintf("Average RTT with you: %v", avg))
+		err = p2p.SendMessage(ctx, peer.ID, fmt.Sprintf("Average RTT with you: %v", avg))
 		if err != nil {
 			panic(err)
 		}
 		time.Sleep(10 * time.Millisecond) // Wait for a message to be delivered.
-	} else {
-		// wait for a SIGINT or SIGTERM signal
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-		<-ch
-		logger.Infof("Received signal, shutting down a node...")
 	}
 
-	if err := node.Close(); err != nil {
+	// wait for a SIGINT or SIGTERM signal
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
+	logger.Infof("Received signal, shutting down a node...")
+
+	err = p2p.Stop()
+	if err != nil {
 		panic(err)
 	}
 }

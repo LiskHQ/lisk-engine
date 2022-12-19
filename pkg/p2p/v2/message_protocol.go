@@ -19,7 +19,7 @@ type MessageProtocol struct {
 func NewMessageProtocol(peer *Peer) *MessageProtocol {
 	mp := &MessageProtocol{peer: peer}
 	peer.host.SetStreamHandler(messageProtocolID, mp.onMessageReceive)
-	mp.peer.logger.Infof("message protocol is set")
+	mp.peer.logger.Infof("Message protocol is set")
 	return mp
 }
 
@@ -28,11 +28,11 @@ func (mp *MessageProtocol) onMessageReceive(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
-		mp.peer.logger.Errorf("%v", err)
+		mp.peer.logger.Errorf("Error onMessageReceive: %v", err)
 		return
 	}
 	s.Close()
-	mp.peer.logger.Infof("data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
+	mp.peer.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 }
 
 // SendMessage sends a message to a peer using a message protocol.
