@@ -112,6 +112,8 @@ func (c *Connection) PostNodeInfo(ctx context.Context, data []byte) {
 func (c *Connection) Send(ctx context.Context, event string, data []byte) {
 }
 
+// In old P2P eager/lazy push is handled in the application, but since now gossipsub maintains it,
+// maybe we need to slightly modify an interface?
 // Broadcast data to all peers.
 func (c *Connection) Broadcast(ctx context.Context, event string, data []byte) {
 }
@@ -146,6 +148,8 @@ func (c *Connection) DisconnectedAddresses() []AddressInfo {
                                                         node.go
 *************************************************************************************************************************/
 
+// In old P2P package NodeInfo (height/maxHeight, prevoted, etc) is handled in the P2P package, but this caused not to be able to
+// fetch some information in the application layer. Therefore, we can remove this from P2P interface and handle it in the application.
 // NodeInfo contains the information about the host node.
 type NodeInfo struct {
 	ChainID          string `json:"chainID" fieldNumber:"1"`
