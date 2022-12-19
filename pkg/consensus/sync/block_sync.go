@@ -8,7 +8,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/forkchoice"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 // Syncer sync the block with network.

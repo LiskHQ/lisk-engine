@@ -9,7 +9,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/consensus"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 	"github.com/LiskHQ/lisk-engine/pkg/router"
 	"github.com/LiskHQ/lisk-engine/pkg/txpool"
 )

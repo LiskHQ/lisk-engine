@@ -5,7 +5,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 func getBestNodeInfo(peers []p2p.PeerInfo) (*NodeInfo, error) {

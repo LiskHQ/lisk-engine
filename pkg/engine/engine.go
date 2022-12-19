@@ -17,7 +17,8 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/generator"
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
 	"github.com/LiskHQ/lisk-engine/pkg/router"
 	"github.com/LiskHQ/lisk-engine/pkg/rpc"
 	"github.com/LiskHQ/lisk-engine/pkg/txpool"
@@ -401,10 +402,10 @@ func (e *Engine) handleEvents() {
 
 type NetworkPeers config.NetworkIPs
 
-func (n NetworkPeers) GetP2PAddress() []*p2p.Address {
-	addresses := make([]*p2p.Address, len(n))
+func (n NetworkPeers) GetP2PAddress() []*addressbook.Address {
+	addresses := make([]*addressbook.Address, len(n))
 	for i, addr := range n {
-		addresses[i] = p2p.NewAddress(addr.IP, addr.Port)
+		addresses[i] = addressbook.NewAddress(addr.IP, addr.Port)
 	}
 	return addresses
 }

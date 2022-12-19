@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
