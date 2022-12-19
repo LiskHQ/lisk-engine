@@ -31,8 +31,8 @@ run.testapp:
 run.testnode:
 	cd ./cmd/debug/p2p/v2/ping && go run . $(addr)
 
-build.pubsub:
-	cd ./cmd/debug/p2p/v2/pubsub && go build . $(addr)
+run.pubsub:
+	cd ./cmd/debug/p2p/v2/pubsub && go run . $(addr)
 
 run.testnat:
 	cd ./cmd/debug/p2p/v2/nat && go run . $(addr)

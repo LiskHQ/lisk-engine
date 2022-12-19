@@ -1,5 +1,5 @@
 {
-  "isBootstrapNode": false,
+  "isSeedNode": false,
   "networkName": "lisk-test",
-  "bootNode": []
+  "seedNodes": []
 }

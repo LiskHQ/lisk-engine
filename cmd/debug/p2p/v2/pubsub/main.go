@@ -10,7 +10,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 
-	pubsub "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
 const (
@@ -45,13 +46,13 @@ func main() {
 		panic(err)
 	}
 
-	cfg, err := pubsub.ReadConfigFromFile(*cfgPath)
+	cfg, err := p2p.ReadConfigFromFile(*cfgPath)
 	if err != nil {
 		panic(err)
 	}
 
 	sk := pubsub.NewScoreKeeper()
-	ps, err := pubsub.NewGossipSub(ctx, h, sk, cfg)
+	ps, err := p2p.NewGossipSub(ctx, h, sk, cfg)
 	if err != nil {
 		panic(err)
 	}

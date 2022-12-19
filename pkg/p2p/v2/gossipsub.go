@@ -8,7 +8,8 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-	ma "github.com/multiformats/go-multiaddr"
+
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
 // GossipSub is wrapper of PubSub.
@@ -19,20 +20,20 @@ type GossipSub struct {
 // NewGossipSub makes a new GossipSub based on input parameters.
 func NewGossipSub(ctx context.Context,
 	h host.Host,
-	sk *ScoreKeeper,
+	sk *lps.ScoreKeeper,
 	cfg Config,
 ) (*GossipSub, error) {
-	bootNodes, err := ParseAddresses(ctx, cfg.BootNode)
+	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedNodes)
 	if err != nil {
 		return nil, err
 	}
 
 	bootstrappers := make(map[peer.ID]struct{})
-	for _, info := range bootNodes {
+	for _, info := range seedNodes {
 		bootstrappers[info.ID] = struct{}{}
 	}
 
-	msgTopic := MessageTopic(cfg.NetworkName)
+	msgTopic := lps.MessageTopic(cfg.NetworkName)
 	topicParams := map[string]*pubsub.TopicScoreParams{
 		msgTopic: {
 			TopicWeight:                    0.1,
@@ -50,12 +51,12 @@ func NewGossipSub(ctx context.Context,
 	var ipWhitelist []*net.IPNet
 	options := []pubsub.Option{
 		pubsub.WithFloodPublish(true),
-		pubsub.WithMessageIdFn(hashMsgID),
+		pubsub.WithMessageIdFn(lps.HashMsgID),
 		pubsub.WithPeerScore(
 			&pubsub.PeerScoreParams{
 				AppSpecificScore: func(p peer.ID) float64 {
 					_, ok := bootstrappers[p]
-					if ok && !cfg.IsBootstrapNode {
+					if ok && !cfg.IsSeedNode {
 						return 2500
 					}
 					return 0
@@ -83,7 +84,7 @@ func NewGossipSub(ctx context.Context,
 		pubsub.WithPeerScoreInspect(sk.Update, 10*time.Second),
 	}
 
-	if cfg.IsBootstrapNode {
+	if cfg.IsSeedNode {
 		pubsub.GossipSubD = 0
 		pubsub.GossipSubDscore = 0
 		pubsub.GossipSubDlo = 0
@@ -95,11 +96,10 @@ func NewGossipSub(ctx context.Context,
 		options = append(options, pubsub.WithPeerExchange(true))
 	}
 
-	pgTopicWeights := map[string]float64{
-		msgTopic: 1,
-	}
+	pgTopicWeights := map[string]float64{}
+
 	var pgParams *pubsub.PeerGaterParams
-	if cfg.IsBootstrapNode {
+	if cfg.IsSeedNode {
 		pgParams = pubsub.NewPeerGaterParams(
 			0.33,
 			pubsub.ScoreParameterDecay(2*time.Minute),
@@ -115,7 +115,7 @@ func NewGossipSub(ctx context.Context,
 	options = append(options, pubsub.WithPeerGater(pgParams))
 
 	options = append(options,
-		pubsub.WithDirectPeers(bootNodes),
+		pubsub.WithDirectPeers(seedNodes),
 		pubsub.WithSubscriptionFilter(
 			pubsub.WrapLimitSubscriptionFilter(
 				pubsub.NewAllowlistSubscriptionFilter(msgTopic),
@@ -126,16 +126,6 @@ func NewGossipSub(ctx context.Context,
 	}
 
 	return &GossipSub{ps}, nil
-}
-
-// P2pAddrs returns all listen address of GossipSub based on host.
-func P2pAddrs(h host.Host) ([]ma.Multiaddr, error) {
-	peerInfo := peer.AddrInfo{
-		ID:    h.ID(),
-		Addrs: h.Addrs(),
-	}
-
-	return peer.AddrInfoToP2pAddrs(&peerInfo)
 }
 
 // PubSub returns the inner of Pubsub.

@@ -12,13 +12,13 @@ import (
 
 func isEqual(lCfg, rCfg Config) bool {
 	var lBuf, rBuf bytes.Buffer
-	gob.NewDecoder(&lBuf).Decode(&lCfg.BootNode)
-	gob.NewDecoder(&rBuf).Decode(&rCfg.BootNode)
+	gob.NewDecoder(&lBuf).Decode(&lCfg.SeedNodes)
+	gob.NewDecoder(&rBuf).Decode(&rCfg.SeedNodes)
 	if !bytes.Equal(lBuf.Bytes(), rBuf.Bytes()) {
 		return false
 	}
 
-	if lCfg.IsBootstrapNode != rCfg.IsBootstrapNode {
+	if lCfg.IsSeedNode != rCfg.IsSeedNode {
 		return false
 	}
 
@@ -38,9 +38,9 @@ func TestConfigJson(t *testing.T) {
 
 	defaultCfg := DefaultConfig()
 	wantedCfg := Config{
-		IsBootstrapNode: false,
-		NetworkName:     "lisk-testnet",
-		BootNode:        []string{},
+		IsSeedNode:  false,
+		NetworkName: "lisk-testnet",
+		SeedNodes:   []string{},
 	}
 	assert.Truef(isEqual(defaultCfg, wantedCfg), fmt.Sprintf("the default config is wrong \nwant(%+v)\n but got (%+v)", wantedCfg, defaultCfg))
 
@@ -49,14 +49,14 @@ func TestConfigJson(t *testing.T) {
 	assert.Errorf(err, "converting an empty text to pubsub config shall return an error")
 
 	c = Config{
-		IsBootstrapNode: true,
-		NetworkName:     "lisk",
-		BootNode: []string{
+		IsSeedNode:  true,
+		NetworkName: "lisk",
+		SeedNodes: []string{
 			"/ip4/172.20.10.6/tcp/49526/p2p/12D3KooWB4J4mraN1nAB9Ge5w8JrzGRKDQ3iGyDyHZdbMWDtYg3R",
 			"/ip4/172.20.10.6/tcp/49529/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1REW41BR",
 		},
 	}
-	ndump := `{"isBootstrapNode":true, "networkName":"lisk", "bootNode": ["/ip4/172.20.10.6/tcp/49526/p2p/12D3KooWB4J4mraN1nAB9Ge5w8JrzGRKDQ3iGyDyHZdbMWDtYg3R","/ip4/172.20.10.6/tcp/49529/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1REW41BR"]}`
+	ndump := `{"isSeedNode":true, "networkName":"lisk", "seedNodes": ["/ip4/172.20.10.6/tcp/49526/p2p/12D3KooWB4J4mraN1nAB9Ge5w8JrzGRKDQ3iGyDyHZdbMWDtYg3R","/ip4/172.20.10.6/tcp/49529/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1REW41BR"]}`
 	err = json.Unmarshal([]byte(ndump), &newCfg)
 	assert.Nil(err)
 	assert.Truef(isEqual(newCfg, c), fmt.Sprintf("dumped and parsed jsons are not the same \n got(%+v) \n want(%+v)", newCfg, c))

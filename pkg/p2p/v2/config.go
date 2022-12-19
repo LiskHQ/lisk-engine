@@ -8,9 +8,9 @@ import (
 
 // Config is a struct that hold all information.
 type Config struct {
-	IsBootstrapNode bool     `json:"isBootstrapNode"`
-	NetworkName     string   `json:"networkName"`
-	BootNode        []string `json:"bootNode"`
+	IsSeedNode  bool     `json:"isSeedNode"`
+	NetworkName string   `json:"networkName"`
+	SeedNodes   []string `json:"seedNodes"`
 }
 
 // ReadConfigFromFile reads json config with path file.
@@ -38,8 +38,8 @@ func ReadConfigFromFile(fpath string) (c Config, err error) {
 // DefaultConfig returns a config by default values.
 func DefaultConfig() Config {
 	return Config{
-		IsBootstrapNode: false,
-		NetworkName:     "lisk-testnet",
-		BootNode:        []string{},
+		IsSeedNode:  false,
+		NetworkName: "xxxxxxxx",
+		SeedNodes:   []string{},
 	}
 }
