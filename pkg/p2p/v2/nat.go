@@ -13,18 +13,13 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/host/autonat"
 )
 
-// natService type - a NAT traversal service.
-type natService struct {
-	autoNAT autonat.AutoNAT
-}
-
-// enableAutoNAT enables AutoNAT service.
-func (n *natService) enableAutoNAT(p *Peer) error {
+// newAutoNAT creates a new AutoNAT service.
+func newAutoNAT(p *Peer) (autonat.AutoNAT, error) {
 	dialback, err := libp2p.New(libp2p.NoListenAddrs)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	an, err := autonat.New(
+	nat, err := autonat.New(
 		p.host,
 		autonat.EnableService(dialback.Network()),
 		autonat.WithSchedule(90*time.Second, 15*time.Minute),
@@ -32,15 +27,9 @@ func (n *natService) enableAutoNAT(p *Peer) error {
 		autonat.WithPeerThrottling(3),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	n.autoNAT = an
-	return nil
-}
-
-// status returns a current NAT status.
-func (n *natService) status() network.Reachability {
-	return n.autoNAT.Status()
+	return nat, nil
 }
 
 // natTraversalService handles all NAT traversal related events.
@@ -48,12 +37,13 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, logger log.Log
 	defer wg.Done()
 	logger.Infof("NAT traversal service started")
 
-	nat := &natService{}
+	var nat autonat.AutoNAT
+	var err error
 	if conf.DummyConfigurationFeatureEnable {
-		if err := nat.enableAutoNAT(p); err != nil {
-			logger.Errorf("Failed to enable peer AutoNAT feature: %v", err)
+		if nat, err = newAutoNAT(p); err != nil {
+			logger.Errorf("Failed to create and enable peer AutoNAT feature: %v", err)
 		}
-		p.logger.Debugf("NAT status: %v", nat.status())
+		p.logger.Debugf("NAT status: %v", nat.Status())
 	}
 
 	sub, err := p.host.EventBus().Subscribe([]interface{}{new(event.EvtLocalReachabilityChanged), new(event.EvtNATDeviceTypeChanged)})
@@ -68,7 +58,7 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, logger log.Log
 		// TODO - remove this timer event after testing
 		case <-t.C:
 			if conf.DummyConfigurationFeatureEnable {
-				p.logger.Debugf("NAT status: %v", nat.status())
+				p.logger.Debugf("NAT status: %v", nat.Status())
 			}
 			addrs, _ := p.P2PAddrs()
 			p.logger.Debugf("My listen addresses: %v", addrs)
