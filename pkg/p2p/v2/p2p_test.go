@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	liskLog "github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/stretchr/testify/assert"
+
+	liskLog "github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
 func TestNewP2P(t *testing.T) {

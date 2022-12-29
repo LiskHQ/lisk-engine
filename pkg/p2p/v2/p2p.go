@@ -12,6 +12,8 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
+const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
+
 // TODO - get configuration from config file (GH issue #14)
 type Config struct {
 	DummyConfigurationFeatureEnable bool
@@ -23,6 +25,7 @@ type P2P struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 	conf   Config
+	*MessageProtocol
 	*Peer
 }
 
@@ -44,15 +47,18 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		return err
 	}
 
+	mp := NewMessageProtocol(ctx, peer)
+
 	p2p.logger = logger
 	p2p.cancel = cancel
+	p2p.MessageProtocol = mp
 	p2p.Peer = peer
 
 	p2p.wg.Add(1)
-	go natTraversalService(ctx, &p2p.wg, logger, p2p.conf, peer)
+	go natTraversalService(ctx, &p2p.wg, p2p.conf, mp)
 
 	p2p.wg.Add(1)
-	go p2pService(ctx, &p2p.wg, logger, peer)
+	go p2pService(ctx, &p2p.wg, peer)
 
 	logger.Infof("P2P module successfully started")
 	return nil
@@ -71,7 +77,7 @@ func (p2p *P2P) Stop() error {
 	select {
 	case <-waitCh:
 		// All services stopped successfully. Nothing to do.
-	case <-time.After(time.Second * 5):
+	case <-time.After(stopTimeout):
 		return errors.New("P2P module failed to stop")
 	}
 
@@ -80,13 +86,13 @@ func (p2p *P2P) Stop() error {
 }
 
 // p2pService handles P2P events.
-func p2pService(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, p *Peer) {
+func p2pService(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 	defer wg.Done()
-	logger.Infof("P2P service started")
+	p.logger.Infof("P2P service started")
 
 	sub, err := p.host.EventBus().Subscribe(event.WildcardSubscription)
 	if err != nil {
-		logger.Errorf("Failed to subscribe to bus events: %v", err)
+		p.logger.Errorf("Failed to subscribe to bus events: %v", err)
 	}
 
 	for {
@@ -111,7 +117,7 @@ func p2pService(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, p *P
 				p.logger.Debugf("New P2P event received. Peer identification completed: %v", ev)
 			}
 		case <-ctx.Done():
-			logger.Infof("P2P service stopped")
+			p.logger.Infof("P2P service stopped")
 			return
 		}
 	}
