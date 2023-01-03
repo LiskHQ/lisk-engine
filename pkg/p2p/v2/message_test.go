@@ -12,7 +12,7 @@ func TestNewRequestMessage(t *testing.T) {
 	assert.NotEmpty(t, msg.ID)
 	assert.NotEmpty(t, msg.Timestamp)
 	assert.Equal(t, "7YHPeiMNWetQV9", msg.PeerID)
-	assert.Equal(t, uint32(MessageRequestTypeKnownPeers), msg.Procedure)
+	assert.Equal(t, MessageRequestTypeKnownPeers, msg.Procedure)
 	assert.Equal(t, []byte("test request data"), msg.Data)
 }
 

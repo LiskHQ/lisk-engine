@@ -66,7 +66,7 @@ func TestNewMessageProtocol(t *testing.T) {
 	assert.Equal(t, 0, len(mp.resCh))
 }
 
-func TestOnMessageReqReceive(t *testing.T) {
+func TestOnRequest(t *testing.T) {
 	var tests = []struct {
 		name      string
 		procedure MessageRequestType
@@ -88,7 +88,7 @@ func TestOnMessageReqReceive(t *testing.T) {
 			reqMsg := newRequestMessage("TestRemotePeerID", tt.procedure, []byte(""))
 			data, _ := reqMsg.Encode()
 			stream.data = data
-			mp.onMessageReqReceive(stream)
+			mp.onRequest(stream)
 
 			idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Request message received") })
 			assert.NotEqual(t, -1, idx)
@@ -99,7 +99,7 @@ func TestOnMessageReqReceive(t *testing.T) {
 	}
 }
 
-func TestOnMessageResReceive(t *testing.T) {
+func TestOnResponse(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
@@ -112,7 +112,7 @@ func TestOnMessageResReceive(t *testing.T) {
 	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
 	data, _ := reqMsg.Encode()
 	stream.data = data
-	mp.onMessageResReceive(stream)
+	mp.onResponse(stream)
 
 	select {
 	case response := <-ch:
@@ -130,7 +130,7 @@ func TestOnMessageResReceive(t *testing.T) {
 	assert.NotEqual(t, -1, idx)
 }
 
-func TestOnMessageResReceiveNilChannel(t *testing.T) {
+func TestOnResponseNilChannel(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
@@ -143,14 +143,14 @@ func TestOnMessageResReceiveNilChannel(t *testing.T) {
 	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
 	data, _ := reqMsg.Encode()
 	stream.data = data
-	mp.onMessageResReceive(stream)
+	mp.onResponse(stream)
 
 	assert.Equal(t, 0, len(mp.resCh))
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received") })
 	assert.NotEqual(t, -1, idx)
 }
 
-func TestOnMessageResReceiveUnknownRequestID(t *testing.T) {
+func TestOnResponseUnknownRequestID(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
@@ -162,7 +162,7 @@ func TestOnMessageResReceiveUnknownRequestID(t *testing.T) {
 	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
 	data, _ := reqMsg.Encode()
 	stream.data = data
-	mp.onMessageResReceive(stream)
+	mp.onResponse(stream)
 
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received for unknown request ID") })
 	assert.NotEqual(t, -1, idx)

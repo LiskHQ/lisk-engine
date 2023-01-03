@@ -17,7 +17,7 @@ func (e *RequestMsg) Encode() ([]byte, error) {
 	if err := writer.WriteString(3, e.PeerID); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteUInt32(4, e.Procedure); err != nil {
+	if err := writer.WriteString(4, e.Procedure); err != nil {
 		return nil, err
 	}
 	if err := writer.WriteBytes(5, e.Data); err != nil {
@@ -79,7 +79,7 @@ func (e *RequestMsg) DecodeFromReader(reader *codec.Reader) error {
 		e.PeerID = val
 	}
 	{
-		val, err := reader.ReadUInt32(4, false)
+		val, err := reader.ReadString(4, false)
 		if err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func (e *RequestMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 		e.PeerID = val
 	}
 	{
-		val, err := reader.ReadUInt32(4, true)
+		val, err := reader.ReadString(4, true)
 		if err != nil {
 			return err
 		}

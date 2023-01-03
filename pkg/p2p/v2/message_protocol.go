@@ -32,14 +32,14 @@ type MessageProtocol struct {
 // NewMessageProtocol creates a new message protocol with a stream handler.
 func NewMessageProtocol(ctx context.Context, peer *Peer) *MessageProtocol {
 	mp := &MessageProtocol{ctx: ctx, peer: peer, resCh: make(map[string]chan<- *ResponseMsg), timeout: messageResponseTimeout}
-	peer.host.SetStreamHandler(messageProtocolReqID, mp.onMessageReqReceive)
-	peer.host.SetStreamHandler(messageProtocolResID, mp.onMessageResReceive)
+	peer.host.SetStreamHandler(messageProtocolReqID, mp.onRequest)
+	peer.host.SetStreamHandler(messageProtocolResID, mp.onResponse)
 	mp.peer.logger.Infof("Message protocol is set")
 	return mp
 }
 
-// onMessageReqReceive is a handler for a received request message.
-func (mp *MessageProtocol) onMessageReqReceive(s network.Stream) {
+// onRequest is a handler for a received request message.
+func (mp *MessageProtocol) onRequest(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
@@ -54,6 +54,7 @@ func (mp *MessageProtocol) onMessageReqReceive(s network.Stream) {
 		mp.peer.logger.Errorf("Error unmarshalling message: %v", err)
 		return
 	}
+	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
 	mp.peer.logger.Debugf("Request message received: %v", newMsg)
 
 	// TODO: Implement a proper procedure (requests) handling (registering, unregistering, handler functions, etc.) (GH issue #13)
@@ -85,8 +86,8 @@ func (mp *MessageProtocol) onMessageReqReceive(s network.Stream) {
 	}
 }
 
-// onMessageResReceive is a handler for a received response message.
-func (mp *MessageProtocol) onMessageResReceive(s network.Stream) {
+// onResponse is a handler for a received response message.
+func (mp *MessageProtocol) onResponse(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
@@ -101,6 +102,7 @@ func (mp *MessageProtocol) onMessageResReceive(s network.Stream) {
 		mp.peer.logger.Errorf("Error unmarshalling message: %v", err)
 		return
 	}
+	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
 	mp.peer.logger.Debugf("Response message received: %v", newMsg)
 
 	mp.resMu.Lock()

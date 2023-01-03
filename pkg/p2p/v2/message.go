@@ -10,12 +10,12 @@ import (
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
 
 // MessageRequestType is a type of a request message.
-type MessageRequestType uint32
+type MessageRequestType string
 
 // MessageRequestType enum.
 const (
-	MessageRequestTypePing       MessageRequestType = iota // Ping request message type. Used to check if a peer is alive.
-	MessageRequestTypeKnownPeers                           // Get all known peers request message type.
+	MessageRequestTypePing       MessageRequestType = "ping"       // Ping request message type. Used to check if a peer is alive.
+	MessageRequestTypeKnownPeers MessageRequestType = "knownPeers" // Get all known peers request message type.
 )
 
 // RequestMsg is a request message type sent to other peer.
@@ -23,7 +23,7 @@ type RequestMsg struct {
 	ID        string `fieldNumber:"1" json:"id"`        // Message ID.
 	Timestamp int64  `fieldNumber:"2" json:"timestamp"` // Unix time when the message was received.
 	PeerID    string `fieldNumber:"3" json:"peerID"`    // ID of peer that created the request message.
-	Procedure uint32 `fieldNumber:"4" json:"procedure"` // Procedure to be called.
+	Procedure string `fieldNumber:"4" json:"procedure"` // Procedure to be called.
 	Data      []byte `fieldNumber:"5" json:"data"`      // Request data.
 }
 
@@ -42,7 +42,7 @@ func newRequestMessage(peerID peer.ID, procedure MessageRequestType, data []byte
 		ID:        uuid.New().String(),
 		Timestamp: time.Now().Unix(),
 		PeerID:    peerID.String(),
-		Procedure: (uint32)(procedure),
+		Procedure: string(procedure),
 		Data:      data,
 	}
 }
