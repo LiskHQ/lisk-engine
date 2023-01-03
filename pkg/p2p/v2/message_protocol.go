@@ -55,7 +55,7 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 		return
 	}
 	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
-	mp.peer.logger.Debugf("Request message received: %v", newMsg)
+	mp.peer.logger.Debugf("Request message received: %+v", newMsg)
 
 	// TODO: Implement a proper procedure (requests) handling (registering, unregistering, handler functions, etc.) (GH issue #13)
 	switch (MessageRequestType)(newMsg.Procedure) {
@@ -103,59 +103,55 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 		return
 	}
 	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
-	mp.peer.logger.Debugf("Response message received: %v", newMsg)
+	mp.peer.logger.Debugf("Response message received: %+v", newMsg)
 
 	mp.resMu.Lock()
 	defer mp.resMu.Unlock()
 	if ch, ok := mp.resCh[newMsg.ID]; ok {
-		if ch != nil {
-			ch <- &ResponseMsg{
-				ID:        newMsg.ID,
-				Timestamp: newMsg.Timestamp,
-				PeerID:    newMsg.PeerID,
-				Data:      newMsg.Data,
-			}
+		ch <- &ResponseMsg{
+			ID:        newMsg.ID,
+			Timestamp: newMsg.Timestamp,
+			PeerID:    newMsg.PeerID,
+			Data:      newMsg.Data,
 		}
-		delete(mp.resCh, newMsg.ID)
 	} else {
 		mp.peer.logger.Warningf("Response message received for unknown request ID: %v", newMsg.ID)
 	}
 }
 
 // SendRequestMessage sends a request message to a peer using a message protocol.
-func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, procedure MessageRequestType, data []byte, ch chan<- *ResponseMsg) error {
+func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, procedure MessageRequestType, data []byte) (*ResponseMsg, error) {
 	reqMsg := newRequestMessage(mp.peer.ID(), procedure, data)
 	if err := mp.sendProtoMessage(ctx, id, messageProtocolReqID, reqMsg); err != nil {
-		return err
+		return nil, err
 	}
 
+	ch := make(chan *ResponseMsg)
 	mp.resMu.Lock()
-	defer mp.resMu.Unlock()
 	mp.resCh[reqMsg.ID] = ch
+	mp.resMu.Unlock()
 
-	// Start a goroutine to wait for a timeout.
-	go func() {
-		select {
-		case <-ctx.Done():
-			return
+	// Wait for a response message or timeout
+	select {
+	case resMsg := <-ch:
+		mp.resMu.Lock()
+		delete(mp.resCh, reqMsg.ID)
+		mp.resMu.Unlock()
+		return resMsg, nil
 
-		case <-time.After(mp.timeout):
-			mp.resMu.Lock()
-			defer mp.resMu.Unlock()
+	case <-time.After(mp.timeout):
+		// Timeout occurs.
+		mp.resMu.Lock()
+		delete(mp.resCh, reqMsg.ID)
+		mp.resMu.Unlock()
+		return nil, errors.New("timeout")
 
-			resCh, ok := mp.resCh[reqMsg.ID]
-			if !ok {
-				// Response already received
-				return
-			}
-			// Timeout occurs. Send a timeout error response and delete the channel from the map.
-			resCh <- &ResponseMsg{Err: errors.New("timeout")}
-			delete(mp.resCh, reqMsg.ID)
-			return
-		}
-	}()
-
-	return nil
+	case <-ctx.Done():
+		mp.resMu.Lock()
+		delete(mp.resCh, reqMsg.ID)
+		mp.resMu.Unlock()
+		return nil, ctx.Err()
+	}
 }
 
 // SendResponseMessage sends a response message to a peer using a message protocol.

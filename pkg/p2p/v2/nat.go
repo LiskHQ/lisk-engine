@@ -61,13 +61,11 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, conf Config, m
 			addrs, _ := mp.peer.P2PAddrs()
 			mp.peer.logger.Debugf("My listen addresses: %v", addrs)
 			for _, connectedPeer := range mp.peer.ConnectedPeers() {
-				ch := make(chan *ResponseMsg, 1)
-				err = mp.SendRequestMessage(ctx, connectedPeer, MessageRequestTypeKnownPeers, nil, ch)
+				response, err := mp.SendRequestMessage(ctx, connectedPeer, MessageRequestTypeKnownPeers, nil)
 				if err != nil {
 					mp.peer.logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, err)
 				}
-				response := <-ch
-				mp.peer.logger.Debugf("Received response from peer %v: %+v", connectedPeer, response)
+				mp.peer.logger.Debugf("Received response from peer %v: %v", connectedPeer, string(response.Data))
 			}
 			t.Reset(10 * time.Second)
 		case e := <-sub.Out():

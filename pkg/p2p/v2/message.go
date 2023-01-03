@@ -33,7 +33,6 @@ type ResponseMsg struct {
 	Timestamp int64  `fieldNumber:"2" json:"timestamp"` // Unix time when the message was received.
 	PeerID    string `fieldNumber:"3" json:"peerID"`    // ID of peer that created the response message.
 	Data      []byte `fieldNumber:"4" json:"data"`      // Response data.
-	Err       error  // Error message in case of an error.
 }
 
 // newRequestMessage creates a new request message.

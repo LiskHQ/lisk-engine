@@ -42,12 +42,10 @@ func main() {
 		if err := p2p.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		ch := make(chan *p2pLib.ResponseMsg, 1)
-		err = p2p.SendRequestMessage(ctx, peer.ID, p2pLib.MessageRequestTypePing, nil, ch)
+		response, err := p2p.SendRequestMessage(ctx, peer.ID, p2pLib.MessageRequestTypePing, nil)
 		if err != nil {
 			panic(err)
 		}
-		response := <-ch
 		logger.Infof("Response message received: %+v", response)
 		logger.Infof("%s", response.Data)
 	}

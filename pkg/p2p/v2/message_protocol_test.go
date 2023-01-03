@@ -15,7 +15,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const testTimeout = 3 // Timeout for the test
+const testTimeout = time.Second * 3 // Timeout for the test
 
 type testLogger struct {
 	log.Logger
@@ -119,33 +119,12 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 		assert.Equal(t, "123456", response.ID)
 		assert.Equal(t, "BRTJxkTmkyEaEb2LYQYnEP", response.PeerID)
 		assert.Equal(t, "Test response message", string(response.Data))
-		assert.Equal(t, nil, response.Err)
 		break
-	case <-time.After(time.Second * testTimeout):
+	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not created and sent to the channel")
 	}
 
-	assert.Equal(t, 0, len(mp.resCh))
-	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received") })
-	assert.NotEqual(t, -1, idx)
-}
-
-func TestMessageProtocol_OnResponseNilChannel(t *testing.T) {
-	logger, _ := log.NewDefaultProductionLogger()
-	loggerTest := testLogger{Logger: logger}
-	conf := Config{DummyConfigurationFeatureEnable: true}
-	p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp := NewMessageProtocol(context.Background(), p)
-	// channel is not created
-	mp.resCh["123456"] = nil
-
-	stream := testStream{}
-	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
-	data, _ := reqMsg.Encode()
-	stream.data = data
-	mp.onResponse(stream)
-
-	assert.Equal(t, 0, len(mp.resCh))
+	assert.Equal(t, 1, len(mp.resCh))
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received") })
 	assert.NotEqual(t, -1, idx)
 }
@@ -181,19 +160,11 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 
 	err := p1.Connect(context.Background(), *p2AddrInfo)
 	assert.Nil(t, err)
-	ch := make(chan *ResponseMsg, 1)
-	err = mp1.SendRequestMessage(context.Background(), p2.ID(), MessageRequestTypePing, []byte("Test protocol request message"), ch)
-	assert.Nil(t, err)
 
-	select {
-	case response := <-ch:
-		assert.Equal(t, p2.ID().String(), response.PeerID)
-		assert.Contains(t, string(response.Data), "Average RTT with you:")
-		assert.Equal(t, nil, response.Err)
-		break
-	case <-time.After(time.Second * testTimeout):
-		t.Fatalf("timeout occurs, response message was not received")
-	}
+	response, err := mp1.SendRequestMessage(context.Background(), p2.ID(), MessageRequestTypePing, []byte("Test protocol request message"))
+	assert.Nil(t, err)
+	assert.Equal(t, p2.ID().String(), response.PeerID)
+	assert.Contains(t, string(response.Data), "Average RTT with you:")
 }
 
 func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
@@ -212,17 +183,10 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 
 	err := p1.Connect(context.Background(), *p2AddrInfo)
 	assert.Nil(t, err)
-	ch := make(chan *ResponseMsg, 1)
-	err = mp1.SendRequestMessage(context.Background(), p2.ID(), MessageRequestTypePing, []byte("Test protocol request message"), ch)
-	assert.Nil(t, err)
 
-	select {
-	case response := <-ch:
-		assert.Equal(t, "timeout", response.Err.Error())
-		break
-	case <-time.After(time.Second * testTimeout * 2):
-		t.Fatalf("timeout occurs, response message was not received")
-	}
+	response, err := mp1.SendRequestMessage(context.Background(), p2.ID(), MessageRequestTypePing, []byte("Test protocol request message"))
+	assert.Nil(t, response)
+	assert.Equal(t, "timeout", err.Error())
 }
 
 func TestMessageProtocol_SendResponseMessage(t *testing.T) {
@@ -248,9 +212,8 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 		assert.Equal(t, "123456", response.ID)
 		assert.Equal(t, p1.ID().String(), response.PeerID)
 		assert.Equal(t, "Test protocol response message", string(response.Data))
-		assert.Equal(t, nil, response.Err)
 		break
-	case <-time.After(time.Second * testTimeout):
+	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not received")
 	}
 }
