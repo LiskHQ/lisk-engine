@@ -11,7 +11,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
@@ -87,7 +86,7 @@ func TestOnMessageReqReceive(t *testing.T) {
 
 			stream := testStream{}
 			reqMsg := newRequestMessage("TestRemotePeerID", tt.procedure, []byte(""))
-			data, _ := proto.Marshal(reqMsg)
+			data, _ := reqMsg.Encode()
 			stream.data = data
 			mp.onMessageReqReceive(stream)
 
@@ -111,14 +110,14 @@ func TestOnMessageResReceive(t *testing.T) {
 
 	stream := testStream{}
 	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
-	data, _ := proto.Marshal(reqMsg)
+	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onMessageResReceive(stream)
 
 	select {
 	case response := <-ch:
+		assert.Equal(t, "123456", response.ID)
 		assert.Equal(t, "BRTJxkTmkyEaEb2LYQYnEP", response.PeerID)
-		assert.Equal(t, "123456", response.ReqMsgID)
 		assert.Equal(t, "Test response message", string(response.Data))
 		assert.Equal(t, nil, response.Err)
 		break
@@ -142,7 +141,7 @@ func TestOnMessageResReceiveNilChannel(t *testing.T) {
 
 	stream := testStream{}
 	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
-	data, _ := proto.Marshal(reqMsg)
+	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onMessageResReceive(stream)
 
@@ -161,7 +160,7 @@ func TestOnMessageResReceiveUnknownRequestID(t *testing.T) {
 
 	stream := testStream{}
 	reqMsg := newResponseMessage("TestRemotePeerID", "123456", []byte("Test response message"))
-	data, _ := proto.Marshal(reqMsg)
+	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onMessageResReceive(stream)
 
@@ -246,8 +245,8 @@ func TestSendResponseMessage(t *testing.T) {
 
 	select {
 	case response := <-ch:
+		assert.Equal(t, "123456", response.ID)
 		assert.Equal(t, p1.ID().String(), response.PeerID)
-		assert.Equal(t, "123456", response.ReqMsgID)
 		assert.Equal(t, "Test protocol response message", string(response.Data))
 		assert.Equal(t, nil, response.Err)
 		break

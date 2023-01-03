@@ -11,9 +11,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	"google.golang.org/protobuf/proto"
 
-	pb "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pb"
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
 const messageProtocolReqID = "/lisk/message/req/0.0.1"
@@ -50,8 +49,8 @@ func (mp *MessageProtocol) onMessageReqReceive(s network.Stream) {
 	s.Close()
 	mp.peer.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	newMsg := &pb.Request{}
-	if err := proto.Unmarshal(buf, newMsg); err != nil {
+	newMsg := &RequestMsg{}
+	if err := newMsg.Decode(buf); err != nil {
 		mp.peer.logger.Errorf("Error unmarshalling message: %v", err)
 		return
 	}
@@ -72,14 +71,14 @@ func (mp *MessageProtocol) onMessageReqReceive(s network.Stream) {
 		}
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
 
-		err = mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.GetMsgData().GetId(), []byte(fmt.Sprintf("Average RTT with you: %v", avg)))
+		err = mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("Average RTT with you: %v", avg)))
 		if err != nil {
 			mp.peer.logger.Errorf("Error sending response message: %v", err)
 		}
 	case MessageRequestTypeKnownPeers:
 		mp.peer.logger.Debugf("Get known peers request received")
 		peers := mp.peer.KnownPeers()
-		err := mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.GetMsgData().GetId(), []byte(fmt.Sprintf("All known peers: %v", peers)))
+		err := mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("All known peers: %v", peers)))
 		if err != nil {
 			mp.peer.logger.Errorf("Error sending response message: %v", err)
 		}
@@ -97,8 +96,8 @@ func (mp *MessageProtocol) onMessageResReceive(s network.Stream) {
 	s.Close()
 	mp.peer.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	newMsg := &pb.Response{}
-	if err := proto.Unmarshal(buf, newMsg); err != nil {
+	newMsg := &ResponseMsg{}
+	if err := newMsg.Decode(buf); err != nil {
 		mp.peer.logger.Errorf("Error unmarshalling message: %v", err)
 		return
 	}
@@ -106,19 +105,18 @@ func (mp *MessageProtocol) onMessageResReceive(s network.Stream) {
 
 	mp.resMu.Lock()
 	defer mp.resMu.Unlock()
-	if ch, ok := mp.resCh[newMsg.GetReqMsgID()]; ok {
+	if ch, ok := mp.resCh[newMsg.ID]; ok {
 		if ch != nil {
 			ch <- &ResponseMsg{
-				ID:        newMsg.GetMsgData().GetId(),
-				Timestamp: newMsg.GetMsgData().GetTimestamp(),
-				PeerID:    newMsg.GetMsgData().GetPeerID(),
-				ReqMsgID:  newMsg.GetReqMsgID(),
-				Data:      newMsg.GetData(),
+				ID:        newMsg.ID,
+				Timestamp: newMsg.Timestamp,
+				PeerID:    newMsg.PeerID,
+				Data:      newMsg.Data,
 			}
 		}
-		delete(mp.resCh, newMsg.GetReqMsgID())
+		delete(mp.resCh, newMsg.ID)
 	} else {
-		mp.peer.logger.Warningf("Response message received for unknown request ID: %v", newMsg.GetReqMsgID())
+		mp.peer.logger.Warningf("Response message received for unknown request ID: %v", newMsg.ID)
 	}
 }
 
@@ -131,7 +129,7 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 
 	mp.resMu.Lock()
 	defer mp.resMu.Unlock()
-	mp.resCh[reqMsg.GetMsgData().GetId()] = ch
+	mp.resCh[reqMsg.ID] = ch
 
 	// Start a goroutine to wait for a timeout.
 	go func() {
@@ -143,14 +141,14 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 			mp.resMu.Lock()
 			defer mp.resMu.Unlock()
 
-			resCh, ok := mp.resCh[reqMsg.GetMsgData().GetId()]
+			resCh, ok := mp.resCh[reqMsg.ID]
 			if !ok {
 				// Response already received
 				return
 			}
 			// Timeout occurs. Send a timeout error response and delete the channel from the map.
 			resCh <- &ResponseMsg{Err: errors.New("timeout")}
-			delete(mp.resCh, reqMsg.GetMsgData().GetId())
+			delete(mp.resCh, reqMsg.ID)
 			return
 		}
 	}()
@@ -165,14 +163,14 @@ func (mp *MessageProtocol) SendResponseMessage(ctx context.Context, id peer.ID, 
 }
 
 // sendProtoMessage sends a message to a peer using a stream.
-func (mp *MessageProtocol) sendProtoMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg proto.Message) error {
+func (mp *MessageProtocol) sendProtoMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg codec.Encodable) error {
 	s, err := mp.peer.host.NewStream(network.WithUseTransient(ctx, "Transient connections are allowed."), id, pId)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
 
-	data, err := proto.Marshal(msg)
+	data, err := msg.Encode()
 	if err != nil {
 		return err
 	}

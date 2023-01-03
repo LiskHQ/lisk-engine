@@ -37,12 +37,6 @@ run.testnat:
 generate.codec:
 	go generate ./...
 
-generate.pb:
-	@echo "Generating protobuf files"
-	@go install github.com/golang/protobuf/protoc-gen-go@latest
-	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	protoc -I=./pkg/p2p/v2/pb --go_out=./pkg/p2p/v2/pb ./pkg/p2p/v2/pb/*.proto
-
 lint:
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run
