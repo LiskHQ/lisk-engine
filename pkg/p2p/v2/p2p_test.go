@@ -9,13 +9,13 @@ import (
 	liskLog "github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-func TestNewP2P(t *testing.T) {
+func TestP2P_NewP2P(t *testing.T) {
 	p2p := NewP2P()
 	assert.NotNil(t, p2p)
 	assert.Equal(t, true, p2p.conf.DummyConfigurationFeatureEnable)
 }
 
-func TestStart(t *testing.T) {
+func TestP2P_Start(t *testing.T) {
 	p2p := NewP2P()
 	logger, _ := liskLog.NewDefaultProductionLogger()
 	err := p2p.Start(logger)
@@ -24,7 +24,7 @@ func TestStart(t *testing.T) {
 	assert.NotNil(t, p2p.host)
 }
 
-func TestStop(t *testing.T) {
+func TestP2P_Stop(t *testing.T) {
 	p2p := NewP2P()
 	logger, _ := liskLog.NewDefaultProductionLogger()
 	_ = p2p.Start(logger)

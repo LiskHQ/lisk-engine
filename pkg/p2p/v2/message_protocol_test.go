@@ -56,7 +56,7 @@ func (s testStream) Conn() network.Conn {
 	return testConn{}
 }
 
-func TestNewMessageProtocol(t *testing.T) {
+func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
@@ -66,7 +66,7 @@ func TestNewMessageProtocol(t *testing.T) {
 	assert.Equal(t, 0, len(mp.resCh))
 }
 
-func TestOnRequest(t *testing.T) {
+func TestMessageProtocol_OnRequest(t *testing.T) {
 	var tests = []struct {
 		name      string
 		procedure MessageRequestType
@@ -99,7 +99,7 @@ func TestOnRequest(t *testing.T) {
 	}
 }
 
-func TestOnResponse(t *testing.T) {
+func TestMessageProtocol_OnResponse(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
@@ -130,7 +130,7 @@ func TestOnResponse(t *testing.T) {
 	assert.NotEqual(t, -1, idx)
 }
 
-func TestOnResponseNilChannel(t *testing.T) {
+func TestMessageProtocol_OnResponseNilChannel(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
@@ -150,7 +150,7 @@ func TestOnResponseNilChannel(t *testing.T) {
 	assert.NotEqual(t, -1, idx)
 }
 
-func TestOnResponseUnknownRequestID(t *testing.T) {
+func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
@@ -168,7 +168,7 @@ func TestOnResponseUnknownRequestID(t *testing.T) {
 	assert.NotEqual(t, -1, idx)
 }
 
-func TestSendRequestMessage(t *testing.T) {
+func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 
@@ -196,7 +196,7 @@ func TestSendRequestMessage(t *testing.T) {
 	}
 }
 
-func TestSendRequestMessageTimeout(t *testing.T) {
+func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 
@@ -225,7 +225,7 @@ func TestSendRequestMessageTimeout(t *testing.T) {
 	}
 }
 
-func TestSendResponseMessage(t *testing.T) {
+func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 
@@ -267,7 +267,7 @@ func (tmr *TestMessageReceive) onMessageReceive(s network.Stream) {
 	tmr.done <- "done"
 }
 
-func TestSendProtoMessage(t *testing.T) {
+func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	tmr := TestMessageReceive{done: make(chan any)}

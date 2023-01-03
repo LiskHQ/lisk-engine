@@ -9,7 +9,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-func TestCreate(t *testing.T) {
+func TestPeer_Create(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p, err := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
@@ -17,7 +17,7 @@ func TestCreate(t *testing.T) {
 	assert.NotNil(t, p.host)
 }
 
-func TestClose(t *testing.T) {
+func TestPeer_Close(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
@@ -25,7 +25,7 @@ func TestClose(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestConnect(t *testing.T) {
+func TestPeer_Connect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
@@ -38,7 +38,7 @@ func TestConnect(t *testing.T) {
 	assert.Equal(t, p2.ID(), p1.ConnectedPeers()[0])
 }
 
-func TestPingMultiTimes(t *testing.T) {
+func TestPeer_PingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
@@ -52,7 +52,7 @@ func TestPingMultiTimes(t *testing.T) {
 	assert.Equal(t, numOfPingMessages, len(rtt))
 }
 
-func TestPing(t *testing.T) {
+func TestPeer_Ping(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
@@ -65,7 +65,7 @@ func TestPing(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestPeerSource(t *testing.T) {
+func TestPeer_PeerSource(t *testing.T) {
 	ch := peerSource(context.Background(), 5)
 
 	for i := 0; i < 5; i++ {
