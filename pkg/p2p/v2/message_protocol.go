@@ -43,7 +43,7 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
-		mp.peer.logger.Errorf("Error onMessageReqReceive: %v", err)
+		mp.peer.logger.Errorf("Error onRequest: %v", err)
 		return
 	}
 	s.Close()
@@ -51,7 +51,7 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 
 	newMsg := &RequestMsg{}
 	if err := newMsg.Decode(buf); err != nil {
-		mp.peer.logger.Errorf("Error unmarshalling message: %v", err)
+		mp.peer.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
 	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
@@ -91,7 +91,7 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
-		mp.peer.logger.Errorf("Error onMessageResReceive: %v", err)
+		mp.peer.logger.Errorf("Error onResponse: %v", err)
 		return
 	}
 	s.Close()
@@ -99,7 +99,7 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 
 	newMsg := &ResponseMsg{}
 	if err := newMsg.Decode(buf); err != nil {
-		mp.peer.logger.Errorf("Error unmarshalling message: %v", err)
+		mp.peer.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
 	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
