@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	mp := p2p.NewMessageProtocol(ctx, node)
+	mp := p2p.NewMessageProtocol(ctx, logger, node)
 
 	addrs, err := node.P2PAddrs()
 	if err != nil {

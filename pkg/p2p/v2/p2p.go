@@ -47,7 +47,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		return err
 	}
 
-	mp := NewMessageProtocol(ctx, peer)
+	mp := NewMessageProtocol(ctx, logger, peer)
 
 	p2p.logger = logger
 	p2p.cancel = cancel
@@ -58,7 +58,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	go natTraversalService(ctx, &p2p.wg, p2p.conf, mp)
 
 	p2p.wg.Add(1)
-	go p2pService(ctx, &p2p.wg, peer)
+	go p2pEventHandler(ctx, &p2p.wg, peer)
 
 	logger.Infof("P2P module successfully started")
 	return nil
@@ -85,8 +85,8 @@ func (p2p *P2P) Stop() error {
 	return nil
 }
 
-// p2pService handles P2P events.
-func p2pService(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
+// p2pEventHandler handles P2P events.
+func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 	defer wg.Done()
 	p.logger.Infof("P2P service started")
 

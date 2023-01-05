@@ -13,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
 const messageProtocolReqID = "/lisk/message/req/0.0.1"
@@ -23,6 +24,7 @@ const messageResponseTimeout = 3 * time.Second // Time to wait for a response me
 // MessageProtocol type.
 type MessageProtocol struct {
 	ctx     context.Context
+	logger  log.Logger
 	peer    *Peer
 	resMu   sync.Mutex
 	resCh   map[string]chan<- *ResponseMsg
@@ -30,11 +32,11 @@ type MessageProtocol struct {
 }
 
 // NewMessageProtocol creates a new message protocol with a stream handler.
-func NewMessageProtocol(ctx context.Context, peer *Peer) *MessageProtocol {
-	mp := &MessageProtocol{ctx: ctx, peer: peer, resCh: make(map[string]chan<- *ResponseMsg), timeout: messageResponseTimeout}
+func NewMessageProtocol(ctx context.Context, logger log.Logger, peer *Peer) *MessageProtocol {
+	mp := &MessageProtocol{ctx: ctx, logger: logger, peer: peer, resCh: make(map[string]chan<- *ResponseMsg), timeout: messageResponseTimeout}
 	peer.host.SetStreamHandler(messageProtocolReqID, mp.onRequest)
 	peer.host.SetStreamHandler(messageProtocolResID, mp.onResponse)
-	mp.peer.logger.Infof("Message protocol is set")
+	mp.logger.Infof("Message protocol is set")
 	return mp
 }
 
@@ -43,28 +45,28 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
-		mp.peer.logger.Errorf("Error onRequest: %v", err)
+		mp.logger.Errorf("Error onRequest: %v", err)
 		return
 	}
 	s.Close()
-	mp.peer.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
+	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
 	newMsg := &RequestMsg{}
 	if err := newMsg.Decode(buf); err != nil {
-		mp.peer.logger.Errorf("Error while decoding message: %v", err)
+		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
 	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
-	mp.peer.logger.Debugf("Request message received: %+v", newMsg)
+	mp.logger.Debugf("Request message received: %+v", newMsg)
 
 	// TODO: Implement a proper procedure (requests) handling (registering, unregistering, handler functions, etc.) (GH issue #13)
 	switch (MessageRequestType)(newMsg.Procedure) {
 	case MessageRequestTypePing:
-		mp.peer.logger.Debugf("Ping request received")
+		mp.logger.Debugf("Ping request received")
 
 		rtt, err := mp.peer.PingMultiTimes(mp.ctx, s.Conn().RemotePeer())
 		if err != nil {
-			mp.peer.logger.Errorf("Ping error: %v", err)
+			mp.logger.Errorf("Ping error: %v", err)
 		}
 		var sum time.Duration
 		for _, i := range rtt {
@@ -74,14 +76,14 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 
 		err = mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("Average RTT with you: %v", avg)))
 		if err != nil {
-			mp.peer.logger.Errorf("Error sending response message: %v", err)
+			mp.logger.Errorf("Error sending response message: %v", err)
 		}
 	case MessageRequestTypeKnownPeers:
-		mp.peer.logger.Debugf("Get known peers request received")
+		mp.logger.Debugf("Get known peers request received")
 		peers := mp.peer.KnownPeers()
 		err := mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("All known peers: %v", peers)))
 		if err != nil {
-			mp.peer.logger.Errorf("Error sending response message: %v", err)
+			mp.logger.Errorf("Error sending response message: %v", err)
 		}
 	}
 }
@@ -91,19 +93,19 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
-		mp.peer.logger.Errorf("Error onResponse: %v", err)
+		mp.logger.Errorf("Error onResponse: %v", err)
 		return
 	}
 	s.Close()
-	mp.peer.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
+	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
 	newMsg := &ResponseMsg{}
 	if err := newMsg.Decode(buf); err != nil {
-		mp.peer.logger.Errorf("Error while decoding message: %v", err)
+		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
 	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
-	mp.peer.logger.Debugf("Response message received: %+v", newMsg)
+	mp.logger.Debugf("Response message received: %+v", newMsg)
 
 	mp.resMu.Lock()
 	defer mp.resMu.Unlock()
@@ -115,14 +117,14 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 			Data:      newMsg.Data,
 		}
 	} else {
-		mp.peer.logger.Warningf("Response message received for unknown request ID: %v", newMsg.ID)
+		mp.logger.Warningf("Response message received for unknown request ID: %v", newMsg.ID)
 	}
 }
 
 // SendRequestMessage sends a request message to a peer using a message protocol.
 func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, procedure MessageRequestType, data []byte) (*ResponseMsg, error) {
 	reqMsg := newRequestMessage(mp.peer.ID(), procedure, data)
-	if err := mp.sendProtoMessage(ctx, id, messageProtocolReqID, reqMsg); err != nil {
+	if err := mp.sendMessage(ctx, id, messageProtocolReqID, reqMsg); err != nil {
 		return nil, err
 	}
 
@@ -157,11 +159,11 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 // SendResponseMessage sends a response message to a peer using a message protocol.
 func (mp *MessageProtocol) SendResponseMessage(ctx context.Context, id peer.ID, reqMsgID string, data []byte) error {
 	resMsg := newResponseMessage(mp.peer.ID(), reqMsgID, data)
-	return mp.sendProtoMessage(ctx, id, messageProtocolResID, resMsg)
+	return mp.sendMessage(ctx, id, messageProtocolResID, resMsg)
 }
 
-// sendProtoMessage sends a message to a peer using a stream.
-func (mp *MessageProtocol) sendProtoMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg codec.Encodable) error {
+// sendMessage sends a message to a peer using a stream.
+func (mp *MessageProtocol) sendMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg codec.Encodable) error {
 	s, err := mp.peer.host.NewStream(network.WithUseTransient(ctx, "Transient connections are allowed."), id, pId)
 	if err != nil {
 		return err

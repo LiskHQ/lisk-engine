@@ -61,7 +61,8 @@ func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 
-	mp := NewMessageProtocol(context.Background(), p)
+	mp := NewMessageProtocol(context.Background(), logger, p)
+	assert.Equal(t, logger, mp.logger)
 	assert.Equal(t, p, mp.peer)
 	assert.Equal(t, 0, len(mp.resCh))
 }
@@ -82,7 +83,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			loggerTest := testLogger{Logger: logger}
 			conf := Config{DummyConfigurationFeatureEnable: true}
 			p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-			mp := NewMessageProtocol(context.Background(), p)
+			mp := NewMessageProtocol(context.Background(), &loggerTest, p)
 
 			stream := testStream{}
 			reqMsg := newRequestMessage("TestRemotePeerID", tt.procedure, []byte(""))
@@ -104,7 +105,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp := NewMessageProtocol(context.Background(), p)
+	mp := NewMessageProtocol(context.Background(), &loggerTest, p)
 	ch := make(chan *ResponseMsg, 1)
 	mp.resCh["123456"] = ch
 
@@ -134,7 +135,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	loggerTest := testLogger{Logger: logger}
 	conf := Config{DummyConfigurationFeatureEnable: true}
 	p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp := NewMessageProtocol(context.Background(), p)
+	mp := NewMessageProtocol(context.Background(), &loggerTest, p)
 	// There is no channel for the request ID "123456"
 
 	stream := testStream{}
@@ -152,9 +153,9 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	conf := Config{DummyConfigurationFeatureEnable: true}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp1 := NewMessageProtocol(context.Background(), p1)
+	mp1 := NewMessageProtocol(context.Background(), logger, p1)
 	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	_ = NewMessageProtocol(context.Background(), p2)
+	_ = NewMessageProtocol(context.Background(), logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -172,12 +173,12 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	conf := Config{DummyConfigurationFeatureEnable: true}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp1 := NewMessageProtocol(context.Background(), p1)
+	mp1 := NewMessageProtocol(context.Background(), logger, p1)
 	mp1.timeout = time.Millisecond * 20 // Reduce timeout to 20 ms to speed up test
 	// Remove response message stream handler to simulate timeout
 	p1.host.RemoveStreamHandler(messageProtocolResID)
 	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	_ = NewMessageProtocol(context.Background(), p2)
+	_ = NewMessageProtocol(context.Background(), logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -194,9 +195,9 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	conf := Config{DummyConfigurationFeatureEnable: true}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp1 := NewMessageProtocol(context.Background(), p1)
+	mp1 := NewMessageProtocol(context.Background(), logger, p1)
 	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	mp2 := NewMessageProtocol(context.Background(), p2)
+	mp2 := NewMessageProtocol(context.Background(), logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -243,8 +244,8 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 
 	_ = p1.Connect(context.Background(), *p2AddrInfo)
 	msg := newRequestMessage(p1.ID(), MessageRequestTypePing, []byte("Test protocol message"))
-	mp := NewMessageProtocol(context.Background(), p1)
-	err := mp.sendProtoMessage(context.Background(), p2.ID(), messageProtocolReqID, msg)
+	mp := NewMessageProtocol(context.Background(), logger, p1)
+	err := mp.sendMessage(context.Background(), p2.ID(), messageProtocolReqID, msg)
 	assert.Nil(t, err)
 
 	select {
