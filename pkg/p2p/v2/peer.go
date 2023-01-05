@@ -68,10 +68,15 @@ func NewPeer(ctx context.Context, logger log.Logger, conf Config, addrs []string
 		libp2p.DefaultTransports,
 	}
 
-	if len(addrs) == 0 {
+	switch conf.AllowIncomingConnections {
+	case true:
+		if len(addrs) == 0 {
+			opts = append(opts, libp2p.NoListenAddrs)
+		} else {
+			opts = append(opts, libp2p.ListenAddrStrings(addrs...))
+		}
+	case false:
 		opts = append(opts, libp2p.NoListenAddrs)
-	} else {
-		opts = append(opts, libp2p.ListenAddrStrings(addrs...))
 	}
 
 	switch security {
@@ -127,6 +132,11 @@ func (p *Peer) Close() error {
 // Connect to a peer.
 func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
 	return p.host.Connect(ctx, peer)
+}
+
+// Disconnect from a peer.
+func (p *Peer) Disconnect(ctx context.Context, peer peer.ID) error {
+	return p.host.Network().ClosePeer(peer)
 }
 
 // ID returns a peers's identifier.

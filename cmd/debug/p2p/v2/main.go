@@ -20,7 +20,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	conf := p2p.Config{DummyConfigurationFeatureEnable: true}
+	conf := p2p.Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 
 	node, err := p2p.NewPeer(ctx, logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.PeerSecurityTLS)
 	if err != nil {

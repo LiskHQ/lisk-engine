@@ -17,6 +17,7 @@ const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 // TODO - get configuration from config file (GH issue #14)
 type Config struct {
 	DummyConfigurationFeatureEnable bool
+	AllowIncomingConnections        bool
 }
 
 // P2P type - a p2p service.
@@ -32,7 +33,10 @@ type P2P struct {
 // NewP2P creates a new P2P instance.
 func NewP2P() *P2P {
 	// TODO - get configuration from config file (GH issue #14)
-	return &P2P{conf: Config{DummyConfigurationFeatureEnable: true}}
+	return &P2P{conf: Config{
+		DummyConfigurationFeatureEnable: true,
+		AllowIncomingConnections:        true,
+	}}
 }
 
 // Start function starts a P2P and all other related services.

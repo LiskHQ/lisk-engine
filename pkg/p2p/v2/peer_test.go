@@ -11,7 +11,7 @@ import (
 
 func TestPeer_Create(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p, err := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	assert.Nil(t, err)
 	assert.NotNil(t, p.host)
@@ -19,7 +19,7 @@ func TestPeer_Create(t *testing.T) {
 
 func TestPeer_Close(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	err := p.Close()
 	assert.Nil(t, err)
@@ -27,7 +27,7 @@ func TestPeer_Close(t *testing.T) {
 
 func TestPeer_Connect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
@@ -38,9 +38,50 @@ func TestPeer_Connect(t *testing.T) {
 	assert.Equal(t, p2.ID(), p1.ConnectedPeers()[0])
 }
 
+func TestPeer_Disconnect(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
+	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	err := p1.Connect(context.Background(), *p2AddrInfo)
+	assert.Nil(t, err)
+	assert.Equal(t, p2.ID(), p1.ConnectedPeers()[0])
+
+	err = p1.Disconnect(context.Background(), p2.ID())
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(p1.ConnectedPeers()))
+}
+
+func TestPeer_DisallowIncomingConnections(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	conf1 := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
+	conf2 := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: false}
+	p1, _ := NewPeer(context.Background(), logger, conf1, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p2, _ := NewPeer(context.Background(), logger, conf2, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	p1Addrs, _ := p1.P2PAddrs()
+	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	// p1 is not allowed to connect to p2
+	err := p1.Connect(context.Background(), *p2AddrInfo)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(p1.ConnectedPeers()))
+
+	// p2 is allowed to connect to p1
+	err = p2.Connect(context.Background(), *p1AddrInfo)
+	assert.Nil(t, err)
+	assert.Equal(t, p1.ID(), p2.ConnectedPeers()[0])
+	err = p2.Disconnect(context.Background(), p1.ID())
+	assert.Nil(t, err)
+}
+
 func TestPeer_PingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
@@ -54,7 +95,7 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 
 func TestPeer_Ping(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	p2Addrs, _ := p2.P2PAddrs()
