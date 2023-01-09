@@ -89,7 +89,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			reqMsg := newRequestMessage("TestRemotePeerID", tt.procedure, []byte(""))
 			data, _ := reqMsg.Encode()
 			stream.data = data
-			mp.onRequest(stream)
+			mp.onRequest(context.Background(), stream)
 
 			idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Request message received") })
 			assert.NotEqual(t, -1, idx)

@@ -23,7 +23,6 @@ const messageResponseTimeout = 3 * time.Second // Time to wait for a response me
 
 // MessageProtocol type.
 type MessageProtocol struct {
-	ctx     context.Context
 	logger  log.Logger
 	peer    *Peer
 	resMu   sync.Mutex
@@ -33,15 +32,17 @@ type MessageProtocol struct {
 
 // NewMessageProtocol creates a new message protocol with a stream handler.
 func NewMessageProtocol(ctx context.Context, logger log.Logger, peer *Peer) *MessageProtocol {
-	mp := &MessageProtocol{ctx: ctx, logger: logger, peer: peer, resCh: make(map[string]chan<- *ResponseMsg), timeout: messageResponseTimeout}
-	peer.host.SetStreamHandler(messageProtocolReqID, mp.onRequest)
+	mp := &MessageProtocol{logger: logger, peer: peer, resCh: make(map[string]chan<- *ResponseMsg), timeout: messageResponseTimeout}
+	peer.host.SetStreamHandler(messageProtocolReqID, func(s network.Stream) {
+		mp.onRequest(ctx, s)
+	})
 	peer.host.SetStreamHandler(messageProtocolResID, mp.onResponse)
 	mp.logger.Infof("Message protocol is set")
 	return mp
 }
 
 // onRequest is a handler for a received request message.
-func (mp *MessageProtocol) onRequest(s network.Stream) {
+func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
@@ -64,7 +65,7 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 	case MessageRequestTypePing:
 		mp.logger.Debugf("Ping request received")
 
-		rtt, err := mp.peer.PingMultiTimes(mp.ctx, s.Conn().RemotePeer())
+		rtt, err := mp.peer.PingMultiTimes(ctx, s.Conn().RemotePeer())
 		if err != nil {
 			mp.logger.Errorf("Ping error: %v", err)
 		}
@@ -74,14 +75,14 @@ func (mp *MessageProtocol) onRequest(s network.Stream) {
 		}
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
 
-		err = mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("Average RTT with you: %v", avg)))
+		err = mp.SendResponseMessage(ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("Average RTT with you: %v", avg)))
 		if err != nil {
 			mp.logger.Errorf("Error sending response message: %v", err)
 		}
 	case MessageRequestTypeKnownPeers:
 		mp.logger.Debugf("Get known peers request received")
 		peers := mp.peer.KnownPeers()
-		err := mp.SendResponseMessage(mp.ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("All known peers: %v", peers)))
+		err := mp.SendResponseMessage(ctx, s.Conn().RemotePeer(), newMsg.ID, []byte(fmt.Sprintf("All known peers: %v", peers)))
 		if err != nil {
 			mp.logger.Errorf("Error sending response message: %v", err)
 		}
