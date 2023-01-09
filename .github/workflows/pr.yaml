@@ -41,3 +41,5 @@ jobs:
           fi
       - name: test
         run: make test
+      - name: build
+        run: make lengine
