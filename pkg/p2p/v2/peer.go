@@ -3,14 +3,11 @@ package p2p
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
@@ -21,8 +18,8 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const numOfPingMessages = 5 // Number of sent ping messages in Ping service.
-const pingTimeout = 5       // Ping service timeout in seconds.
+const numOfPingMessages = 5         // Number of sent ping messages in Ping service.
+const pingTimeout = time.Second * 5 // Ping service timeout in seconds.
 
 // Peer security option type.
 type PeerSecurityOption uint8
@@ -36,9 +33,7 @@ const (
 // Peer type - a p2p node.
 type Peer struct {
 	logger log.Logger
-	done   sync.WaitGroup
 	host   host.Host
-	*MessageProtocol
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -115,7 +110,6 @@ func NewPeer(ctx context.Context, logger log.Logger, conf Config, addrs []string
 		return nil, err
 	}
 	p := &Peer{logger: logger, host: host}
-	p.MessageProtocol = NewMessageProtocol(p)
 	p.logger.Infof("Peer successfully created")
 	return p, nil
 }
@@ -126,7 +120,6 @@ func (p *Peer) Close() error {
 	if err != nil {
 		return err
 	}
-	p.done.Wait()
 	p.logger.Infof("Peer successfully stopped")
 	return nil
 }
@@ -160,6 +153,11 @@ func (p *Peer) ConnectedPeers() []peer.ID {
 	return p.host.Network().Peers()
 }
 
+// KnownPeers returns a list of all known peers.
+func (p *Peer) KnownPeers() peer.IDSlice {
+	return p.host.Peerstore().Peers()
+}
+
 // PingMultiTimes tries to send ping request to a peer for five times.
 func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Duration, err error) {
 	pingService := ping.NewPingService(p.host)
@@ -176,7 +174,7 @@ func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Dur
 			rtt = append(rtt, pingRes.RTT)
 		case <-ctx.Done():
 			return rtt, errors.New("ping canceled")
-		case <-time.After(time.Second * pingTimeout):
+		case <-time.After(pingTimeout):
 			return rtt, errors.New("ping timeout")
 		}
 	}
@@ -201,25 +199,6 @@ func (p *Peer) Ping(ctx context.Context, peer peer.ID) (rtt time.Duration, err e
 	case <-time.After(time.Second * pingTimeout):
 		return rtt, errors.New("ping timeout")
 	}
-}
-
-// sendProtoMessage sends a message to a peer using a stream.
-func (p *Peer) sendProtoMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg string) error {
-	s, err := p.host.NewStream(network.WithUseTransient(ctx, "Transient connections are allowed."), id, pId)
-	if err != nil {
-		return err
-	}
-	defer s.Close()
-
-	n, err := s.Write([]byte(msg))
-	if err != nil {
-		return err
-	}
-	if n != len([]byte(msg)) {
-		return errors.New("error while sending a message, did not sent a whole message")
-	}
-
-	return nil
 }
 
 // peerSource returns a channel and sends connected peers (possible relayers) to that channel.

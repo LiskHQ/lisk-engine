@@ -3,11 +3,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
@@ -29,6 +27,8 @@ func main() {
 		panic(err)
 	}
 
+	mp := p2p.NewMessageProtocol(ctx, logger, node)
+
 	addrs, err := node.P2PAddrs()
 	if err != nil {
 		panic(err)
@@ -36,7 +36,7 @@ func main() {
 	logger.Infof("libp2p node addresses: %v", addrs)
 
 	// if a remote peer has been passed on the command line, connect to it
-	// and send it 5 ping messages, otherwise wait for a signal to stop
+	// and send ping request message, otherwise wait for a signal to stop
 	if len(os.Args) > 1 {
 		peer, err := p2p.PeerInfoFromMultiAddr(os.Args[1])
 		if err != nil {
@@ -45,21 +45,12 @@ func main() {
 		if err := node.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		rtt, err := node.PingMultiTimes(ctx, peer.ID)
+		response, err := mp.SendRequestMessage(ctx, peer.ID, p2p.MessageRequestTypePing, nil)
 		if err != nil {
 			panic(err)
 		}
-
-		var sum time.Duration
-		for _, i := range rtt {
-			sum += i
-		}
-		avg := time.Duration(float64(sum) / float64(len(rtt)))
-		err = node.SendMessage(ctx, peer.ID, fmt.Sprintf("Average RTT with you: %v", avg))
-		if err != nil {
-			panic(err)
-		}
-		time.Sleep(10 * time.Millisecond) // Wait for a message to be delivered.
+		logger.Infof("Response message received: %+v", response)
+		logger.Infof("%s", response.Data)
 	} else {
 		// wait for a SIGINT or SIGTERM signal
 		ch := make(chan os.Signal, 1)

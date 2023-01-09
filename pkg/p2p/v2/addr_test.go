@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPeerInfoFromMultiAddrs(t *testing.T) {
+func TestAddr_PeerInfoFromMultiAddrs(t *testing.T) {
 	type Want struct {
 		id   string
 		addr string
