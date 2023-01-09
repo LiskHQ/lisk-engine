@@ -58,7 +58,7 @@ func (s testStream) Conn() network.Conn {
 
 func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 
 	mp := NewMessageProtocol(context.Background(), logger, p)
@@ -81,7 +81,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logger, _ := log.NewDefaultProductionLogger()
 			loggerTest := testLogger{Logger: logger}
-			conf := Config{DummyConfigurationFeatureEnable: true}
+			conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 			p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 			mp := NewMessageProtocol(context.Background(), &loggerTest, p)
 
@@ -103,7 +103,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 func TestMessageProtocol_OnResponse(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	mp := NewMessageProtocol(context.Background(), &loggerTest, p)
 	ch := make(chan *ResponseMsg, 1)
@@ -133,7 +133,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	p, _ := NewPeer(context.Background(), &loggerTest, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	mp := NewMessageProtocol(context.Background(), &loggerTest, p)
 	// There is no channel for the request ID "123456"
@@ -150,7 +150,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	mp1 := NewMessageProtocol(context.Background(), logger, p1)
@@ -170,7 +170,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 
 func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	mp1 := NewMessageProtocol(context.Background(), logger, p1)
@@ -192,7 +192,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 
 func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
 	mp1 := NewMessageProtocol(context.Background(), logger, p1)
@@ -233,7 +233,7 @@ func (tmr *TestMessageReceive) onMessageReceive(s network.Stream) {
 
 func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true}
+	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
 	tmr := TestMessageReceive{done: make(chan any)}
 
 	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
