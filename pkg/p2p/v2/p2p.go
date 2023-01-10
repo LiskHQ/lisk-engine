@@ -3,10 +3,7 @@ package p2p
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -19,11 +16,11 @@ const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
 // TODO - get configuration from config file (GH issue #14)
 type Config struct {
-	DummyConfigurationFeatureEnable bool     `json:"dummyConfigurationFeatureEnable,omitempty"`
-	AllowIncomingConnections        bool     `json:"allowIncomingConnections,omitempty"`
-	IsSeedNode                      bool     `json:"isSeedNode,omitempty"`
-	NetworkName                     string   `json:"networkName"`
-	SeedNodes                       []string `json:"seedNodes"`
+	DummyConfigurationFeatureEnable bool
+	AllowIncomingConnections        bool
+	IsSeedNode                      bool
+	NetworkName                     string
+	SeedNodes                       []string
 }
 
 // P2P type - a p2p service.
@@ -46,28 +43,6 @@ func NewP2P() *P2P {
 		NetworkName:                     "xxxxxxxx",
 		SeedNodes:                       []string{},
 	}}
-}
-
-// ReadConfigFromFile reads json config with path file.
-func ReadConfigFromFile(fpath string) (c Config, err error) {
-	var file *os.File
-	file, err = os.Open(fpath)
-	if err != nil {
-		return
-	}
-	defer func() {
-		errClose := file.Close()
-		if errClose != nil {
-			fmt.Println("Error in closing file:", errClose)
-		}
-	}()
-
-	err = json.NewDecoder(file).Decode(&c)
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 // Start function starts a P2P and all other related services.

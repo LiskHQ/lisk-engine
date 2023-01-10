@@ -9,6 +9,7 @@ import (
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 )
 
@@ -71,6 +72,6 @@ func TestMessageTopic(t *testing.T) {
 func TestHashMsgID(t *testing.T) {
 	msg := pubsub_pb.Message{}
 	hash := HashMsgID(&msg)
-	expected := string(crypto.Hash([]byte{}))
+	expected := codec.Hex(crypto.Hash([]byte{})).String()
 	assert.Equal(t, expected, hash)
 }

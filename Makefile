@@ -28,7 +28,7 @@ run.lengine:
 run.testapp:
 	cd ./cmd/debug/app && go run . start
 
-run.testnode:
+run.testping:
 	cd ./cmd/debug/p2p/v2/ping && go run . $(addr)
 
 run.pubsub:

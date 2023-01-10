@@ -22,7 +22,6 @@ const (
 )
 
 var (
-	cfgPath = flag.String("config", "config.json", "file path of configuration json")
 	port    = flag.Uint("port", 8010, "listening port")
 	isLocal = flag.Bool("isLocal", false, "run the application in local mode")
 )
@@ -46,11 +45,10 @@ func main() {
 		panic(err)
 	}
 
-	cfg, err := p2p.ReadConfigFromFile(*cfgPath)
-	if err != nil {
-		panic(err)
+	cfg := p2p.Config{
+		NetworkName: "xxxxxxxx",
+		SeedNodes:   []string{""},
 	}
-
 	sk := pubsub.NewScoreKeeper()
 	ps, err := p2p.NewGossipSub(ctx, h, sk, cfg)
 	if err != nil {

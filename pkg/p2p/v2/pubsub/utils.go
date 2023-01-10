@@ -9,6 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 )
 
@@ -19,7 +20,7 @@ func MessageTopic(networkName string) string {
 
 func HashMsgID(m *pubsub_pb.Message) string {
 	hash := crypto.Hash(m.Data)
-	return string(hash)
+	return codec.Hex(hash).String()
 }
 
 // ParseAddresses returns an array of AddrInfo based on the array of the string.
