@@ -12,17 +12,12 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
-// GossipSub is wrapper of PubSub.
-type GossipSub struct {
-	ps *pubsub.PubSub
-}
-
 // NewGossipSub makes a new GossipSub based on input parameters.
 func NewGossipSub(ctx context.Context,
 	h host.Host,
 	sk *lps.ScoreKeeper,
 	cfg Config,
-) (*GossipSub, error) {
+) (*pubsub.PubSub, error) {
 	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedNodes)
 	if err != nil {
 		return nil, err
@@ -120,15 +115,5 @@ func NewGossipSub(ctx context.Context,
 			pubsub.WrapLimitSubscriptionFilter(
 				pubsub.NewAllowlistSubscriptionFilter(msgTopic),
 				100)))
-	ps, err := pubsub.NewGossipSub(ctx, h, options...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &GossipSub{ps}, nil
-}
-
-// PubSub returns the inner of Pubsub.
-func (ps *GossipSub) PubSub() *pubsub.PubSub {
-	return ps.ps
+	return pubsub.NewGossipSub(ctx, h, options...)
 }

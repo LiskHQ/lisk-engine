@@ -60,7 +60,7 @@ func main() {
 		nick = defaultNick(h.ID())
 	}
 
-	cr, err := JoinChatRoom(ctx, ps.PubSub(), h.ID(), nick, cfg.NetworkName)
+	cr, err := JoinChatRoom(ctx, ps, h.ID(), nick, cfg.NetworkName)
 	if err != nil {
 		panic(err)
 	}
