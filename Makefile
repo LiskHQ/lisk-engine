@@ -28,8 +28,11 @@ run.lengine:
 run.testapp:
 	cd ./cmd/debug/app && go run . start
 
-run.testnode:
-	cd ./cmd/debug/p2p/v2 && go run . $(addr)
+run.testping:
+	cd ./cmd/debug/p2p/v2/ping && go run . $(addr)
+
+run.pubsub:
+	cd ./cmd/debug/p2p/v2/pubsub && go run . $(addr)
 
 run.testnat:
 	cd ./cmd/debug/p2p/v2/nat && go run . $(addr)
@@ -42,7 +45,7 @@ lint:
 	golangci-lint run
 
 format:
-	gofmt -s -w ./.. 
+	gofmt -s -w ./..
 
 godocs:
 	@go install golang.org/x/tools/cmd/godoc@latest

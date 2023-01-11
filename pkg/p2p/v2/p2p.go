@@ -18,6 +18,9 @@ const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 type Config struct {
 	DummyConfigurationFeatureEnable bool
 	AllowIncomingConnections        bool
+	IsSeedNode                      bool
+	NetworkName                     string
+	SeedNodes                       []string
 }
 
 // P2P type - a p2p service.
@@ -36,6 +39,9 @@ func NewP2P() *P2P {
 	return &P2P{conf: Config{
 		DummyConfigurationFeatureEnable: true,
 		AllowIncomingConnections:        true,
+		IsSeedNode:                      false,
+		NetworkName:                     "xxxxxxxx",
+		SeedNodes:                       []string{},
 	}}
 }
 

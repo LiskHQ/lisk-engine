@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	liskLog "github.com/LiskHQ/lisk-engine/pkg/log"
+	logger "github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
 func TestP2P_NewP2P(t *testing.T) {
@@ -17,7 +17,7 @@ func TestP2P_NewP2P(t *testing.T) {
 
 func TestP2P_Start(t *testing.T) {
 	p2p := NewP2P()
-	logger, _ := liskLog.NewDefaultProductionLogger()
+	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger)
 	assert.Nil(t, err)
 	assert.Equal(t, logger, p2p.logger)
@@ -26,7 +26,7 @@ func TestP2P_Start(t *testing.T) {
 
 func TestP2P_Stop(t *testing.T) {
 	p2p := NewP2P()
-	logger, _ := liskLog.NewDefaultProductionLogger()
+	logger, _ := logger.NewDefaultProductionLogger()
 	_ = p2p.Start(logger)
 
 	ch := make(chan struct{})
