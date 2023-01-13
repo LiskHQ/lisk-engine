@@ -29,7 +29,7 @@ func TestPeer_Close(t *testing.T) {
 
 func TestPeer_Connect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true}
+	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(context.Background(), logger, config)
 	p2, _ := NewPeer(context.Background(), logger, config)
@@ -43,7 +43,7 @@ func TestPeer_Connect(t *testing.T) {
 
 func TestPeer_Disconnect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true}
+	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(context.Background(), logger, config)
 	p2, _ := NewPeer(context.Background(), logger, config)
@@ -61,9 +61,9 @@ func TestPeer_Disconnect(t *testing.T) {
 
 func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config1 := P2PConfig{AllowIncomingConnections: true}
+	config1 := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config1.InsertDefault()
-	config2 := P2PConfig{AllowIncomingConnections: false}
+	config2 := P2PConfig{AllowIncomingConnections: false, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config2.InsertDefault()
 	p1, _ := NewPeer(context.Background(), logger, config1)
 	p2, _ := NewPeer(context.Background(), logger, config2)
@@ -87,7 +87,7 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 
 func TestPeer_PingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true}
+	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(context.Background(), logger, config)
 	p2, _ := NewPeer(context.Background(), logger, config)
@@ -102,7 +102,7 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 
 func TestPeer_Ping(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true}
+	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(context.Background(), logger, config)
 	p2, _ := NewPeer(context.Background(), logger, config)
