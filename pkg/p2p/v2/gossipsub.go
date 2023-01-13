@@ -16,7 +16,7 @@ import (
 func NewGossipSub(ctx context.Context,
 	h host.Host,
 	sk *lps.ScoreKeeper,
-	cfg Config,
+	cfg P2PConfig,
 ) (*pubsub.PubSub, error) {
 	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedNodes)
 	if err != nil {

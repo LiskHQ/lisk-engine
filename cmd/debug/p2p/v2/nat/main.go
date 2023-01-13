@@ -20,7 +20,19 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	p2p := p2pLib.NewP2P()
+	config := p2pLib.P2PConfig{
+		AllowIncomingConnections: true,
+		EnableNATService:         true,
+		EnableUsingRelayService:  true,
+		EnableRelayService:       true,
+		EnableHolePunching:       true,
+	}
+	err = config.InsertDefault()
+	if err != nil {
+		panic(err)
+	}
+
+	p2p := p2pLib.NewP2P(config)
 	err = p2p.Start(logger)
 	if err != nil {
 		panic(err)

@@ -11,25 +11,28 @@ import (
 
 func TestPeer_Create(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	p, err := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config := P2PConfig{}
+	_ = config.InsertDefault()
+	p, err := NewPeer(context.Background(), logger, config)
 	assert.Nil(t, err)
 	assert.NotNil(t, p.host)
 }
 
 func TestPeer_Close(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	p, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config := P2PConfig{}
+	_ = config.InsertDefault()
+	p, _ := NewPeer(context.Background(), logger, config)
 	err := p.Close()
 	assert.Nil(t, err)
 }
 
 func TestPeer_Connect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config := P2PConfig{AllowIncomingConnections: true}
+	_ = config.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -40,9 +43,10 @@ func TestPeer_Connect(t *testing.T) {
 
 func TestPeer_Disconnect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config := P2PConfig{AllowIncomingConnections: true}
+	_ = config.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -57,10 +61,12 @@ func TestPeer_Disconnect(t *testing.T) {
 
 func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf1 := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	conf2 := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: false}
-	p1, _ := NewPeer(context.Background(), logger, conf1, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, conf2, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config1 := P2PConfig{AllowIncomingConnections: true}
+	_ = config1.InsertDefault()
+	config2 := P2PConfig{AllowIncomingConnections: false}
+	_ = config2.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config1)
+	p2, _ := NewPeer(context.Background(), logger, config2)
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 	p2Addrs, _ := p2.P2PAddrs()
@@ -81,9 +87,10 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 
 func TestPeer_PingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config := P2PConfig{AllowIncomingConnections: true}
+	_ = config.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -95,9 +102,10 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 
 func TestPeer_Ping(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	conf := Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
-	p1, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
-	p2, _ := NewPeer(context.Background(), logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	config := P2PConfig{AllowIncomingConnections: true}
+	_ = config.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 

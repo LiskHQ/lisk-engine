@@ -45,9 +45,13 @@ func main() {
 		panic(err)
 	}
 
-	cfg := p2p.Config{
-		NetworkName: "xxxxxxxx",
-		SeedNodes:   []string{""},
+	cfg := p2p.P2PConfig{
+		NetworkName: "lisk-test",
+		SeedNodes:   []string{"/ip4/0.0.0.0/tcp/0"},
+	}
+	err = cfg.InsertDefault()
+	if err != nil {
+		panic(err)
 	}
 	sk := pubsub.NewScoreKeeper()
 	ps, err := p2p.NewGossipSub(ctx, h, sk, cfg)

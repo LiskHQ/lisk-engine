@@ -31,13 +31,13 @@ func newAutoNAT(p *Peer) (autonat.AutoNAT, error) {
 }
 
 // natTraversalService handles all NAT traversal related events.
-func natTraversalService(ctx context.Context, wg *sync.WaitGroup, conf Config, mp *MessageProtocol) {
+func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config P2PConfig, mp *MessageProtocol) {
 	defer wg.Done()
 	mp.peer.logger.Infof("NAT traversal service started")
 
 	var nat autonat.AutoNAT
 	var err error
-	if conf.DummyConfigurationFeatureEnable {
+	if config.EnableNATService {
 		if nat, err = newAutoNAT(mp.peer); err != nil {
 			mp.peer.logger.Errorf("Failed to create and enable peer AutoNAT feature: %v", err)
 		}
@@ -55,7 +55,7 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, conf Config, m
 		select {
 		// TODO - remove this timer event after testing
 		case <-t.C:
-			if conf.DummyConfigurationFeatureEnable {
+			if config.EnableNATService {
 				mp.peer.logger.Debugf("NAT status: %v", nat.Status())
 			}
 			addrs, _ := mp.peer.P2PAddrs()
@@ -64,8 +64,9 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, conf Config, m
 				response, err := mp.SendRequestMessage(ctx, connectedPeer, MessageRequestTypeKnownPeers, nil)
 				if err != nil {
 					mp.peer.logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, err)
+				} else {
+					mp.peer.logger.Debugf("Received response from peer %v: %v", connectedPeer, string(response.Data))
 				}
-				mp.peer.logger.Debugf("Received response from peer %v: %v", connectedPeer, string(response.Data))
 			}
 			t.Reset(10 * time.Second)
 		case e := <-sub.Out():

@@ -8,19 +8,67 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/event"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
-// TODO - get configuration from config file (GH issue #14)
-type Config struct {
-	DummyConfigurationFeatureEnable bool
-	AllowIncomingConnections        bool
-	IsSeedNode                      bool
-	NetworkName                     string
-	SeedNodes                       []string
+// TODO - Move this struct into pkg/engine/config/config.go. Optionally, it could be renamed to NetworkConfig. (GH issue #19)
+// P2PConfig type - a p2p configuration.
+type P2PConfig struct {
+	Version                  string    `json:"version"`
+	Addresses                []string  `json:"addresses"`
+	ConnectionSecurity       string    `json:"connectionSecurity"`
+	AllowIncomingConnections bool      `json:"allowIncomingConnections"`
+	EnableNATService         bool      `json:"enableNATService,omitempty"`
+	EnableUsingRelayService  bool      `json:"enableUsingRelayService"`
+	EnableRelayService       bool      `json:"enableRelayService,omitempty"`
+	EnableHolePunching       bool      `json:"enableHolePunching,omitempty"`
+	SeedPeers                []peer.ID `json:"seedPeers"`
+	FixedPeers               []peer.ID `json:"fixedPeers,omitempty"`
+	BlackListedPeers         []peer.ID `json:"blackListedPeers,omitempty"`
+	MaxInboundConnections    int       `json:"maxInboundConnections"`
+	MaxOutboundConnections   int       `json:"maxOutboundConnections"`
+	// GossipSub configuration
+	IsSeedNode  bool     `json:"isSeedNode,omitempty"`
+	NetworkName string   `json:"networkName"`
+	SeedNodes   []string `json:"seedNodes"` // TODO - Join seedNodes and seedPeers into one field. (GH issue #18)
+}
+
+func (c *P2PConfig) InsertDefault() error {
+	if c.Version == "" {
+		c.Version = "1.0"
+	}
+	if c.Addresses == nil {
+		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
+	}
+	if c.ConnectionSecurity == "" {
+		c.ConnectionSecurity = "tls"
+	}
+	if c.SeedPeers == nil {
+		c.SeedPeers = []peer.ID{}
+	}
+	if c.FixedPeers == nil {
+		c.FixedPeers = []peer.ID{}
+	}
+	if c.BlackListedPeers == nil {
+		c.BlackListedPeers = []peer.ID{}
+	}
+	if c.MaxInboundConnections == 0 {
+		c.MaxInboundConnections = 100
+	}
+	if c.MaxOutboundConnections == 0 {
+		c.MaxOutboundConnections = 20
+	}
+	if c.NetworkName == "" {
+		c.NetworkName = "lisk-test"
+	}
+	if c.SeedNodes == nil {
+		c.SeedNodes = []string{}
+	}
+	return nil
 }
 
 // P2P type - a p2p service.
@@ -28,21 +76,14 @@ type P2P struct {
 	logger log.Logger
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
-	conf   Config
+	config P2PConfig
 	*MessageProtocol
 	*Peer
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P() *P2P {
-	// TODO - get configuration from config file (GH issue #14)
-	return &P2P{conf: Config{
-		DummyConfigurationFeatureEnable: true,
-		AllowIncomingConnections:        true,
-		IsSeedNode:                      false,
-		NetworkName:                     "xxxxxxxx",
-		SeedNodes:                       []string{},
-	}}
+func NewP2P(config P2PConfig) *P2P {
+	return &P2P{config: config}
 }
 
 // Start function starts a P2P and all other related services.
@@ -50,8 +91,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// TODO - get configuration from config file (GH issue #14)
-	peer, err := NewPeer(ctx, logger, p2p.conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, PeerSecurityTLS)
+	peer, err := NewPeer(ctx, logger, p2p.config)
 	if err != nil {
 		cancel()
 		return err
@@ -65,7 +105,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.Peer = peer
 
 	p2p.wg.Add(1)
-	go natTraversalService(ctx, &p2p.wg, p2p.conf, mp)
+	go natTraversalService(ctx, &p2p.wg, p2p.config, mp)
 
 	p2p.wg.Add(1)
 	go p2pEventHandler(ctx, &p2p.wg, peer)
