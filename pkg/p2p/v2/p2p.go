@@ -13,24 +13,26 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
+type PeerID peer.ID
+
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
 // TODO - Move this struct into pkg/engine/config/config.go. Optionally, it could be renamed to NetworkConfig. (GH issue #19)
 // Config type - a p2p configuration.
 type Config struct {
-	Version                  string    `json:"version"`
-	Addresses                []string  `json:"addresses"`
-	ConnectionSecurity       string    `json:"connectionSecurity"`
-	AllowIncomingConnections bool      `json:"allowIncomingConnections"`
-	EnableNATService         bool      `json:"enableNATService,omitempty"`
-	EnableUsingRelayService  bool      `json:"enableUsingRelayService"`
-	EnableRelayService       bool      `json:"enableRelayService,omitempty"`
-	EnableHolePunching       bool      `json:"enableHolePunching,omitempty"`
-	SeedPeers                []peer.ID `json:"seedPeers"`
-	FixedPeers               []peer.ID `json:"fixedPeers,omitempty"`
-	BlackListedPeers         []peer.ID `json:"blackListedPeers,omitempty"`
-	MaxInboundConnections    int       `json:"maxInboundConnections"`
-	MaxOutboundConnections   int       `json:"maxOutboundConnections"`
+	Version                  string   `json:"version"`
+	Addresses                []string `json:"addresses"`
+	ConnectionSecurity       string   `json:"connectionSecurity"`
+	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
+	EnableNATService         bool     `json:"enableNATService,omitempty"`
+	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
+	EnableRelayService       bool     `json:"enableRelayService,omitempty"`
+	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
+	SeedPeers                []PeerID `json:"seedPeers"`
+	FixedPeers               []PeerID `json:"fixedPeers,omitempty"`
+	BlackListedPeers         []PeerID `json:"blackListedPeers,omitempty"`
+	MaxInboundConnections    int      `json:"maxInboundConnections"`
+	MaxOutboundConnections   int      `json:"maxOutboundConnections"`
 	// GossipSub configuration
 	IsSeedNode  bool     `json:"isSeedNode,omitempty"`
 	NetworkName string   `json:"networkName"`
@@ -48,13 +50,13 @@ func (c *Config) InsertDefault() error {
 		c.ConnectionSecurity = "tls"
 	}
 	if c.SeedPeers == nil {
-		c.SeedPeers = []peer.ID{}
+		c.SeedPeers = []PeerID{}
 	}
 	if c.FixedPeers == nil {
-		c.FixedPeers = []peer.ID{}
+		c.FixedPeers = []PeerID{}
 	}
 	if c.BlackListedPeers == nil {
-		c.BlackListedPeers = []peer.ID{}
+		c.BlackListedPeers = []PeerID{}
 	}
 	if c.MaxInboundConnections == 0 {
 		c.MaxInboundConnections = 100

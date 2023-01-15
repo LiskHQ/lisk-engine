@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/assert"
 
 	logger "github.com/LiskHQ/lisk-engine/pkg/log"
@@ -23,9 +22,9 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal(t, false, p2p.config.EnableUsingRelayService)
 	assert.Equal(t, false, p2p.config.EnableRelayService)
 	assert.Equal(t, false, p2p.config.EnableHolePunching)
-	assert.Equal(t, []peer.ID{}, p2p.config.SeedPeers)
-	assert.Equal(t, []peer.ID{}, p2p.config.FixedPeers)
-	assert.Equal(t, []peer.ID{}, p2p.config.BlackListedPeers)
+	assert.Equal(t, []PeerID{}, p2p.config.SeedPeers)
+	assert.Equal(t, []PeerID{}, p2p.config.FixedPeers)
+	assert.Equal(t, []PeerID{}, p2p.config.BlackListedPeers)
 	assert.Equal(t, 100, p2p.config.MaxInboundConnections)
 	assert.Equal(t, 20, p2p.config.MaxOutboundConnections)
 	assert.Equal(t, false, p2p.config.IsSeedNode)
