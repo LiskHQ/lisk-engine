@@ -45,7 +45,7 @@ func main() {
 		panic(err)
 	}
 
-	cfg := p2p.P2PConfig{
+	cfg := p2p.Config{
 		NetworkName: "lisk-test",
 		SeedNodes:   []string{"/ip4/0.0.0.0/tcp/0"},
 	}

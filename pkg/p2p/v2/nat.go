@@ -31,7 +31,7 @@ func newAutoNAT(p *Peer) (autonat.AutoNAT, error) {
 }
 
 // natTraversalService handles all NAT traversal related events.
-func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config P2PConfig, mp *MessageProtocol) {
+func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config Config, mp *MessageProtocol) {
 	defer wg.Done()
 	mp.peer.logger.Infof("NAT traversal service started")
 

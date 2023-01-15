@@ -16,8 +16,8 @@ import (
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
 // TODO - Move this struct into pkg/engine/config/config.go. Optionally, it could be renamed to NetworkConfig. (GH issue #19)
-// P2PConfig type - a p2p configuration.
-type P2PConfig struct {
+// Config type - a p2p configuration.
+type Config struct {
 	Version                  string    `json:"version"`
 	Addresses                []string  `json:"addresses"`
 	ConnectionSecurity       string    `json:"connectionSecurity"`
@@ -37,7 +37,7 @@ type P2PConfig struct {
 	SeedNodes   []string `json:"seedNodes"` // TODO - Join seedNodes and seedPeers into one field. (GH issue #18)
 }
 
-func (c *P2PConfig) InsertDefault() error {
+func (c *Config) InsertDefault() error {
 	if c.Version == "" {
 		c.Version = "1.0"
 	}
@@ -76,13 +76,13 @@ type P2P struct {
 	logger log.Logger
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
-	config P2PConfig
+	config Config
 	*MessageProtocol
 	*Peer
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P(config P2PConfig) *P2P {
+func NewP2P(config Config) *P2P {
 	return &P2P{config: config}
 }
 

@@ -20,7 +20,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := p2p.P2PConfig{
+	config := p2p.Config{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,

@@ -61,7 +61,7 @@ var relayServiceOptions = []relay.Option{
 }
 
 // NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, logger log.Logger, config P2PConfig) (*Peer, error) {
+func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, error) {
 	opts := []libp2p.Option{
 		// Support default transports (TCP, QUIC, WS)
 		libp2p.DefaultTransports,

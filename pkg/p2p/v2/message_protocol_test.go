@@ -58,7 +58,7 @@ func (s testStream) Conn() network.Conn {
 
 func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{}
+	config := Config{}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(context.Background(), logger, config)
 
@@ -82,7 +82,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logger, _ := log.NewDefaultProductionLogger()
 			loggerTest := testLogger{Logger: logger}
-			config := P2PConfig{}
+			config := Config{}
 			_ = config.InsertDefault()
 			p, _ := NewPeer(context.Background(), &loggerTest, config)
 			mp := NewMessageProtocol(context.Background(), &loggerTest, p)
@@ -105,7 +105,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 func TestMessageProtocol_OnResponse(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	config := P2PConfig{}
+	config := Config{}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(context.Background(), &loggerTest, config)
 	mp := NewMessageProtocol(context.Background(), &loggerTest, p)
@@ -136,7 +136,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	config := P2PConfig{}
+	config := Config{}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(context.Background(), &loggerTest, config)
 	mp := NewMessageProtocol(context.Background(), &loggerTest, p)
@@ -154,7 +154,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(context.Background(), logger, config)
@@ -175,7 +175,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 
 func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(context.Background(), logger, config)
@@ -198,7 +198,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 
 func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(context.Background(), logger, config)
@@ -240,7 +240,7 @@ func (tmr *TestMessageReceive) onMessageReceive(s network.Stream) {
 
 func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
-	config := P2PConfig{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 

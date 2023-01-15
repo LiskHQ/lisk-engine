@@ -11,7 +11,7 @@ import (
 )
 
 func TestP2P_NewP2P(t *testing.T) {
-	config := P2PConfig{}
+	config := Config{}
 	err := config.InsertDefault()
 	assert.Nil(t, err)
 	p2p := NewP2P(config)
@@ -34,7 +34,7 @@ func TestP2P_NewP2P(t *testing.T) {
 }
 
 func TestP2P_Start(t *testing.T) {
-	config := P2PConfig{}
+	config := Config{}
 	_ = config.InsertDefault()
 	p2p := NewP2P(config)
 	logger, _ := logger.NewDefaultProductionLogger()
@@ -45,7 +45,7 @@ func TestP2P_Start(t *testing.T) {
 }
 
 func TestP2P_Stop(t *testing.T) {
-	config := P2PConfig{}
+	config := Config{}
 	_ = config.InsertDefault()
 	p2p := NewP2P(config)
 	logger, _ := logger.NewDefaultProductionLogger()
