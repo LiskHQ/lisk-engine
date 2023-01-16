@@ -47,7 +47,7 @@ func main() {
 
 	cfg := p2p.Config{
 		NetworkName: "lisk-test",
-		SeedNodes:   []string{"/ip4/0.0.0.0/tcp/0"},
+		SeedNodes:   []string{},
 	}
 	err = cfg.InsertDefault()
 	if err != nil {
