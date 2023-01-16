@@ -75,9 +75,12 @@ func TestHTTPServer(t *testing.T) {
 
 	server := NewHTTPJSONServer(log.DefaultLogger, port, "0.0.0.0", invoker)
 	defer server.Close()
+	ch := make(chan any)
 	go func() {
+		close(ch)
 		server.ListenAndServe()
 	}()
+	<-ch
 
 	cli := http.DefaultClient
 

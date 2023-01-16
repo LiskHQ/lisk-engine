@@ -20,9 +20,19 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	conf := p2p.Config{DummyConfigurationFeatureEnable: true, AllowIncomingConnections: true}
+	config := p2p.Config{
+		AllowIncomingConnections: true,
+		EnableNATService:         true,
+		EnableUsingRelayService:  true,
+		EnableRelayService:       true,
+		EnableHolePunching:       true,
+	}
+	err = config.InsertDefault()
+	if err != nil {
+		panic(err)
+	}
 
-	node, err := p2p.NewPeer(ctx, logger, conf, []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.PeerSecurityTLS)
+	node, err := p2p.NewPeer(ctx, logger, config)
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -21,13 +22,11 @@ import (
 const numOfPingMessages = 5         // Number of sent ping messages in Ping service.
 const pingTimeout = time.Second * 5 // Ping service timeout in seconds.
 
-// Peer security option type.
-type PeerSecurityOption uint8
-
+// Connection security option type.
 const (
-	PeerSecurityNone  PeerSecurityOption = iota // Do not support any security.
-	PeerSecurityTLS                             // Support TLS connections.
-	PeerSecurityNoise                           // Support Noise connections.
+	ConnectionSecurityNone  = "none"  // Do not support any security.
+	ConnectionSecurityTLS   = "tls"   // Support TLS connections.
+	ConnectionSecurityNoise = "noise" // Support Noise connections.
 )
 
 // Peer type - a p2p node.
@@ -62,53 +61,62 @@ var relayServiceOptions = []relay.Option{
 }
 
 // NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, logger log.Logger, conf Config, addrs []string, security PeerSecurityOption) (*Peer, error) {
+func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, error) {
 	opts := []libp2p.Option{
 		// Support default transports (TCP, QUIC, WS)
 		libp2p.DefaultTransports,
 	}
 
-	switch conf.AllowIncomingConnections {
+	switch config.AllowIncomingConnections {
 	case true:
-		if len(addrs) == 0 {
+		if len(config.Addresses) == 0 {
 			opts = append(opts, libp2p.NoListenAddrs)
 		} else {
-			opts = append(opts, libp2p.ListenAddrStrings(addrs...))
+			opts = append(opts, libp2p.ListenAddrStrings(config.Addresses...))
 		}
 	case false:
 		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
+	// Configure connection security.
+	security := strings.ToLower(config.ConnectionSecurity)
 	switch security {
-	case PeerSecurityNone:
+	case ConnectionSecurityNone:
 		opts = append(opts, libp2p.NoSecurity)
-	case PeerSecurityTLS:
+	case ConnectionSecurityTLS:
 		opts = append(opts, libp2p.Security(libp2ptls.ID, libp2ptls.New))
-	case PeerSecurityNoise:
+	case ConnectionSecurityNoise:
 		opts = append(opts, libp2p.Security(noise.ID, noise.New))
 	default:
 		opts = append(opts, libp2p.NoSecurity)
 	}
 
 	// Configure peer to provide a service for other peers for determining their reachability status.
-	// TODO - get configuration from config file (GH issue #14)
-	if conf.DummyConfigurationFeatureEnable {
+	if config.EnableNATService {
 		opts = append(opts, libp2p.EnableNATService())
 		opts = append(opts, libp2p.AutoNATServiceRateLimit(60, 10, time.Minute))
 	}
 	opts = append(opts, libp2p.NATPortMap())
 
+	// Enable using relay service from other peers. In case a peer is not reachable from the network,
+	// it will try to connect to a relay service from other peers.
+	if config.EnableUsingRelayService {
+		opts = append(opts, libp2p.EnableRelay())
+		opts = append(opts, libp2p.EnableAutoRelay(autoRelayOptions...))
+	} else {
+		// Relay is enabled by default, so we need to disable it explicitly.
+		opts = append(opts, libp2p.DisableRelay())
+	}
+
 	// Enable circuit relay service.
-	// TODO - get configuration from config file (GH issue #14)
-	opts = append(opts, libp2p.EnableRelay())
-	opts = append(opts, libp2p.EnableAutoRelay(autoRelayOptions...))
-	if conf.DummyConfigurationFeatureEnable {
+	if config.EnableRelayService {
 		opts = append(opts, libp2p.EnableRelayService(relayServiceOptions...))
 	}
 
 	// Enable hole punching service.
-	// TODO - get configuration from config file (GH issue #14)
-	opts = append(opts, libp2p.EnableHolePunching())
+	if config.EnableHolePunching {
+		opts = append(opts, libp2p.EnableHolePunching())
+	}
 
 	host, err := libp2p.New(opts...)
 	if err != nil {
