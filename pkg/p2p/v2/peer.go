@@ -78,6 +78,15 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
+	// Load Blacklist
+	if len(config.BlackListedPeers) > 0 {
+		connGaterOpt, err := ConnectionGaterOption(NewBlacklistWithPeer(config.BlackListedPeers))
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, connGaterOpt)
+	}
+
 	// Configure connection security.
 	security := strings.ToLower(config.ConnectionSecurity)
 	switch security {

@@ -9,6 +9,7 @@ require (
 	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-zeromq/zmq4 v0.14.1
 	github.com/gorilla/websocket v1.5.0
+	github.com/ipfs/go-datastore v0.6.0
 	github.com/libp2p/go-libp2p v0.23.4
 	github.com/libp2p/go-libp2p-pubsub v0.8.2
 	github.com/multiformats/go-multiaddr v0.7.0
@@ -28,6 +29,7 @@ require (
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/ipfs/go-log v1.0.5 // indirect
+	github.com/jbenet/goprocess v0.1.4 // indirect
 	github.com/libp2p/zeroconf/v2 v2.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
