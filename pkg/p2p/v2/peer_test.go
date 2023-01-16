@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,6 +84,20 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	assert.Equal(t, p1.ID(), p2.ConnectedPeers()[0])
 	err = p2.Disconnect(context.Background(), p1.ID())
 	assert.Nil(t, err)
+}
+
+func TestP2PAddrs(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	ip4quic := fmt.Sprintf("/ip4/127.0.0.1/udp/%d/quic", 12345)
+	ip4tcp := fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", 12345)
+	config := Config{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
+	_ = config.InsertDefault()
+	p, err := NewPeer(context.Background(), logger, config)
+	assert.Nil(t, err)
+
+	addrs, err := p.P2PAddrs()
+	assert.Nil(t, err)
+	assert.Equal(t, len(addrs), 2)
 }
 
 func TestPeer_PingMultiTimes(t *testing.T) {

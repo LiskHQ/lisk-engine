@@ -5,11 +5,11 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 
+	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
@@ -27,6 +27,11 @@ var (
 )
 
 func main() {
+	logger, err := log.NewDefaultProductionLogger()
+	if err != nil {
+		panic(err)
+	}
+
 	nickFlag := flag.String("nick", "", "nickname to use in chat. will be generated if empty")
 	flag.Parse()
 
@@ -39,43 +44,45 @@ func main() {
 	ip6tcp := fmt.Sprintf("/ip6/::/tcp/%d", *port)
 	ip4tcp := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port)
 
-	h, err := libp2p.New(
-		libp2p.ListenAddrStrings(ip6quic, ip4quic, ip6tcp, ip4tcp))
-	if err != nil {
-		panic(err)
-	}
-
 	cfg := p2p.Config{
-		NetworkName: "lisk-test",
-		SeedNodes:   []string{},
+		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
+		AllowIncomingConnections: true,
+		NetworkName:              "lisk-test",
+		SeedNodes:                []string{},
 	}
 	err = cfg.InsertDefault()
 	if err != nil {
 		panic(err)
 	}
+
+	p, err := p2p.NewPeer(ctx, logger, cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	sk := pubsub.NewScoreKeeper()
-	ps, err := p2p.NewGossipSub(ctx, h, sk, cfg)
+	ps, err := p2p.NewGossipSub(ctx, p, sk, cfg)
 	if err != nil {
 		panic(err)
 	}
 
 	nick := *nickFlag
 	if len(nick) == 0 {
-		nick = defaultNick(h.ID())
+		nick = defaultNick(p.GetHost().ID())
 	}
 
-	cr, err := JoinChatRoom(ctx, ps, h.ID(), nick, cfg.NetworkName)
+	cr, err := JoinChatRoom(ctx, ps, p.GetHost().ID(), nick, cfg.NetworkName)
 	if err != nil {
 		panic(err)
 	}
 
 	ui := NewChatUI(cr)
 	if *isLocal {
-		if err := setupDiscovery(h, ui); err != nil {
+		if err := setupDiscovery(p.GetHost(), ui); err != nil {
 			panic(err)
 		}
 	}
-	addrs, err := pubsub.P2pAddrs(h)
+	addrs, err := p.P2PAddrs()
 	if err != nil {
 		panic(err)
 	}

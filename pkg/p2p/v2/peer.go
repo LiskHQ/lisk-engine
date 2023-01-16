@@ -176,6 +176,11 @@ func (p *Peer) KnownPeers() peer.IDSlice {
 	return p.host.Peerstore().Peers()
 }
 
+// GetHost returns a libp2p host.
+func (p *Peer) GetHost() host.Host {
+	return p.host
+}
+
 // PingMultiTimes tries to send ping request to a peer for five times.
 func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Duration, err error) {
 	pingService := ping.NewPingService(p.host)
