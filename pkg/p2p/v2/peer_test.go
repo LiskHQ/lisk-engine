@@ -145,34 +145,5 @@ func TestPeer_PeerSource(t *testing.T) {
 }
 
 func TestPeerWithBlacklist(t *testing.T) {
-	assert := assert.New(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	logger, _ := log.NewDefaultProductionLogger()
-	cfg := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
-	assert.Nil(cfg.InsertDefault())
-	blockedHost, _ := NewPeer(ctx, logger, cfg)
-	blockedAddrs, _ := blockedHost.P2PAddrs()
-	blockedAddrInfo, _ := PeerInfoFromMultiAddr(blockedAddrs[0].String())
-
-	acceptedHost, _ := NewPeer(ctx, logger, cfg)
-	acceptedAddrs, _ := acceptedHost.P2PAddrs()
-	acceptedAddrInfo, _ := PeerInfoFromMultiAddr(acceptedAddrs[0].String())
-
-	var blockedPeers []PeerID
-	for _, id := range blockedHost.KnownPeers() {
-		blockedPeers = append(blockedPeers, PeerID(id))
-	}
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}, BlackListedPeers: blockedPeers}
-	assert.Nil(config.InsertDefault())
-	host, err := NewPeer(ctx, logger, config)
-	assert.Nil(err)
-	hostAddrs, _ := host.P2PAddrs()
-	hostAddrInfo, _ := PeerInfoFromMultiAddr(hostAddrs[0].String())
-	assert.NotNil(host.Connect(ctx, *blockedAddrInfo))
-	assert.NotNil(blockedHost.Connect(ctx, *hostAddrInfo))
-
-	assert.Nil(host.Connect(ctx, *acceptedAddrInfo))
-	assert.Nil(acceptedHost.Connect(ctx, *hostAddrInfo))
+	// TODO Peer needs to be tested by blacklistIPs
 }

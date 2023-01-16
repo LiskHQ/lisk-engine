@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/p2p/net/swarm"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,8 +15,8 @@ func TestBlacklistPeer(t *testing.T) {
 	defer cancel()
 
 	opts := []libp2p.Option{}
-	addrs := []string{"/ip4/127.0.0.1/tcp/0"}
-	opts = append(opts, libp2p.ListenAddrStrings(addrs...))
+	adr := []string{"/ip4/127.0.0.1/tcp/0"}
+	opts = append(opts, libp2p.ListenAddrStrings(adr...))
 
 	blockedHost, err := libp2p.New(libp2p.ListenAddrStrings("/ip4/127.0.0.1/tcp/0"))
 	assert.Nil(err)
@@ -35,8 +36,8 @@ func TestBlacklistPeer(t *testing.T) {
 
 	hostPeer := host.Peerstore().PeerInfo(host.Peerstore().Peers()[0])
 	blockedPeer := blockedHost.Peerstore().PeerInfo(blockedHost.Peerstore().Peers()[0])
-	assert.NotNil(host.Connect(ctx, blockedPeer))
-	assert.NotNil(blockedHost.Connect(ctx, hostPeer))
+	assert.ErrorContains(host.Connect(ctx, blockedPeer), swarm.ErrGaterDisallowedConnection.Error())
+	assert.ErrorContains(blockedHost.Connect(ctx, hostPeer), swarm.ErrNoAddresses.Error())
 
 	acceptedPeer := acceptedHost.Peerstore().PeerInfo(acceptedHost.Peerstore().Peers()[0])
 	assert.Nil(host.Connect(ctx, acceptedPeer))

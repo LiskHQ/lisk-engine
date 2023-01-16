@@ -3,7 +3,6 @@ package p2p
 import (
 	"net"
 
-	"github.com/ipfs/go-datastore"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/net/conngater"
@@ -46,8 +45,7 @@ func NewBlacklistWithSubnet(subnets []*net.IPNet) Blacklists {
 // ConnectionGaterOption returns the ConnectionGater option of the libp2p which
 // is usable to reject incoming and outgoing connections based on blacklists.
 func ConnectionGaterOption(bl Blacklists) (libp2p.Option, error) {
-	ds := datastore.NewMapDatastore()
-	cg, err := conngater.NewBasicConnectionGater(ds)
+	cg, err := conngater.NewBasicConnectionGater(nil)
 	if err != nil {
 		return nil, err
 	}
