@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"net"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal(t, false, p2p.config.EnableHolePunching)
 	assert.Equal(t, []PeerID{}, p2p.config.SeedPeers)
 	assert.Equal(t, []PeerID{}, p2p.config.FixedPeers)
-	assert.Equal(t, []net.IP{}, p2p.config.BlacklistedIPs)
+	assert.Equal(t, []string{}, p2p.config.BlacklistedIPs)
 	assert.Equal(t, 100, p2p.config.MaxInboundConnections)
 	assert.Equal(t, 20, p2p.config.MaxOutboundConnections)
 	assert.Equal(t, false, p2p.config.IsSeedNode)

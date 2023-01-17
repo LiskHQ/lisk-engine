@@ -4,7 +4,6 @@ package p2p
 import (
 	"context"
 	"errors"
-	"net"
 	"sync"
 	"time"
 
@@ -31,7 +30,7 @@ type Config struct {
 	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
 	SeedPeers                []PeerID `json:"seedPeers"`
 	FixedPeers               []PeerID `json:"fixedPeers,omitempty"`
-	BlacklistedIPs           []net.IP `json:"blackListedIPs,omitempty"`
+	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
 	MaxInboundConnections    int      `json:"maxInboundConnections"`
 	MaxOutboundConnections   int      `json:"maxOutboundConnections"`
 	// GossipSub configuration
@@ -57,7 +56,7 @@ func (c *Config) InsertDefault() error {
 		c.FixedPeers = []PeerID{}
 	}
 	if c.BlacklistedIPs == nil {
-		c.BlacklistedIPs = []net.IP{}
+		c.BlacklistedIPs = []string{}
 	}
 	if c.MaxInboundConnections == 0 {
 		c.MaxInboundConnections = 100

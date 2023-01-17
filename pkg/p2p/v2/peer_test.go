@@ -143,7 +143,3 @@ func TestPeer_PeerSource(t *testing.T) {
 	assert.NotNil(t, addr)
 	assert.Equal(t, 0, len(addr.Addrs))
 }
-
-func TestPeerWithBlacklist(t *testing.T) {
-	// TODO Peer needs to be tested by blacklistIPs
-}

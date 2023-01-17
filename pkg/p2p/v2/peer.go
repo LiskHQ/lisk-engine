@@ -80,7 +80,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 
 	// Load Blacklist
 	if len(config.BlacklistedIPs) > 0 {
-		connGaterOpt, err := ConnectionGaterOption(NewBlacklistWithAddress(config.BlacklistedIPs))
+		connGaterOpt, err := ConnectionGaterOption(config.BlacklistedIPs)
 		if err != nil {
 			return nil, err
 		}
