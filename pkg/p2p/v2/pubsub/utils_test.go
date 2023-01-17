@@ -2,10 +2,8 @@ package pubsub
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/libp2p/go-libp2p"
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/stretchr/testify/assert"
 
@@ -49,20 +47,6 @@ func TestParseAddresses(t *testing.T) {
 	}
 	_, err = ParseAddresses(ctx, stringAddresses)
 	assert.Errorf(err, "invalid address are not acceptable")
-}
-
-func TestP2pAddrs(t *testing.T) {
-	assert := assert.New(t)
-
-	ip4quic := fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", 12345)
-	ip4tcp := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", 12345)
-	h, err := libp2p.New(
-		libp2p.ListenAddrStrings(ip4quic, ip4tcp))
-	assert.Nil(err)
-
-	addrs, err := P2pAddrs(h)
-	assert.Nil(err)
-	assert.Equal(len(addrs), 4)
 }
 
 func TestMessageTopic(t *testing.T) {

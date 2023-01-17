@@ -8,7 +8,7 @@ import (
 )
 
 type ScoreKeeper struct {
-	lk     sync.RWMutex
+	lk     sync.Mutex
 	scores map[peer.ID]*pubsub.PeerScoreSnapshot
 }
 
@@ -19,11 +19,13 @@ func NewScoreKeeper() *ScoreKeeper {
 }
 
 func (sk *ScoreKeeper) Update(scores map[peer.ID]*pubsub.PeerScoreSnapshot) {
+	sk.lk.Lock()
+	defer sk.lk.Unlock()
 	sk.scores = scores
 }
 
 func (sk *ScoreKeeper) Get() map[peer.ID]*pubsub.PeerScoreSnapshot {
-	sk.lk.RLock()
-	defer sk.lk.RUnlock()
+	sk.lk.Lock()
+	defer sk.lk.Unlock()
 	return sk.scores
 }

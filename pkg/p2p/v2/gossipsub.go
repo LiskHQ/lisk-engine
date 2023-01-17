@@ -6,7 +6,6 @@ import (
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
@@ -14,7 +13,7 @@ import (
 
 // NewGossipSub makes a new GossipSub based on input parameters.
 func NewGossipSub(ctx context.Context,
-	h host.Host,
+	p *Peer,
 	sk *lps.ScoreKeeper,
 	cfg Config,
 ) (*pubsub.PubSub, error) {
@@ -115,5 +114,5 @@ func NewGossipSub(ctx context.Context,
 			pubsub.WrapLimitSubscriptionFilter(
 				pubsub.NewAllowlistSubscriptionFilter(msgTopic),
 				100)))
-	return pubsub.NewGossipSub(ctx, h, options...)
+	return pubsub.NewGossipSub(ctx, p.GetHost(), options...)
 }
