@@ -20,13 +20,11 @@ const maxAllowedTopics = 10
 // GossipSub type.
 type GossipSub struct {
 	logger log.Logger
-	ctx    context.Context
 	peerID peer.ID
 	*pubsub.PubSub
 	topics        map[string]*pubsub.Topic
 	subscriptions map[string]*pubsub.Subscription
 	eventHandlers map[string]EventHandler
-	started       bool
 }
 
 // NewGossipSub makes a new GossipSub struct.
@@ -35,7 +33,6 @@ func NewGossipSub() *GossipSub {
 		topics:        make(map[string]*pubsub.Topic),
 		subscriptions: make(map[string]*pubsub.Subscription),
 		eventHandlers: make(map[string]EventHandler),
-		started:       false,
 	}
 }
 
@@ -153,7 +150,6 @@ func (gs *GossipSub) StartGossipSub(ctx context.Context,
 	}
 
 	gs.logger = logger
-	gs.ctx = ctx
 	gs.peerID = p.GetHost().ID()
 	gs.PubSub = gossipSub
 
@@ -161,8 +157,6 @@ func (gs *GossipSub) StartGossipSub(ctx context.Context,
 	if err != nil {
 		return err
 	}
-
-	gs.started = true
 
 	return nil
 }
@@ -227,7 +221,7 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 
 // JoinAndSubscribeTopic joins and subscribes to a topic.
 func (gs *GossipSub) JoinAndSubscribeTopic(name string) error {
-	if gs.started {
+	if gs.PubSub != nil {
 		return errors.New("cannot join and subscribe to a topic after GossipSub is started")
 	}
 	_, exist := gs.topics[name]
@@ -241,7 +235,7 @@ func (gs *GossipSub) JoinAndSubscribeTopic(name string) error {
 
 // RegisterEventHandler registers an event handler for an event type.
 func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) error {
-	if gs.started {
+	if gs.PubSub != nil {
 		return errors.New("cannot register event handler after GossipSub is started")
 	}
 	_, exist := gs.eventHandlers[name]
@@ -253,7 +247,7 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) err
 }
 
 // Publish publishes a message to a topic.
-func (gs *GossipSub) Publish(topicName string, msgType string, data []byte) error {
+func (gs *GossipSub) Publish(ctx context.Context, topicName string, msgType string, data []byte) error {
 	msg := newMessage(msgType, data)
 	data, err := msg.Encode()
 	if err != nil {
@@ -263,7 +257,7 @@ func (gs *GossipSub) Publish(topicName string, msgType string, data []byte) erro
 	if topic == nil {
 		return errors.New("topic not found")
 	}
-	return topic.Publish(gs.ctx, data)
+	return topic.Publish(ctx, data)
 }
 
 // Start starts the GossipSub event handler.
@@ -280,7 +274,7 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 		case <-t.C:
 			gs.logger.Debugf("GossipSub event handler is alive")
 			topicEvents := "events" // Test topic which will be removed after testing
-			err := gs.Publish(topicEvents, "testEventName", []byte(fmt.Sprintf("Timer for %s is running and this is a test message: %v", p.ID().String(), counter)))
+			err := gs.Publish(ctx, topicEvents, "testEventName", []byte(fmt.Sprintf("Timer for %s is running and this is a test message: %v", p.ID().String(), counter)))
 			counter++
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)

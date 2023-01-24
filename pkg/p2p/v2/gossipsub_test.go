@@ -22,7 +22,6 @@ func TestGossipSub_NewGossipSub(t *testing.T) {
 	assert.NotNil(gs.topics)
 	assert.NotNil(gs.subscriptions)
 	assert.NotNil(gs.eventHandlers)
-	assert.False(gs.started)
 }
 
 func TestGossipSub_StartGossipSub(t *testing.T) {
@@ -43,7 +42,6 @@ func TestGossipSub_StartGossipSub(t *testing.T) {
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
-	assert.NotNil(gs.ctx)
 	assert.Equal(p.GetHost().ID(), gs.peerID)
 	assert.NotNil(gs.PubSub)
 
@@ -53,8 +51,6 @@ func TestGossipSub_StartGossipSub(t *testing.T) {
 	assert.True(exist)
 	_, exist = gs.subscriptions["testTopic"]
 	assert.True(exist)
-
-	assert.True(gs.started)
 }
 
 func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
@@ -64,13 +60,14 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	gs := NewGossipSub()
-	host, _ := libp2p.New()
-	gossipSub, _ := pubsub.NewGossipSub(ctx, host)
-	gs.PubSub = gossipSub
 
 	gs.JoinAndSubscribeTopic("testTopic1")
 	gs.JoinAndSubscribeTopic("testTopic2")
 	gs.JoinAndSubscribeTopic("testTopic3")
+
+	host, _ := libp2p.New()
+	gossipSub, _ := pubsub.NewGossipSub(ctx, host)
+	gs.PubSub = gossipSub
 
 	err := gs.createSubscriptionHandlers(ctx, wg)
 	assert.Nil(err)
@@ -109,8 +106,16 @@ func TestGossipSub_JoinAndSubscribeTopic(t *testing.T) {
 func TestGossipSub_JoinAndSubscribeTopicGossipSubRunning(t *testing.T) {
 	assert := assert.New(t)
 
+	ctx := context.Background()
+	wg := &sync.WaitGroup{}
+	logger, _ := log.NewDefaultProductionLogger()
+	config := Config{}
+	_ = config.InsertDefault()
+	p, _ := NewPeer(context.Background(), logger, config)
+	sk := ps.NewScoreKeeper()
+
 	gs := NewGossipSub()
-	gs.started = true
+	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
 
 	err := gs.JoinAndSubscribeTopic("testTopic")
 	assert.NotNil(err)
@@ -158,8 +163,16 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	testHandler := func(event *Event) {
 	}
 
+	ctx := context.Background()
+	wg := &sync.WaitGroup{}
+	logger, _ := log.NewDefaultProductionLogger()
+	config := Config{}
+	_ = config.InsertDefault()
+	p, _ := NewPeer(context.Background(), logger, config)
+	sk := ps.NewScoreKeeper()
+
 	gs := NewGossipSub()
-	gs.started = true
+	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
 
 	err := gs.RegisterEventHandler("testEvent", testHandler)
 	assert.NotNil(err)
@@ -202,15 +215,16 @@ func TestGossipSub_Publish(t *testing.T) {
 	gs.JoinAndSubscribeTopic("testTopic")
 	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
 
-	err := gs.Publish("testTopic", "testMsgType", []byte("testMessageData"))
+	err := gs.Publish(ctx, "testTopic", "testMsgType", []byte("testMessageData"))
 	assert.Nil(err)
 }
 
 func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	assert := assert.New(t)
 
+	ctx := context.Background()
 	gs := NewGossipSub()
 
-	err := gs.Publish("testTopic", "testMsgType", []byte("testMessageData"))
+	err := gs.Publish(ctx, "testTopic", "testMsgType", []byte("testMessageData"))
 	assert.Equal("topic not found", err.Error())
 }
