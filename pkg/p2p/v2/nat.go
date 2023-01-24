@@ -53,7 +53,7 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config Config,
 
 	for {
 		select {
-		// TODO - remove this timer event after testing
+		// TODO - remove this timer event after testing (GH issue #19)
 		case <-t.C:
 			if config.EnableNATService {
 				mp.peer.logger.Debugf("NAT status: %v", nat.Status())

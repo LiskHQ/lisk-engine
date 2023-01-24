@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
+
+	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
 // ChatRoomBufSize is the number of incoming messages to buffer for each topic.
@@ -18,10 +19,8 @@ type ChatRoom struct {
 	// Messages is a channel of messages received from other peers in the chat room
 	Messages chan *ChatMessage
 
-	ctx   context.Context
-	ps    *pubsub.PubSub
-	topic *pubsub.Topic
-	sub   *pubsub.Subscription
+	ctx context.Context
+	gs  *p2p.GossipSub
 
 	roomName string
 	self     peer.ID
@@ -37,32 +36,16 @@ type ChatMessage struct {
 
 // JoinChatRoom tries to subscribe to the PubSub topic for the room name, returning
 // a ChatRoom on success.
-func JoinChatRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, nickname string, roomName string) (*ChatRoom, error) {
-	// join the pubsub topic
-	topic, err := ps.Join(topicName(roomName))
-	if err != nil {
-		return nil, err
-	}
-
-	// and subscribe to it
-	sub, err := topic.Subscribe()
-	if err != nil {
-		return nil, err
-	}
-
+func JoinChatRoom(ctx context.Context, gs *p2p.GossipSub, selfID peer.ID, ch chan *ChatMessage, nickname string, roomName string) (*ChatRoom, error) {
 	cr := &ChatRoom{
 		ctx:      ctx,
-		ps:       ps,
-		topic:    topic,
-		sub:      sub,
+		gs:       gs,
 		self:     selfID,
 		nick:     nickname,
 		roomName: roomName,
-		Messages: make(chan *ChatMessage, ChatRoomBufSize),
+		Messages: ch,
 	}
 
-	// start reading messages from the subscription in a loop
-	go cr.readLoop()
 	return cr, nil
 }
 
@@ -77,32 +60,21 @@ func (cr *ChatRoom) Publish(message string) error {
 	if err != nil {
 		return err
 	}
-	return cr.topic.Publish(cr.ctx, msgBytes)
+	return cr.gs.Publish(topicName(cr.roomName), eventName, msgBytes)
 }
 
 // ListPeers returns an array of ID.
 func (cr *ChatRoom) ListPeers() []peer.ID {
-	return cr.ps.ListPeers(topicName(cr.roomName))
+	return cr.gs.ListPeers(topicName(cr.roomName))
 }
 
-// readLoop pulls messages from the pubsub topic and pushes them onto the Messages channel.
-func (cr *ChatRoom) readLoop() {
-	for {
-		msg, err := cr.sub.Next(cr.ctx)
-		if err != nil {
-			close(cr.Messages)
-			return
-		}
-		// only forward messages delivered by others
-		if msg.ReceivedFrom == cr.self {
-			continue
-		}
-		cm := new(ChatMessage)
-		err = json.Unmarshal(msg.Data, cm)
-		if err != nil {
-			continue
-		}
-		// send valid messages onto the Messages channel
-		cr.Messages <- cm
+// Read messages from the subscription and push them onto the Messages channel.
+func readMessage(event *p2p.Event, ch chan *ChatMessage) {
+	cm := new(ChatMessage)
+	err := json.Unmarshal(event.Data(), cm)
+	if err != nil {
+		return
 	}
+	// send valid messages onto the Messages channel
+	ch <- cm
 }

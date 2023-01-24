@@ -244,3 +244,80 @@ func (e *ResponseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 	}
 	return nil
 }
+
+func (e *Message) Encode() ([]byte, error) {
+	writer := codec.NewWriter()
+	if err := writer.WriteString(1, e.MsgType); err != nil {
+		return nil, err
+	}
+	if err := writer.WriteBytes(2, e.Data); err != nil {
+		return nil, err
+	}
+	return writer.Result(), nil
+}
+
+func (e *Message) MustEncode() []byte {
+	encoded, err := e.Encode()
+	if err != nil {
+		panic(err)
+	}
+	return encoded
+}
+
+func (e *Message) Decode(data []byte) error {
+	reader := codec.NewReader(data)
+	return e.DecodeFromReader(reader)
+}
+
+func (e *Message) MustDecode(data []byte) {
+	if err := e.Decode(data); err != nil {
+		panic(err)
+	}
+}
+
+func (e *Message) DecodeStrict(data []byte) error {
+	reader := codec.NewReader(data)
+	if err := e.DecodeStrictFromReader(reader); err != nil {
+		return err
+	}
+	if reader.HasUnreadBytes() {
+		return codec.ErrUnreadBytes
+	}
+	return nil
+}
+
+func (e *Message) DecodeFromReader(reader *codec.Reader) error {
+	{
+		val, err := reader.ReadString(1, false)
+		if err != nil {
+			return err
+		}
+		e.MsgType = val
+	}
+	{
+		val, err := reader.ReadBytes(2, false)
+		if err != nil {
+			return err
+		}
+		e.Data = val
+	}
+	return nil
+}
+
+func (e *Message) DecodeStrictFromReader(reader *codec.Reader) error {
+	{
+		val, err := reader.ReadString(1, true)
+		if err != nil {
+			return err
+		}
+		e.MsgType = val
+	}
+	{
+		val, err := reader.ReadBytes(2, true)
+		if err != nil {
+			return err
+		}
+		e.Data = val
+	}
+	return nil
+}
