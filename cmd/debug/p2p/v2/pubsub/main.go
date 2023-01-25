@@ -67,11 +67,6 @@ func main() {
 
 	gs := p2p.NewGossipSub()
 
-	err = gs.JoinAndSubscribeTopic(topicName(topic))
-	if err != nil {
-		panic(err)
-	}
-
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
 	err = gs.RegisterEventHandler(topicName(topic), func(event *p2p.Event) {
 		readMessage(event, ch)

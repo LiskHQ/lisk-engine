@@ -36,9 +36,10 @@ func TestGossipSub_StartGossipSub(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	gs.JoinAndSubscribeTopic("testTopic")
+	err := gs.RegisterEventHandler("testTopic", func(event *Event) {})
+	assert.Nil(err)
 
-	err := gs.StartGossipSub(ctx, wg, logger, p, sk, config)
+	err = gs.StartGossipSub(ctx, wg, logger, p, sk, config)
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
@@ -61,9 +62,9 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 
 	gs := NewGossipSub()
 
-	gs.JoinAndSubscribeTopic("testTopic1")
-	gs.JoinAndSubscribeTopic("testTopic2")
-	gs.JoinAndSubscribeTopic("testTopic3")
+	gs.RegisterEventHandler("testTopic1", func(event *Event) {})
+	gs.RegisterEventHandler("testTopic2", func(event *Event) {})
+	gs.RegisterEventHandler("testTopic3", func(event *Event) {})
 
 	host, _ := libp2p.New()
 	gossipSub, _ := pubsub.NewGossipSub(ctx, host)
@@ -91,55 +92,6 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	assert.True(exist)
 }
 
-func TestGossipSub_JoinAndSubscribeTopic(t *testing.T) {
-	assert := assert.New(t)
-
-	gs := NewGossipSub()
-	err := gs.JoinAndSubscribeTopic("testTopic")
-	assert.Nil(err)
-	_, exist := gs.topics["testTopic"]
-	assert.True(exist)
-	_, exist = gs.subscriptions["testTopic"]
-	assert.True(exist)
-}
-
-func TestGossipSub_JoinAndSubscribeTopicGossipSubRunning(t *testing.T) {
-	assert := assert.New(t)
-
-	ctx := context.Background()
-	wg := &sync.WaitGroup{}
-	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
-	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
-	sk := ps.NewScoreKeeper()
-
-	gs := NewGossipSub()
-	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
-
-	err := gs.JoinAndSubscribeTopic("testTopic")
-	assert.NotNil(err)
-	assert.Equal("cannot join and subscribe to a topic after GossipSub is started", err.Error())
-
-	_, exist := gs.topics["testTopic"]
-	assert.False(exist)
-	_, exist = gs.subscriptions["testTopic"]
-	assert.False(exist)
-}
-
-func TestGossipSub_JoinAndSubscribeTopicAlreadyRegistered(t *testing.T) {
-	assert := assert.New(t)
-
-	gs := NewGossipSub()
-
-	err := gs.JoinAndSubscribeTopic("testTopic")
-	assert.Nil(err)
-
-	err = gs.JoinAndSubscribeTopic("testTopic")
-	assert.NotNil(err)
-	assert.Equal("subscription to testTopic topic is already set", err.Error())
-}
-
 func TestGossipSub_RegisterEventHandler(t *testing.T) {
 	assert := assert.New(t)
 
@@ -149,6 +101,12 @@ func TestGossipSub_RegisterEventHandler(t *testing.T) {
 	gs := NewGossipSub()
 	err := gs.RegisterEventHandler("testEvent", testHandler)
 	assert.Nil(err)
+
+	_, exist := gs.topics["testEvent"]
+	assert.True(exist)
+	_, exist = gs.subscriptions["testEvent"]
+	assert.True(exist)
+
 	assert.NotNil(gs.eventHandlers["testEvent"])
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
@@ -178,7 +136,11 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	assert.NotNil(err)
 	assert.Equal("cannot register event handler after GossipSub is started", err.Error())
 
-	_, exist := gs.eventHandlers["testEvent"]
+	_, exist := gs.topics["testEvent"]
+	assert.False(exist)
+	_, exist = gs.subscriptions["testEvent"]
+	assert.False(exist)
+	_, exist = gs.eventHandlers["testEvent"]
 	assert.False(exist)
 }
 
@@ -192,7 +154,11 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 
 	err := gs.RegisterEventHandler("testEvent", testHandler)
 	assert.Nil(err)
-	_, exist := gs.eventHandlers["testEvent"]
+	_, exist := gs.subscriptions["testEvent"]
+	assert.True(exist)
+	_, exist = gs.eventHandlers["testEvent"]
+	assert.True(exist)
+	_, exist = gs.eventHandlers["testEvent"]
 	assert.True(exist)
 
 	err = gs.RegisterEventHandler("testEvent", testHandler)
@@ -212,7 +178,7 @@ func TestGossipSub_Publish(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	gs.JoinAndSubscribeTopic("testTopic")
+	gs.RegisterEventHandler("testTopic", func(event *Event) {})
 	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
 
 	err := gs.Publish(ctx, "testTopic", []byte("testMessageData"))

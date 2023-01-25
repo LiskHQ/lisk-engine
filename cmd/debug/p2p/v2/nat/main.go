@@ -43,7 +43,12 @@ func main() {
 	p2p := p2pLib.NewP2P(config)
 
 	for _, topic := range Topics {
-		err = p2p.JoinAndSubscribeTopic(topic)
+		err = p2p.RegisterEventHandler(topic, func(event *p2pLib.Event) {
+			logger.Infof("Received event: %v", event)
+			logger.Infof("PeerID: %v", event.PeerID())
+			logger.Infof("Event: %v", event.Event())
+			logger.Infof("Data: %s", string(event.Data()))
+		})
 		if err != nil {
 			panic(err)
 		}

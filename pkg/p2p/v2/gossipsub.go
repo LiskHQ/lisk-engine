@@ -220,20 +220,6 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 	return nil
 }
 
-// JoinAndSubscribeTopic joins and subscribes to a topic.
-func (gs *GossipSub) JoinAndSubscribeTopic(name string) error {
-	if gs.PubSub != nil {
-		return errors.New("cannot join and subscribe to a topic after GossipSub is started")
-	}
-	_, exist := gs.topics[name]
-	if exist {
-		return fmt.Errorf("subscription to %s topic is already set", name)
-	}
-	gs.topics[name] = nil
-	gs.subscriptions[name] = nil
-	return nil
-}
-
 // RegisterEventHandler registers an event handler for an event type.
 func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) error {
 	if gs.PubSub != nil {
@@ -243,6 +229,8 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) err
 	if exist {
 		return fmt.Errorf("eventHandler %s is already registered", name)
 	}
+	gs.topics[name] = nil
+	gs.subscriptions[name] = nil
 	gs.eventHandlers[name] = handler
 	return nil
 }
@@ -274,12 +262,22 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 		// TODO - remove this timer event after testing (GH issue #19)
 		case <-t.C:
 			gs.logger.Debugf("GossipSub event handler is alive")
-			topicEvents := "events" // Test topic which will be removed after testing
-			err := gs.Publish(ctx, topicEvents, []byte(fmt.Sprintf("Timer for %s is running and this is a test message: %v", p.ID().String(), counter)))
-			counter++
+			topicTransactions := "transactions" // Test topic which will be removed after testing
+			topicBlocks := "blocks"             // Test topic which will be removed after testing
+			topicEvents := "events"             // Test topic which will be removed after testing
+			err := gs.Publish(ctx, topicTransactions, []byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter)))
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
+			err = gs.Publish(ctx, topicBlocks, []byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter)))
+			if err != nil {
+				gs.logger.Errorf("Error while publishing message: %s", err)
+			}
+			err = gs.Publish(ctx, topicEvents, []byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter)))
+			if err != nil {
+				gs.logger.Errorf("Error while publishing message: %s", err)
+			}
+			counter++
 			t.Reset(10 * time.Second)
 		case <-ctx.Done():
 			gs.logger.Infof("GossipSub event handler stopped")
