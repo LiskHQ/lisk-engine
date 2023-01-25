@@ -215,7 +215,7 @@ func TestGossipSub_Publish(t *testing.T) {
 	gs.JoinAndSubscribeTopic("testTopic")
 	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
 
-	err := gs.Publish(ctx, "testTopic", "testMsgType", []byte("testMessageData"))
+	err := gs.Publish(ctx, "testTopic", []byte("testMessageData"))
 	assert.Nil(err)
 }
 
@@ -225,6 +225,6 @@ func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	ctx := context.Background()
 	gs := NewGossipSub()
 
-	err := gs.Publish(ctx, "testTopic", "testMsgType", []byte("testMessageData"))
+	err := gs.Publish(ctx, "testTopic", []byte("testMessageData"))
 	assert.Equal("topic not found", err.Error())
 }

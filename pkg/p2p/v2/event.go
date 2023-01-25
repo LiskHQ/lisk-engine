@@ -1,7 +1,5 @@
 package p2p
 
-//go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
-
 // Event holds event message from a peer.
 type Event struct {
 	peerID string

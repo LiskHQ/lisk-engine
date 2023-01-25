@@ -247,7 +247,7 @@ func (e *ResponseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 
 func (e *Message) Encode() ([]byte, error) {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.MsgType); err != nil {
+	if err := writer.WriteInt(1, e.Timestamp); err != nil {
 		return nil, err
 	}
 	if err := writer.WriteBytes(2, e.Data); err != nil {
@@ -288,11 +288,11 @@ func (e *Message) DecodeStrict(data []byte) error {
 
 func (e *Message) DecodeFromReader(reader *codec.Reader) error {
 	{
-		val, err := reader.ReadString(1, false)
+		val, err := reader.ReadInt(1, false)
 		if err != nil {
 			return err
 		}
-		e.MsgType = val
+		e.Timestamp = val
 	}
 	{
 		val, err := reader.ReadBytes(2, false)
@@ -306,11 +306,11 @@ func (e *Message) DecodeFromReader(reader *codec.Reader) error {
 
 func (e *Message) DecodeStrictFromReader(reader *codec.Reader) error {
 	{
-		val, err := reader.ReadString(1, true)
+		val, err := reader.ReadInt(1, true)
 		if err != nil {
 			return err
 		}
-		e.MsgType = val
+		e.Timestamp = val
 	}
 	{
 		val, err := reader.ReadBytes(2, true)

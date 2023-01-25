@@ -28,7 +28,6 @@ var (
 )
 
 const topic = "test-chat"
-const eventName = "new-message"
 
 func main() {
 	logger, err := log.NewDefaultProductionLogger()
@@ -74,7 +73,7 @@ func main() {
 	}
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
-	err = gs.RegisterEventHandler(eventName, func(event *p2p.Event) {
+	err = gs.RegisterEventHandler(topicName(topic), func(event *p2p.Event) {
 		readMessage(event, ch)
 	})
 	if err != nil {

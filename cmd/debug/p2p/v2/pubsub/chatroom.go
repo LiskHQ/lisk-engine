@@ -60,7 +60,7 @@ func (cr *ChatRoom) Publish(message string) error {
 	if err != nil {
 		return err
 	}
-	return cr.gs.Publish(context.Background(), topicName(cr.roomName), eventName, msgBytes)
+	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msgBytes)
 }
 
 // ListPeers returns an array of ID.

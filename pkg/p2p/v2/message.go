@@ -37,8 +37,8 @@ type ResponseMsg struct {
 
 // Message is a message type sent to other peers in the network over GossipSub.
 type Message struct {
-	MsgType string `fieldNumber:"1" json:"msgType"` // Message type (event name, procedure name, etc.).
-	Data    []byte `fieldNumber:"2" json:"data"`    // Message data (payload).
+	Timestamp int64  `fieldNumber:"1" json:"timestamp"` // Unix time when the message was received.
+	Data      []byte `fieldNumber:"2" json:"data"`      // Message data (payload).
 }
 
 // newRequestMessage creates a new request message.
@@ -63,9 +63,9 @@ func newResponseMessage(peerID peer.ID, reqMsgID string, data []byte) *ResponseM
 }
 
 // newMessage creates a new message.
-func newMessage(msgType string, data []byte) *Message {
+func newMessage(data []byte) *Message {
 	return &Message{
-		MsgType: msgType,
-		Data:    data,
+		Timestamp: time.Now().Unix(),
+		Data:      data,
 	}
 }
