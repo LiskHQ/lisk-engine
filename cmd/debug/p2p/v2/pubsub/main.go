@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"sync"
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -26,6 +27,8 @@ var (
 	isLocal = flag.Bool("isLocal", false, "run the application in local mode")
 )
 
+const topic = "test-chat"
+
 func main() {
 	logger, err := log.NewDefaultProductionLogger()
 	if err != nil {
@@ -37,6 +40,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	wg := &sync.WaitGroup{}
 
 	ip6quic := fmt.Sprintf("/ip6/::/udp/%d/quic", *port)
 	ip4quic := fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", *port)
@@ -60,8 +65,18 @@ func main() {
 		panic(err)
 	}
 
+	gs := p2p.NewGossipSub()
+
+	ch := make(chan *ChatMessage, ChatRoomBufSize)
+	err = gs.RegisterEventHandler(topicName(topic), func(event *p2p.Event) {
+		readMessage(event, ch)
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	sk := pubsub.NewScoreKeeper()
-	ps, err := p2p.NewGossipSub(ctx, p, sk, cfg)
+	err = gs.Start(ctx, wg, logger, p, sk, cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +86,7 @@ func main() {
 		nick = defaultNick(p.GetHost().ID())
 	}
 
-	cr, err := JoinChatRoom(ctx, ps, p.GetHost().ID(), nick, cfg.NetworkName)
+	cr, err := JoinChatRoom(ctx, gs, p.GetHost().ID(), ch, nick, topic)
 	if err != nil {
 		panic(err)
 	}

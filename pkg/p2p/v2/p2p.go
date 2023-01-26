@@ -11,6 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
 type PeerID peer.ID
@@ -81,14 +82,15 @@ type P2P struct {
 	config Config
 	*MessageProtocol
 	*Peer
+	*GossipSub
 }
 
 // NewP2P creates a new P2P instance.
 func NewP2P(config Config) *P2P {
-	return &P2P{config: config}
+	return &P2P{config: config, GossipSub: NewGossipSub()}
 }
 
-// Start function starts a P2P and all other related services.
+// Start function starts a P2P and all other related services and handlers.
 func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -101,6 +103,13 @@ func (p2p *P2P) Start(logger log.Logger) error {
 
 	mp := NewMessageProtocol(ctx, logger, peer)
 
+	sk := pubsub.NewScoreKeeper()
+	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
+	if err != nil {
+		cancel()
+		return err
+	}
+
 	p2p.logger = logger
 	p2p.cancel = cancel
 	p2p.MessageProtocol = mp
@@ -111,6 +120,9 @@ func (p2p *P2P) Start(logger log.Logger) error {
 
 	p2p.wg.Add(1)
 	go p2pEventHandler(ctx, &p2p.wg, peer)
+
+	p2p.wg.Add(1)
+	go gossipSubEventHandler(ctx, &p2p.wg, peer, p2p.GossipSub)
 
 	logger.Infof("P2P module successfully started")
 	return nil
@@ -140,7 +152,7 @@ func (p2p *P2P) Stop() error {
 // p2pEventHandler handles P2P events.
 func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 	defer wg.Done()
-	p.logger.Infof("P2P service started")
+	p.logger.Infof("P2P event handler started")
 
 	sub, err := p.host.EventBus().Subscribe(event.WildcardSubscription)
 	if err != nil {
@@ -169,7 +181,7 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 				p.logger.Debugf("New P2P event received. Peer identification completed: %v", ev)
 			}
 		case <-ctx.Done():
-			p.logger.Infof("P2P service stopped")
+			p.logger.Infof("P2P event handler stopped")
 			return
 		}
 	}
