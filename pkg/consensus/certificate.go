@@ -19,7 +19,7 @@ import (
 
 func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 	postCommits := &EventPostSingleCommits{}
-	if err := postCommits.Decode(msgData); err != nil {
+	if err := postCommits.DecodeStrict(msgData); err != nil {
 		c.conn.ApplyPenalty(peerID, 100)
 		c.logger.Errorf("Received invalid single commit from %s", peerID)
 		return

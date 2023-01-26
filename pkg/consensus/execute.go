@@ -185,7 +185,14 @@ func (c *Executer) Subscribe(topic string) <-chan interface{} {
 
 // Start consensus process.
 func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
-	block, err := blockchain.NewBlock(msgData)
+	postBlockEvent := &EventPostBlock{}
+	err := postBlockEvent.DecodeStrict(msgData)
+	if err != nil {
+		c.conn.ApplyPenalty(peerID, 100)
+		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
+		return
+	}
+	block, err := blockchain.NewBlock(postBlockEvent.Block)
 	if err != nil {
 		c.conn.ApplyPenalty(peerID, 100)
 		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
