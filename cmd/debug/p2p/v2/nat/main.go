@@ -11,6 +11,14 @@ import (
 	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
 )
 
+const (
+	TopicTransactions = "transactions"
+	TopicBlocks       = "blocks"
+	TopicEvents       = "events"
+)
+
+var Topics = []string{TopicTransactions, TopicBlocks, TopicEvents}
+
 func main() {
 	logger, err := log.NewDefaultProductionLogger()
 	if err != nil {
@@ -33,6 +41,29 @@ func main() {
 	}
 
 	p2p := p2pLib.NewP2P(config)
+
+	for _, topic := range Topics {
+		err = p2p.RegisterEventHandler(topic, func(event *p2pLib.Event) {
+			logger.Infof("Received event: %v", event)
+			logger.Infof("PeerID: %v", event.PeerID())
+			logger.Infof("Event: %v", event.Event())
+			logger.Infof("Data: %s", string(event.Data()))
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	err = p2p.RegisterEventHandler("testEventName", func(event *p2pLib.Event) {
+		logger.Infof("Received event: %v", event)
+		logger.Infof("PeerID: %v", event.PeerID())
+		logger.Infof("Event: %v", event.Event())
+		logger.Infof("Data: %s", string(event.Data()))
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	err = p2p.Start(logger)
 	if err != nil {
 		panic(err)
