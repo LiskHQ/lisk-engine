@@ -76,7 +76,7 @@ func main() {
 	}
 
 	sk := pubsub.NewScoreKeeper()
-	err = gs.StartGossipSub(ctx, wg, logger, p, sk, cfg)
+	err = gs.Start(ctx, wg, logger, p, sk, cfg)
 	if err != nil {
 		panic(err)
 	}

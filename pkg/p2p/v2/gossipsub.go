@@ -36,8 +36,8 @@ func NewGossipSub() *GossipSub {
 	}
 }
 
-// StartGossipSub starts a GossipSub based on input parameters.
-func (gs *GossipSub) StartGossipSub(ctx context.Context,
+// Start starts a GossipSub based on input parameters.
+func (gs *GossipSub) Start(ctx context.Context,
 	wg *sync.WaitGroup,
 	logger log.Logger,
 	p *Peer,
@@ -198,13 +198,12 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 				}
 				gs.logger.Debugf("Received message: %s", msg.Data)
 
-				m := new(Message)
+				m := newMessage(nil)
 				err = m.Decode(msg.Data)
 				if err != nil {
 					gs.logger.Errorf("Error while decoding message: %s", err)
 					continue
 				}
-				m.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
 
 				handler, exist := gs.eventHandlers[sub.Topic()]
 				if !exist {

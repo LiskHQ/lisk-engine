@@ -104,7 +104,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	mp := NewMessageProtocol(ctx, logger, peer)
 
 	sk := pubsub.NewScoreKeeper()
-	err = p2p.StartGossipSub(ctx, &p2p.wg, logger, peer, sk, p2p.config)
+	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
 	if err != nil {
 		cancel()
 		return err

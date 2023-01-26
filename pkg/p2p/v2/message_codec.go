@@ -11,16 +11,13 @@ func (e *RequestMsg) Encode() ([]byte, error) {
 	if err := writer.WriteString(1, e.ID); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteInt(2, e.Timestamp); err != nil {
+	if err := writer.WriteString(2, e.PeerID); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteString(3, e.PeerID); err != nil {
+	if err := writer.WriteString(3, e.Procedure); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteString(4, e.Procedure); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(5, e.Data); err != nil {
+	if err := writer.WriteBytes(4, e.Data); err != nil {
 		return nil, err
 	}
 	return writer.Result(), nil
@@ -65,28 +62,21 @@ func (e *RequestMsg) DecodeFromReader(reader *codec.Reader) error {
 		e.ID = val
 	}
 	{
-		val, err := reader.ReadInt(2, false)
-		if err != nil {
-			return err
-		}
-		e.Timestamp = val
-	}
-	{
-		val, err := reader.ReadString(3, false)
+		val, err := reader.ReadString(2, false)
 		if err != nil {
 			return err
 		}
 		e.PeerID = val
 	}
 	{
-		val, err := reader.ReadString(4, false)
+		val, err := reader.ReadString(3, false)
 		if err != nil {
 			return err
 		}
 		e.Procedure = val
 	}
 	{
-		val, err := reader.ReadBytes(5, false)
+		val, err := reader.ReadBytes(4, false)
 		if err != nil {
 			return err
 		}
@@ -104,28 +94,21 @@ func (e *RequestMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 		e.ID = val
 	}
 	{
-		val, err := reader.ReadInt(2, true)
-		if err != nil {
-			return err
-		}
-		e.Timestamp = val
-	}
-	{
-		val, err := reader.ReadString(3, true)
+		val, err := reader.ReadString(2, true)
 		if err != nil {
 			return err
 		}
 		e.PeerID = val
 	}
 	{
-		val, err := reader.ReadString(4, true)
+		val, err := reader.ReadString(3, true)
 		if err != nil {
 			return err
 		}
 		e.Procedure = val
 	}
 	{
-		val, err := reader.ReadBytes(5, true)
+		val, err := reader.ReadBytes(4, true)
 		if err != nil {
 			return err
 		}
@@ -139,13 +122,10 @@ func (e *ResponseMsg) Encode() ([]byte, error) {
 	if err := writer.WriteString(1, e.ID); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteInt(2, e.Timestamp); err != nil {
+	if err := writer.WriteString(2, e.PeerID); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteString(3, e.PeerID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.Data); err != nil {
+	if err := writer.WriteBytes(3, e.Data); err != nil {
 		return nil, err
 	}
 	return writer.Result(), nil
@@ -190,21 +170,14 @@ func (e *ResponseMsg) DecodeFromReader(reader *codec.Reader) error {
 		e.ID = val
 	}
 	{
-		val, err := reader.ReadInt(2, false)
-		if err != nil {
-			return err
-		}
-		e.Timestamp = val
-	}
-	{
-		val, err := reader.ReadString(3, false)
+		val, err := reader.ReadString(2, false)
 		if err != nil {
 			return err
 		}
 		e.PeerID = val
 	}
 	{
-		val, err := reader.ReadBytes(4, false)
+		val, err := reader.ReadBytes(3, false)
 		if err != nil {
 			return err
 		}
@@ -222,21 +195,14 @@ func (e *ResponseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 		e.ID = val
 	}
 	{
-		val, err := reader.ReadInt(2, true)
-		if err != nil {
-			return err
-		}
-		e.Timestamp = val
-	}
-	{
-		val, err := reader.ReadString(3, true)
+		val, err := reader.ReadString(2, true)
 		if err != nil {
 			return err
 		}
 		e.PeerID = val
 	}
 	{
-		val, err := reader.ReadBytes(4, true)
+		val, err := reader.ReadBytes(3, true)
 		if err != nil {
 			return err
 		}
@@ -247,10 +213,7 @@ func (e *ResponseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 
 func (e *Message) Encode() ([]byte, error) {
 	writer := codec.NewWriter()
-	if err := writer.WriteInt(1, e.Timestamp); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Data); err != nil {
+	if err := writer.WriteBytes(1, e.Data); err != nil {
 		return nil, err
 	}
 	return writer.Result(), nil
@@ -288,14 +251,7 @@ func (e *Message) DecodeStrict(data []byte) error {
 
 func (e *Message) DecodeFromReader(reader *codec.Reader) error {
 	{
-		val, err := reader.ReadInt(1, false)
-		if err != nil {
-			return err
-		}
-		e.Timestamp = val
-	}
-	{
-		val, err := reader.ReadBytes(2, false)
+		val, err := reader.ReadBytes(1, false)
 		if err != nil {
 			return err
 		}
@@ -306,14 +262,7 @@ func (e *Message) DecodeFromReader(reader *codec.Reader) error {
 
 func (e *Message) DecodeStrictFromReader(reader *codec.Reader) error {
 	{
-		val, err := reader.ReadInt(1, true)
-		if err != nil {
-			return err
-		}
-		e.Timestamp = val
-	}
-	{
-		val, err := reader.ReadBytes(2, true)
+		val, err := reader.ReadBytes(1, true)
 		if err != nil {
 			return err
 		}

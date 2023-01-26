@@ -24,7 +24,7 @@ func TestGossipSub_NewGossipSub(t *testing.T) {
 	assert.NotNil(gs.eventHandlers)
 }
 
-func TestGossipSub_StartGossipSub(t *testing.T) {
+func TestGossipSub_Start(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := context.Background()
@@ -39,7 +39,7 @@ func TestGossipSub_StartGossipSub(t *testing.T) {
 	err := gs.RegisterEventHandler("testTopic", func(event *Event) {})
 	assert.Nil(err)
 
-	err = gs.StartGossipSub(ctx, wg, logger, p, sk, config)
+	err = gs.Start(ctx, wg, logger, p, sk, config)
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
@@ -130,7 +130,7 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
+	gs.Start(ctx, wg, logger, p, sk, config)
 
 	err := gs.RegisterEventHandler("testEvent", testHandler)
 	assert.NotNil(err)
@@ -179,7 +179,7 @@ func TestGossipSub_Publish(t *testing.T) {
 
 	gs := NewGossipSub()
 	gs.RegisterEventHandler("testTopic", func(event *Event) {})
-	gs.StartGossipSub(ctx, wg, logger, p, sk, config)
+	gs.Start(ctx, wg, logger, p, sk, config)
 
 	err := gs.Publish(ctx, "testTopic", []byte("testMessageData"))
 	assert.Nil(err)

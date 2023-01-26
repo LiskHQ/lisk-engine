@@ -52,12 +52,11 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	newMsg := &RequestMsg{}
+	newMsg := newRequestMessage("", "", nil)
 	if err := newMsg.Decode(buf); err != nil {
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
-	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
 	mp.logger.Debugf("Request message received: %+v", newMsg)
 
 	// TODO: Implement a proper procedure (requests) handling (registering, unregistering, handler functions, etc.) (GH issue #13)
@@ -100,12 +99,11 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	newMsg := &ResponseMsg{}
+	newMsg := newResponseMessage("", "", nil)
 	if err := newMsg.Decode(buf); err != nil {
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
-	newMsg.Timestamp = time.Now().Unix() // Update timestamp to be equal to the time of receiving the message
 	mp.logger.Debugf("Response message received: %+v", newMsg)
 
 	mp.resMu.Lock()
