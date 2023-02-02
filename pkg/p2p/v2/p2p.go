@@ -87,7 +87,7 @@ type P2P struct {
 
 // NewP2P creates a new P2P instance.
 func NewP2P(config Config) *P2P {
-	return &P2P{config: config, GossipSub: NewGossipSub()}
+	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
 }
 
 // Start function starts a P2P and all other related services and handlers.
@@ -101,7 +101,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		return err
 	}
 
-	mp := NewMessageProtocol(ctx, logger, peer)
+	p2p.MessageProtocol.Start(ctx, logger, peer)
 
 	sk := pubsub.NewScoreKeeper()
 	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
@@ -112,11 +112,10 @@ func (p2p *P2P) Start(logger log.Logger) error {
 
 	p2p.logger = logger
 	p2p.cancel = cancel
-	p2p.MessageProtocol = mp
 	p2p.Peer = peer
 
 	p2p.wg.Add(1)
-	go natTraversalService(ctx, &p2p.wg, p2p.config, mp)
+	go natTraversalService(ctx, &p2p.wg, p2p.config, p2p.MessageProtocol)
 
 	p2p.wg.Add(1)
 	go p2pEventHandler(ctx, &p2p.wg, peer)

@@ -154,9 +154,9 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 
 	err := gs.RegisterEventHandler("testEvent", testHandler)
 	assert.Nil(err)
-	_, exist := gs.subscriptions["testEvent"]
+	_, exist := gs.topics["testEvent"]
 	assert.True(exist)
-	_, exist = gs.eventHandlers["testEvent"]
+	_, exist = gs.subscriptions["testEvent"]
 	assert.True(exist)
 	_, exist = gs.eventHandlers["testEvent"]
 	assert.True(exist)
