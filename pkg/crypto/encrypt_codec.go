@@ -14,6 +14,9 @@ func (e *KDFParams) Encode() ([]byte, error) {
 	if err := writer.WriteUInt32(2, e.Iterations); err != nil {
 		return nil, err
 	}
+	if err := writer.WriteUInt32(3, e.MemorySize); err != nil {
+		return nil, err
+	}
 	if err := writer.WriteBytes(4, e.Salt); err != nil {
 		return nil, err
 	}
@@ -66,6 +69,13 @@ func (e *KDFParams) DecodeFromReader(reader *codec.Reader) error {
 		e.Iterations = val
 	}
 	{
+		val, err := reader.ReadUInt32(3, false)
+		if err != nil {
+			return err
+		}
+		e.MemorySize = val
+	}
+	{
 		val, err := reader.ReadBytes(4, false)
 		if err != nil {
 			return err
@@ -89,6 +99,13 @@ func (e *KDFParams) DecodeStrictFromReader(reader *codec.Reader) error {
 			return err
 		}
 		e.Iterations = val
+	}
+	{
+		val, err := reader.ReadUInt32(3, true)
+		if err != nil {
+			return err
+		}
+		e.MemorySize = val
 	}
 	{
 		val, err := reader.ReadBytes(4, true)

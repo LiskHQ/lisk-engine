@@ -16,13 +16,7 @@ import (
 // Request holds request from a peer.
 type Request socket.Request
 
-type Response socket.Response
-
-// RPCHandler is a definition for accepting the RPC request from a peer.
-type RPCHandler func(w ResponseWriter, r *Request)
-
-// ResponseWriter is a interface for handler to write.
-type ResponseWriter socket.ResponseWriter
+type ResponseOld socket.Response
 
 /*************************************************************************************************************************
                                                         connection.go
@@ -60,14 +54,6 @@ func NewConnection(cfg *ConnectionConfig) *Connection {
 	return conn
 }
 
-func (c *Connection) RegisterRPCHandler(endpoint string, handler RPCHandler) error {
-	return nil
-}
-
-func (c *Connection) RegisterEventHandler(name string, handler EventHandler) error {
-	return nil
-}
-
 // Start P2P connection.
 func (c *Connection) Start(logger log.Logger, nodeInfo *NodeInfo) error {
 	return nil
@@ -93,12 +79,12 @@ func (c *Connection) Broadcast(ctx context.Context, event string, data []byte) {
 }
 
 // Request data from random outbound peer.
-func (c *Connection) Request(ctx context.Context, procedure string, data []byte) Response {
+func (c *Connection) Request(ctx context.Context, procedure string, data []byte) ResponseOld {
 	return socket.NewResponse(nil, errors.New("implementation is needed"))
 }
 
 // RequestFrom data from a particular peer.
-func (c *Connection) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
+func (c *Connection) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) ResponseOld {
 	return socket.NewResponse(nil, errors.New("implementation is needed"))
 }
 

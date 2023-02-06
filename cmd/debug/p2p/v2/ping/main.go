@@ -3,9 +3,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
@@ -37,7 +39,24 @@ func main() {
 		panic(err)
 	}
 
-	mp := p2p.NewMessageProtocol(ctx, logger, node)
+	mp := p2p.NewMessageProtocol()
+	err = mp.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.RequestMsg) {
+		rtt, err := node.PingMultiTimes(ctx, node.ConnectedPeers()[0])
+		if err != nil {
+			panic(err)
+		}
+		var sum time.Duration
+		for _, i := range rtt {
+			sum += i
+		}
+		avg := time.Duration(float64(sum) / float64(len(rtt)))
+
+		w.Write([]byte(fmt.Sprintf("Average RTT with you: %v", avg)))
+	})
+	if err != nil {
+		panic(err)
+	}
+	mp.Start(ctx, logger, node)
 
 	addrs, err := node.P2PAddrs()
 	if err != nil {
@@ -55,12 +74,12 @@ func main() {
 		if err := node.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		response, err := mp.SendRequestMessage(ctx, peer.ID, p2p.MessageRequestTypePing, nil)
+		response, err := mp.SendRequestMessage(ctx, peer.ID, "ping", nil)
 		if err != nil {
 			panic(err)
 		}
 		logger.Infof("Response message received: %+v", response)
-		logger.Infof("%s", response.Data)
+		logger.Infof("%s", string(response.Data()))
 	} else {
 		// wait for a SIGINT or SIGTERM signal
 		ch := make(chan os.Signal, 1)
