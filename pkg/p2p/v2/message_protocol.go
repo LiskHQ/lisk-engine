@@ -125,8 +125,7 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) e
 	if mp.peer != nil {
 		return errors.New("cannot register RPC handler after MessageProtocol is started")
 	}
-	_, exist := mp.rpcHandlers[name]
-	if exist {
+	if _, ok := mp.rpcHandlers[name]; ok {
 		return fmt.Errorf("rpcHandler %s is already registered", name)
 	}
 	mp.rpcHandlers[name] = handler

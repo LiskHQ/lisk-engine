@@ -59,12 +59,14 @@ func (s testStream) Conn() network.Conn {
 }
 
 func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
+	assert := assert.New(t)
+
 	mp := NewMessageProtocol()
-	assert.Nil(t, mp.logger)
-	assert.Nil(t, mp.peer)
-	assert.Equal(t, 0, len(mp.resCh))
-	assert.Equal(t, 3*time.Second, mp.timeout)
-	assert.Equal(t, 0, len(mp.rpcHandlers))
+	assert.Nil(mp.logger)
+	assert.Nil(mp.peer)
+	assert.Equal(0, len(mp.resCh))
+	assert.Equal(3*time.Second, mp.timeout)
+	assert.Equal(0, len(mp.rpcHandlers))
 }
 
 func TestMessageProtocol_Start(t *testing.T) {

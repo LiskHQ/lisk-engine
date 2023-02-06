@@ -7,32 +7,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const timestamp = int64(123456789)
+const peerID = "testPeerID"
+const data = "testData"
+const err = "testError"
+
 func TestRPC_NewResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	timestamp := int64(123456789)
-	peerID := "testPeerID"
-	data := []byte("testData")
-	err := errors.New("testError")
-
-	e := newResponse(timestamp, peerID, data, err)
-	assert.Equal(int64(123456789), e.timestamp)
-	assert.Equal("testPeerID", e.peerID)
-	assert.Equal([]byte("testData"), e.data)
-	assert.Equal(errors.New("testError"), e.err)
+	e := newResponse(timestamp, peerID, []byte(data), errors.New(err))
+	assert.Equal(timestamp, e.timestamp)
+	assert.Equal(peerID, e.peerID)
+	assert.Equal([]byte(data), e.data)
+	assert.Equal(errors.New(err), e.err)
 }
 
 func TestRPC_Getters(t *testing.T) {
 	assert := assert.New(t)
 
-	timestamp := int64(123456789)
-	peerID := "testPeerID"
-	data := []byte("testData")
-	err := errors.New("testError")
-
-	e := newResponse(timestamp, peerID, data, err)
-	assert.Equal(int64(123456789), e.Timestamp())
-	assert.Equal("testPeerID", e.PeerID())
-	assert.Equal([]byte("testData"), e.Data())
-	assert.Equal(errors.New("testError"), e.Error())
+	e := newResponse(timestamp, peerID, []byte(data), errors.New(err))
+	assert.Equal(timestamp, e.Timestamp())
+	assert.Equal(peerID, e.PeerID())
+	assert.Equal([]byte(data), e.Data())
+	assert.Equal(errors.New(err), e.Error())
 }
