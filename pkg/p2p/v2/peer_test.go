@@ -14,7 +14,8 @@ func TestPeer_Create(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, err := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, err := NewPeer(context.Background(), logger, config, peerbook)
 	assert.Nil(t, err)
 	assert.NotNil(t, p.host)
 }
@@ -23,7 +24,8 @@ func TestPeer_Close(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, _ := NewPeer(context.Background(), logger, config, peerbook)
 	err := p.Close()
 	assert.Nil(t, err)
 }
@@ -32,8 +34,9 @@ func TestPeer_Connect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(context.Background(), logger, config)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -46,8 +49,9 @@ func TestPeer_Disconnect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(context.Background(), logger, config)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -66,8 +70,9 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	_ = config1.InsertDefault()
 	config2 := Config{AllowIncomingConnections: false, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config2.InsertDefault()
-	p1, _ := NewPeer(context.Background(), logger, config1)
-	p2, _ := NewPeer(context.Background(), logger, config2)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p1, _ := NewPeer(context.Background(), logger, config1, peerbook)
+	p2, _ := NewPeer(context.Background(), logger, config2, peerbook)
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 	p2Addrs, _ := p2.P2PAddrs()
@@ -92,7 +97,8 @@ func TestP2PAddrs(t *testing.T) {
 	ip4tcp := fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", 12345)
 	config := Config{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
 	_ = config.InsertDefault()
-	p, err := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, err := NewPeer(context.Background(), logger, config, peerbook)
 	assert.Nil(t, err)
 
 	addrs, err := p.P2PAddrs()
@@ -104,8 +110,9 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(context.Background(), logger, config)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -119,8 +126,9 @@ func TestPeer_Ping(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(context.Background(), logger, config)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 

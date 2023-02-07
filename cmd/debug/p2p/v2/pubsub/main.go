@@ -53,14 +53,19 @@ func main() {
 		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
 		AllowIncomingConnections: true,
 		NetworkName:              "lisk-test",
-		SeedNodes:                []string{},
+		SeedPeers:                []string{},
 	}
 	err = cfg.InsertDefault()
 	if err != nil {
 		panic(err)
 	}
 
-	p, err := p2p.NewPeer(ctx, logger, cfg)
+	peerbook, err := p2p.NewPeerBook([]string{}, []string{}, []string{})
+	if err != nil {
+		panic(err)
+	}
+
+	p, err := p2p.NewPeer(ctx, logger, cfg, peerbook)
 	if err != nil {
 		panic(err)
 	}

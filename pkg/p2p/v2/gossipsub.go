@@ -44,7 +44,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	sk *lps.ScoreKeeper,
 	cfg Config,
 ) error {
-	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedNodes)
+	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedPeers)
 	if err != nil {
 		return err
 	}
@@ -205,8 +205,8 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 					continue
 				}
 
-				handler, exist := gs.eventHandlers[sub.Topic()]
-				if !exist {
+				handler, ok := gs.eventHandlers[sub.Topic()]
+				if !ok {
 					gs.logger.Errorf("EventHandler for %s not found", sub.Topic())
 					continue
 				}

@@ -17,6 +17,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
 const numOfPingMessages = 5         // Number of sent ping messages in Ping service.
@@ -31,8 +32,9 @@ const (
 
 // Peer type - a p2p node.
 type Peer struct {
-	logger log.Logger
-	host   host.Host
+	logger   log.Logger
+	host     host.Host
+	peerbook *Peerbook
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -61,7 +63,7 @@ var relayServiceOptions = []relay.Option{
 }
 
 // NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, error) {
+func NewPeer(ctx context.Context, logger log.Logger, config Config, peerbook *PeerBook) (*Peer, error) {
 	opts := []libp2p.Option{
 		// Support default transports (TCP, QUIC, WS)
 		libp2p.DefaultTransports,
@@ -131,7 +133,13 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 	if err != nil {
 		return nil, err
 	}
-	p := &Peer{logger: logger, host: host}
+
+	peerbook, err := NewPeerbook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs, config.KnownPeers)
+	if err != nil {
+		return nil, err
+	}
+
+	p := &Peer{logger: logger, host: host, peerbook: peerbook}
 	p.logger.Infof("Peer successfully created")
 	return p, nil
 }
@@ -148,6 +156,17 @@ func (p *Peer) Close() error {
 
 // Connect to a peer.
 func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
+	for _, addr := range peer.Addrs {
+		ip := lps.ExtractIP(addr)
+		if p.peerbook.isIPBlacklisted(ip) {
+			p.logger.Warningf("IP %s is blacklisted. Will not connect to a peer %s", ip, peer.ID)
+			return nil
+		}
+		if p.peerbook.isIPBanned(ip) {
+			p.logger.Warningf("IP %s is banned. Will not connect to a peer %s", ip, peer.ID)
+			return nil
+		}
+	}
 	return p.host.Connect(ctx, peer)
 }
 

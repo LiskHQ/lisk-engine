@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/event"
-	"github.com/libp2p/go-libp2p/core/peer"
 
+	"github.com/LiskHQ/lisk-engine/pkg/db"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
-
-type PeerID peer.ID
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
@@ -29,15 +27,14 @@ type Config struct {
 	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
 	EnableRelayService       bool     `json:"enableRelayService,omitempty"`
 	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
-	SeedPeers                []PeerID `json:"seedPeers"`
-	FixedPeers               []PeerID `json:"fixedPeers,omitempty"`
+	SeedPeers                []string `json:"seedPeers"`
+	FixedPeers               []string `json:"fixedPeers,omitempty"`
 	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
 	MaxInboundConnections    int      `json:"maxInboundConnections"`
 	MaxOutboundConnections   int      `json:"maxOutboundConnections"`
 	// GossipSub configuration
-	IsSeedNode  bool     `json:"isSeedNode,omitempty"`
-	NetworkName string   `json:"networkName"`
-	SeedNodes   []string `json:"seedNodes"` // TODO - Join seedNodes and seedPeers into one field. (GH issue #18)
+	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
+	NetworkName string `json:"networkName"`
 }
 
 func (c *Config) InsertDefault() error {
@@ -51,10 +48,10 @@ func (c *Config) InsertDefault() error {
 		c.ConnectionSecurity = "tls"
 	}
 	if c.SeedPeers == nil {
-		c.SeedPeers = []PeerID{}
+		c.SeedPeers = []string{}
 	}
 	if c.FixedPeers == nil {
-		c.FixedPeers = []PeerID{}
+		c.FixedPeers = []string{}
 	}
 	if c.BlacklistedIPs == nil {
 		c.BlacklistedIPs = []string{}
@@ -68,9 +65,6 @@ func (c *Config) InsertDefault() error {
 	if c.NetworkName == "" {
 		c.NetworkName = "lisk-test"
 	}
-	if c.SeedNodes == nil {
-		c.SeedNodes = []string{}
-	}
 	return nil
 }
 
@@ -83,11 +77,17 @@ type P2P struct {
 	*MessageProtocol
 	*Peer
 	*GossipSub
+	peerbook *PeerBook
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P(config Config) *P2P {
-	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
+func NewP2P(config Config) (*P2P, error) {
+	peerbook, err := NewPeerBook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub(), peerbook: peerbook}, nil
 }
 
 // Start function starts a P2P and all other related services and handlers.
@@ -95,7 +95,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, logger, p2p.config)
+	peer, err := NewPeer(ctx, logger, p2p.config, p2p.peerbook)
 	if err != nil {
 		cancel()
 		return err
@@ -105,6 +105,17 @@ func (p2p *P2P) Start(logger log.Logger) error {
 
 	sk := pubsub.NewScoreKeeper()
 	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
+	if err != nil {
+		cancel()
+		return err
+	}
+
+	peerbookDB, err := db.NewDB("/home/matjaz/peerbook.db") // TODO - move this function call to somewhere else
+	if err != nil {
+		cancel()
+		return err
+	}
+	err = p2p.peerbook.start(logger, peerbookDB)
 	if err != nil {
 		cancel()
 		return err
@@ -122,6 +133,9 @@ func (p2p *P2P) Start(logger log.Logger) error {
 
 	p2p.wg.Add(1)
 	go gossipSubEventHandler(ctx, &p2p.wg, peer, p2p.GossipSub)
+
+	p2p.wg.Add(1)
+	go p2p.peerbook.peerBookService(ctx, &p2p.wg, peer)
 
 	logger.Infof("P2P module successfully started")
 	return nil

@@ -73,7 +73,8 @@ func TestMessageProtocol_Start(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, _ := NewPeer(context.Background(), logger, config, peerbook)
 
 	mp := NewMessageProtocol()
 	mp.Start(context.Background(), logger, p)
@@ -97,7 +98,8 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			loggerTest := testLogger{Logger: logger}
 			config := Config{}
 			_ = config.InsertDefault()
-			p, _ := NewPeer(context.Background(), &loggerTest, config)
+			peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+			p, _ := NewPeer(context.Background(), &loggerTest, config, peerbook)
 			mp := NewMessageProtocol()
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *RequestMsg) {
 				mp.logger.Debugf("Request received")
@@ -125,7 +127,8 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	loggerTest := testLogger{Logger: logger}
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), &loggerTest, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, _ := NewPeer(context.Background(), &loggerTest, config, peerbook)
 	mp := NewMessageProtocol()
 	mp.Start(context.Background(), &loggerTest, p)
 	ch := make(chan *Response, 1)
@@ -156,7 +159,8 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	loggerTest := testLogger{Logger: logger}
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), &loggerTest, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, _ := NewPeer(context.Background(), &loggerTest, config, peerbook)
 	mp := NewMessageProtocol()
 	mp.Start(context.Background(), &loggerTest, p)
 	// There is no channel for the request ID "123456"
@@ -199,7 +203,8 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
+	p, _ := NewPeer(context.Background(), logger, config, peerbook)
 
 	mp := NewMessageProtocol()
 	mp.Start(ctx, logger, p)
@@ -234,11 +239,12 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp1 := NewMessageProtocol()
 	mp1.Start(context.Background(), logger, p1)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp2 := NewMessageProtocol()
 	mp2.RegisterRPCHandler("ping", func(w ResponseWriter, req *RequestMsg) {
 		w.Write([]byte("Average RTT with you:"))
@@ -260,11 +266,12 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp1 := NewMessageProtocol()
 	mp1.Start(context.Background(), logger, p1)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp2 := NewMessageProtocol()
 	mp2.RegisterRPCHandler("ping", func(w ResponseWriter, req *RequestMsg) {
 		w.Error(errors.New("Test RPC handler error!"))
@@ -287,14 +294,15 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp1 := NewMessageProtocol()
 	mp1.Start(context.Background(), logger, p1)
 	mp1.timeout = time.Millisecond * 20 // Reduce timeout to 20 ms to speed up test
 	// Remove response message stream handler to simulate timeout
 	p1.host.RemoveStreamHandler(messageProtocolResID)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp2 := NewMessageProtocol()
 	mp2.Start(context.Background(), logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
@@ -312,11 +320,12 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp1 := NewMessageProtocol()
 	mp1.Start(context.Background(), logger, p1)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	mp2 := NewMessageProtocol()
 	mp2.Start(context.Background(), logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
@@ -357,9 +366,10 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
 	_ = config.InsertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
+	peerbook, _ := NewPeerBook([]string{}, []string{}, []string{})
 
-	p1, _ := NewPeer(context.Background(), logger, config)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(context.Background(), logger, config, peerbook)
+	p2, _ := NewPeer(context.Background(), logger, config, peerbook)
 	p2.host.SetStreamHandler(messageProtocolReqID, tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())

@@ -38,3 +38,9 @@ func ParseAddresses(ctx context.Context, addrs []string) ([]peer.AddrInfo, error
 
 	return peer.AddrInfosFromP2pAddrs(maddrs...)
 }
+
+// ExtractIP returns the IP address from the multiaddress.
+func ExtractIP(address ma.Multiaddr) string {
+	component, _ := ma.SplitFirst(address)
+	return component.Value()
+}

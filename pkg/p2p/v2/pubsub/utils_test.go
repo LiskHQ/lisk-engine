@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
@@ -58,4 +59,29 @@ func TestHashMsgID(t *testing.T) {
 	hash := HashMsgID(&msg)
 	expected := codec.Hex(crypto.Hash([]byte{})).String()
 	assert.Equal(t, expected, hash)
+}
+
+func TestUtils_ExtractIP(t *testing.T) {
+	assert := assert.New(t)
+
+	var tests = []struct {
+		name      string
+		multiAddr string
+		want      string
+	}{
+		{"ip4", "/ip4/127.0.0.1/udp/1234", "127.0.0.1"},
+		{"ip6", "/ip6/2001:0db8:85a3:0000:0000:8a2e:0370:7334/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1SDFW34S", "2001:db8:85a3::8a2e:370:7334"},
+		{"ip4", "/ip4/172.20.10.6/tcp/49526/p2p/12D3KooWB4J4mraN1nAB9Ge5w8JrzGRKDQ3iGyDyHZdbMWDtYg3R", "172.20.10.6"},
+		{"reley", "/ip4/198.51.100.0/tcp/55555/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1SDFW34S/p2p-circuit/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1SDFW34S", "198.51.100.0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			addr, err := ma.NewMultiaddr(tt.multiAddr)
+			assert.Nil(err)
+
+			got := ExtractIP(addr)
+			assert.Equal(tt.want, got)
+		})
+	}
 }
