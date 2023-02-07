@@ -60,12 +60,7 @@ func main() {
 		panic(err)
 	}
 
-	peerbook, err := p2p.NewPeerBook([]string{}, []string{}, []string{})
-	if err != nil {
-		panic(err)
-	}
-
-	p, err := p2p.NewPeer(ctx, logger, cfg, peerbook)
+	p, err := p2p.NewPeer(ctx, logger, cfg)
 	if err != nil {
 		panic(err)
 	}

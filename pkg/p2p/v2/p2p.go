@@ -8,30 +8,33 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/event"
+	"github.com/libp2p/go-libp2p/core/peer"
 
-	"github.com/LiskHQ/lisk-engine/pkg/db"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
+
+type AddressInfo2 peer.AddrInfo
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
 // TODO - Move this struct into pkg/engine/config/config.go. Optionally, it could be renamed to NetworkConfig. (GH issue #19)
 // Config type - a p2p configuration.
 type Config struct {
-	Version                  string   `json:"version"`
-	Addresses                []string `json:"addresses"`
-	ConnectionSecurity       string   `json:"connectionSecurity"`
-	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
-	EnableNATService         bool     `json:"enableNATService,omitempty"`
-	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
-	EnableRelayService       bool     `json:"enableRelayService,omitempty"`
-	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
-	SeedPeers                []string `json:"seedPeers"`
-	FixedPeers               []string `json:"fixedPeers,omitempty"`
-	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
-	MaxInboundConnections    int      `json:"maxInboundConnections"`
-	MaxOutboundConnections   int      `json:"maxOutboundConnections"`
+	Version                  string         `json:"version"`
+	Addresses                []string       `json:"addresses"`
+	ConnectionSecurity       string         `json:"connectionSecurity"`
+	AllowIncomingConnections bool           `json:"allowIncomingConnections"`
+	EnableNATService         bool           `json:"enableNATService,omitempty"`
+	EnableUsingRelayService  bool           `json:"enableUsingRelayService"`
+	EnableRelayService       bool           `json:"enableRelayService,omitempty"`
+	EnableHolePunching       bool           `json:"enableHolePunching,omitempty"`
+	SeedPeers                []string       `json:"seedPeers"`
+	FixedPeers               []string       `json:"fixedPeers,omitempty"`
+	BlacklistedIPs           []string       `json:"blackListedIPs,omitempty"`
+	KnownPeers               []AddressInfo2 `json:"-"`
+	MaxInboundConnections    int            `json:"maxInboundConnections"`
+	MaxOutboundConnections   int            `json:"maxOutboundConnections"`
 	// GossipSub configuration
 	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
 	NetworkName string `json:"networkName"`
@@ -56,6 +59,9 @@ func (c *Config) InsertDefault() error {
 	if c.BlacklistedIPs == nil {
 		c.BlacklistedIPs = []string{}
 	}
+	if c.KnownPeers == nil {
+		c.KnownPeers = []AddressInfo2{}
+	}
 	if c.MaxInboundConnections == 0 {
 		c.MaxInboundConnections = 100
 	}
@@ -77,17 +83,11 @@ type P2P struct {
 	*MessageProtocol
 	*Peer
 	*GossipSub
-	peerbook *PeerBook
 }
 
 // NewP2P creates a new P2P instance.
 func NewP2P(config Config) (*P2P, error) {
-	peerbook, err := NewPeerBook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs)
-	if err != nil {
-		return nil, err
-	}
-
-	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub(), peerbook: peerbook}, nil
+	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}, nil
 }
 
 // Start function starts a P2P and all other related services and handlers.
@@ -95,7 +95,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, logger, p2p.config, p2p.peerbook)
+	peer, err := NewPeer(ctx, logger, p2p.config)
 	if err != nil {
 		cancel()
 		return err
@@ -110,12 +110,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		return err
 	}
 
-	peerbookDB, err := db.NewDB("/home/matjaz/peerbook.db") // TODO - move this function call to somewhere else
-	if err != nil {
-		cancel()
-		return err
-	}
-	err = p2p.peerbook.start(logger, peerbookDB)
+	err = peer.peerbook.init(logger)
 	if err != nil {
 		cancel()
 		return err

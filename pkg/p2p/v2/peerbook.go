@@ -2,15 +2,12 @@ package p2p
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"sync"
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
-	"github.com/LiskHQ/lisk-engine/pkg/db"
 	log "github.com/LiskHQ/lisk-engine/pkg/log"
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
@@ -22,7 +19,6 @@ const banTimeout int64 = int64((time.Hour * 24) / time.Nanosecond) // Ban timeou
 type Peerbook struct {
 	logger         log.Logger
 	mutex          sync.Mutex
-	peerbookDB     *db.DB
 	seedPeers      []peer.AddrInfo
 	fixedPeers     []peer.AddrInfo
 	blacklistedIPs []string
@@ -70,10 +66,6 @@ func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []strin
 func (pb *Peerbook) init(logger log.Logger) error {
 	pb.logger = logger
 
-	if err := pb.loadFromDB(db); err != nil {
-		return err
-	}
-
 	for _, ip := range pb.blacklistedIPs {
 		// Only warn if the blacklisted IP is present in seed peers or fixed peers.
 		if pb.isIPInSeedPeers(ip) {
@@ -85,71 +77,6 @@ func (pb *Peerbook) init(logger log.Logger) error {
 	}
 
 	return nil
-}
-
-// loadFromDB loads some lists of peers from the database.
-func (pb *PeerBook) loadFromDB(db *db.DB) error {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
-
-	if pb.peerbookDB != nil {
-		return errors.New("peerbook is already loaded")
-	}
-
-	pb.peerbookDB = db
-
-	knownPeers, err := pb.loadKnownPeersFromDB()
-	if err != nil {
-		return err
-	}
-	pb.knownPeers = knownPeers
-
-	return nil
-}
-
-// saveKnownPeersToDB saves known peers to non-volatile storage (database).
-func (pb *PeerBook) saveKnownPeersToDB() error {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
-
-	knownPeers, err := json.Marshal(pb.knownPeers)
-	if err != nil {
-		return err
-	}
-
-	err = pb.peerbookDB.Set([]byte("knownPeers"), knownPeers)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// loadKnownPeersFromDB loads known peers from non-volatile storage (database).
-func (pb *PeerBook) loadKnownPeersFromDB() ([]peer.AddrInfo, error) {
-	var knownPeers []peer.AddrInfo
-
-	knownPeersDB, err := pb.peerbookDB.Get([]byte("knownPeers"))
-	if err != nil {
-		if errors.Is(err, db.ErrDataNotFound) {
-			return knownPeers, nil
-		}
-		return nil, err
-	}
-
-	err = json.Unmarshal(knownPeersDB, &knownPeers)
-	if err != nil {
-		return nil, err
-	}
-
-	return knownPeers, nil
-}
-
-// close closes the peerbook database.
-func (pb *PeerBook) close() error {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
-	return pb.peerbookDB.Close()
 }
 
 // SeedPeers returns seed peers.
@@ -262,7 +189,6 @@ func (pb *Peerbook) addPeerToKnownPeers(newPeer peer.AddrInfo) error {
 		pb.mutex.Lock()
 		pb.knownPeers = append(pb.knownPeers, newPeer)
 		pb.mutex.Unlock()
-		return pb.saveKnownPeersToDB()
 	}
 
 	return nil
@@ -376,7 +302,6 @@ func (pb *Peerbook) removePeerFromKnownPeers(peerID peer.ID) error {
 		pb.mutex.Lock()
 		pb.knownPeers = append(pb.knownPeers[:index], pb.knownPeers[index+1:]...)
 		pb.mutex.Unlock()
-		return pb.saveKnownPeersToDB()
 	}
 
 	return nil
