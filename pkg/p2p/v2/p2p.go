@@ -14,7 +14,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
-type AddressInfo2 peer.AddrInfo
+type AddressInfo2 peer.AddrInfo // TODO - Rename this type to AddressInfo. (GH issue #19)
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
@@ -86,8 +86,8 @@ type P2P struct {
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P(config Config) (*P2P, error) {
-	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}, nil
+func NewP2P(config Config) *P2P {
+	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
 }
 
 // Start function starts a P2P and all other related services and handlers.

@@ -10,13 +10,14 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-func TestPeer_Create(t *testing.T) {
+func TestPeer_New(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
 	p, err := NewPeer(context.Background(), logger, config)
 	assert.Nil(t, err)
 	assert.NotNil(t, p.host)
+	assert.NotNil(t, p.peerbook)
 }
 
 func TestPeer_Close(t *testing.T) {
@@ -40,6 +41,44 @@ func TestPeer_Connect(t *testing.T) {
 	err := p1.Connect(context.Background(), *p2AddrInfo)
 	assert.Nil(t, err)
 	assert.Equal(t, p2.ID(), p1.ConnectedPeers()[0])
+}
+
+func TestPeer_ConnectIPIsBlacklisted(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	config1 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	_ = config1.InsertDefault()
+	config2 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	_ = config2.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config1)
+	p2, _ := NewPeer(context.Background(), logger, config2)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	// p2 is blacklisted
+	p1.peerbook.blacklistedIPs = []string{"127.0.0.1"}
+
+	err := p1.Connect(context.Background(), *p2AddrInfo)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(p1.ConnectedPeers()))
+}
+
+func TestPeer_ConnectIPIsBanned(t *testing.T) {
+	logger, _ := log.NewDefaultProductionLogger()
+	config1 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	_ = config1.InsertDefault()
+	config2 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	_ = config2.InsertDefault()
+	p1, _ := NewPeer(context.Background(), logger, config1)
+	p2, _ := NewPeer(context.Background(), logger, config2)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	// p2 is banned
+	p1.peerbook.bannedIPs = []BannedIP{{ip: "127.0.0.1", timestamp: 123456}}
+
+	err := p1.Connect(context.Background(), *p2AddrInfo)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(p1.ConnectedPeers()))
 }
 
 func TestPeer_Disconnect(t *testing.T) {

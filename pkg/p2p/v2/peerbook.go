@@ -244,7 +244,7 @@ func (pb *Peerbook) isInSeedPeers(peerID peer.ID) bool {
 	defer pb.mutex.Unlock()
 
 	index := collection.FindIndex(pb.seedPeers, func(val peer.AddrInfo) bool {
-		return val.ID == peerID
+		return peer.ID(val.ID.String()) == peerID
 	})
 
 	return index != -1
@@ -256,7 +256,7 @@ func (pb *Peerbook) isInFixedPeers(peerID peer.ID) bool {
 	defer pb.mutex.Unlock()
 
 	index := collection.FindIndex(pb.fixedPeers, func(val peer.AddrInfo) bool {
-		return val.ID == peerID
+		return peer.ID(val.ID.String()) == peerID
 	})
 
 	return index != -1

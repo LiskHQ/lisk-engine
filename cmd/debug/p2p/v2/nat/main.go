@@ -42,10 +42,7 @@ func main() {
 		panic(err)
 	}
 
-	p2p, err := p2pLib.NewP2P(config)
-	if err != nil {
-		panic(err)
-	}
+	p2p := p2pLib.NewP2P(config)
 
 	for _, topic := range Topics {
 		err = p2p.RegisterEventHandler(topic, func(event *p2pLib.Event) {

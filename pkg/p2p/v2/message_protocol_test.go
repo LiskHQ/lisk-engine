@@ -32,6 +32,10 @@ func (l *testLogger) Warningf(msg string, others ...interface{}) {
 	l.logs = append(l.logs, msg)
 }
 
+func (l *testLogger) Errorf(msg string, others ...interface{}) {
+	l.logs = append(l.logs, msg)
+}
+
 type testConn struct {
 	network.Conn
 }
