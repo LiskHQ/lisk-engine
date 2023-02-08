@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
@@ -169,12 +171,33 @@ func TestPeer_Ping(t *testing.T) {
 }
 
 func TestPeer_PeerSource(t *testing.T) {
-	ch := peerSource(context.Background(), 5)
+	logger, _ := log.NewDefaultProductionLogger()
 
-	for i := 0; i < 5; i++ {
-		addr := <-ch
-		assert.NotNil(t, addr)
-		assert.Equal(t, 1, len(addr.Addrs))
+	addr1, _ := ma.NewMultiaddr("/ip4/1.2.3.4/tcp/80")
+	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
+	addr3, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
+
+	knownPeers := []AddressInfo2{
+		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		AddressInfo2{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
+	}
+
+	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}, KnownPeers: knownPeers}
+	_ = config.InsertDefault()
+	p, _ := NewPeer(context.Background(), logger, config)
+
+	ch := p.peerSource(context.Background(), 3)
+
+	for i := 0; i < 3; i++ {
+		select {
+		case addr := <-ch:
+			assert.NotNil(t, addr)
+			assert.Equal(t, 1, len(addr.Addrs))
+			break
+		case <-time.After(testTimeout):
+			t.Fatalf("timeout occurs, peer address info was not sent to the channel")
+		}
 	}
 
 	// Test there is no more addresses sent

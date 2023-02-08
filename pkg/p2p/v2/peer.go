@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -38,7 +39,6 @@ type Peer struct {
 }
 
 var autoRelayOptions = []autorelay.Option{
-	autorelay.WithPeerSource(peerSource, 1*time.Minute),
 	autorelay.WithNumRelays(2),
 	autorelay.WithMaxCandidates(20),
 	autorelay.WithMinCandidates(1),
@@ -64,6 +64,9 @@ var relayServiceOptions = []relay.Option{
 
 // NewPeer creates a peer with a libp2p host and message protocol.
 func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, error) {
+	// Create a Peer variable in advance to be able to use it in the libp2p options.
+	var p *Peer
+
 	opts := []libp2p.Option{
 		// Support default transports (TCP, QUIC, WS)
 		libp2p.DefaultTransports,
@@ -113,6 +116,10 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 	// it will try to connect to a relay service from other peers.
 	if config.EnableUsingRelayService {
 		opts = append(opts, libp2p.EnableRelay())
+
+		autoRelayOptions = append(autoRelayOptions, autorelay.WithPeerSource(func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
+			return p.peerSource(ctx, numPeers)
+		}, 1*time.Minute))
 		opts = append(opts, libp2p.EnableAutoRelay(autoRelayOptions...))
 	} else {
 		// Relay is enabled by default, so we need to disable it explicitly.
@@ -139,7 +146,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		return nil, err
 	}
 
-	p := &Peer{logger: logger, host: host, peerbook: peerbook}
+	p = &Peer{logger: logger, host: host, peerbook: peerbook}
 	p.logger.Infof("Peer successfully created")
 	return p, nil
 }
@@ -180,16 +187,11 @@ func (p *Peer) ID() peer.ID {
 	return p.host.ID()
 }
 
-// Addrs returns a peers's listen addresses.
-func (p *Peer) Addrs() []ma.Multiaddr {
-	return p.host.Addrs()
-}
-
 // P2PAddrs returns a peers's listen addresses in multiaddress format.
 func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
 	peerInfo := peer.AddrInfo{
 		ID:    p.ID(),
-		Addrs: p.Addrs(),
+		Addrs: p.host.Addrs(),
 	}
 	return peer.AddrInfoToP2pAddrs(&peerInfo)
 }
@@ -253,25 +255,36 @@ func (p *Peer) Ping(ctx context.Context, peer peer.ID) (rtt time.Duration, err e
 }
 
 // peerSource returns a channel and sends connected peers (possible relayers) to that channel.
-func peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
+func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
 	peerChan := make(chan peer.AddrInfo, 1)
 
 	go func() {
 		defer close(peerChan)
-		// TODO - get list of peers from a Peer list or some other peer book (GH issue #31)
-		testAddr, _ := PeerInfoFromMultiAddr("/ip4/159.223.230.202/tcp/4455/p2p/12D3KooWJapB9gVB2eD2D5RTWdRyFaub9jv9DEELZoSMBPeTimzy")
-		// TODO - this is an example of how to construct AddrInfo and send it to the channel
-		// peerChan <- peer.AddrInfo{ID: r.ID(), Addrs: r.Addrs()}
+
+		knownPeers := p.peerbook.KnownPeers()
+
+		// Shuffle known peers to avoid always returning the same peers.
+		for i := range knownPeers {
+			j := rand.Intn(i + 1)
+			knownPeers[i], knownPeers[j] = knownPeers[j], knownPeers[i]
+		}
+
+		// If there are less known peers than requested, decrease the number of requested peers.
+		numKnownPeers := len(knownPeers)
+		if numKnownPeers < numPeers {
+			numPeers = numKnownPeers
+		}
+		if numPeers == 0 {
+			return
+		}
 
 		for {
 			select {
-			case peerChan <- *testAddr:
+			case peerChan <- knownPeers[numPeers-1]:
 				numPeers--
 				if numPeers == 0 {
 					return
 				}
-				// TODO - get another peer address from a Peer list or some other peer book
-				// testAddr = ...
 			case <-ctx.Done():
 				return
 			}
