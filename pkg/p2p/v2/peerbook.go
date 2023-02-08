@@ -132,17 +132,20 @@ func (pb *Peerbook) BanIP(ip string) {
 		}
 
 		// Remove a peer from known peers if it has the same IP address.
-		for _, knownPeer := range pb.knownPeers {
+		pb.mutex.Lock()
+		for index, knownPeer := range pb.knownPeers {
 			for _, addr := range knownPeer.Addrs {
 				if ip == lps.ExtractIP(addr) {
-					pb.removePeerFromKnownPeers(knownPeer.ID)
+					pb.knownPeers = append(pb.knownPeers[:index], pb.knownPeers[index+1:]...)
 				}
 			}
 		}
-
 		pb.bannedIPs = append(pb.bannedIPs, BannedIP{ip: ip, timestamp: time.Now().Unix()})
+		pb.mutex.Unlock()
 	} else {
+		pb.mutex.Lock()
 		pb.bannedIPs[index].timestamp = time.Now().Unix()
+		pb.mutex.Unlock()
 	}
 }
 
@@ -282,15 +285,14 @@ func (pb *Peerbook) removeIPFromBannedIPs(ip string) {
 // removePeerFromKnownPeers removes a peer from the list of known peers and saves it to non-volatile storage (database).
 func (pb *Peerbook) removePeerFromKnownPeers(peerID peer.ID) {
 	pb.mutex.Lock()
+	defer pb.mutex.Unlock()
+
 	index := collection.FindIndex(pb.knownPeers, func(val peer.AddrInfo) bool {
 		return val.ID == peerID
 	})
-	pb.mutex.Unlock()
 
 	if index != -1 {
-		pb.mutex.Lock()
 		pb.knownPeers = append(pb.knownPeers[:index], pb.knownPeers[index+1:]...)
-		pb.mutex.Unlock()
 	}
 }
 
