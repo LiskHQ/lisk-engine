@@ -310,6 +310,7 @@ func (pb *Peerbook) peerBookService(ctx context.Context, wg *sync.WaitGroup, p *
 			pb.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
 			pb.logger.Debugf("List of known peers: %v", pb.KnownPeers())
 
+			// TODO - add to known peers also peers which are retrieved by peer exchange gossipsub messages (GH issue #47)
 			for _, connPeer := range p.ConnectedPeers() {
 				pb.addPeerToKnownPeers(p.host.Peerstore().PeerInfo(connPeer))
 			}
