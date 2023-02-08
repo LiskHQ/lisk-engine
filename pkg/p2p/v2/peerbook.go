@@ -63,7 +63,7 @@ func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []strin
 }
 
 // init initializes the Peerbook.
-func (pb *Peerbook) init(logger log.Logger) error {
+func (pb *Peerbook) init(logger log.Logger) {
 	pb.logger = logger
 
 	for _, ip := range pb.blacklistedIPs {
@@ -75,8 +75,6 @@ func (pb *Peerbook) init(logger log.Logger) error {
 			pb.logger.Errorf("Blacklisted IP %s is present in fixed peers", ip)
 		}
 	}
-
-	return nil
 }
 
 // SeedPeers returns seed peers.
@@ -115,7 +113,7 @@ func (pb *Peerbook) KnownPeers() []peer.AddrInfo {
 }
 
 // BanIP bans an IP address.
-func (pb *Peerbook) BanIP(ip string) error {
+func (pb *Peerbook) BanIP(ip string) {
 	pb.mutex.Lock()
 	index := collection.FindIndex(pb.bannedIPs, func(val BannedIP) bool {
 		return val.ip == ip
@@ -126,21 +124,18 @@ func (pb *Peerbook) BanIP(ip string) error {
 		// Warn if the IP is present in seed peers or fixed peers and do not ban it.
 		if pb.isIPInSeedPeers(ip) {
 			pb.logger.Warningf("IP %s is present in seed peers, will not ban it", ip)
-			return nil
+			return
 		}
 		if pb.isIPInFixedPeers(ip) {
 			pb.logger.Warningf("IP %s is present in fixed peers, will not ban it", ip)
-			return nil
+			return
 		}
 
 		// Remove a peer from known peers if it has the same IP address.
 		for _, knownPeer := range pb.knownPeers {
 			for _, addr := range knownPeer.Addrs {
 				if ip == lps.ExtractIP(addr) {
-					err := pb.removePeerFromKnownPeers(knownPeer.ID)
-					if err != nil {
-						return err
-					}
+					pb.removePeerFromKnownPeers(knownPeer.ID)
 				}
 			}
 		}
@@ -149,12 +144,10 @@ func (pb *Peerbook) BanIP(ip string) error {
 	} else {
 		pb.bannedIPs[index].timestamp = time.Now().Unix()
 	}
-
-	return nil
 }
 
 // addPeerToKnownPeers adds a peer to the list of known peers and saves it to non-volatile storage (database).
-func (pb *Peerbook) addPeerToKnownPeers(newPeer peer.AddrInfo) error {
+func (pb *Peerbook) addPeerToKnownPeers(newPeer peer.AddrInfo) {
 	pb.mutex.Lock()
 	index := collection.FindIndex(pb.knownPeers, func(val peer.AddrInfo) bool {
 		return val.ID == newPeer.ID
@@ -167,22 +160,22 @@ func (pb *Peerbook) addPeerToKnownPeers(newPeer peer.AddrInfo) error {
 
 			// If the peer is in seed peers, we won't add it to the list of known peers.
 			if pb.isInSeedPeers(newPeer.ID) {
-				return nil
+				return
 			}
 
 			// If the peer is in fixed peers, we won't add it to the list of known peers.
 			if pb.isInFixedPeers(newPeer.ID) {
-				return nil
+				return
 			}
 
 			// If the peer has an IP address that is blacklisted, we won't add it to the list of known peers.
 			if pb.isIPBlacklisted(ip) {
-				return nil
+				return
 			}
 
 			// If the peer has an IP address that is banned, we won't add it to the list of known peers.
 			if pb.isIPBanned(ip) {
-				return nil
+				return
 			}
 		}
 
@@ -190,8 +183,6 @@ func (pb *Peerbook) addPeerToKnownPeers(newPeer peer.AddrInfo) error {
 		pb.knownPeers = append(pb.knownPeers, newPeer)
 		pb.mutex.Unlock()
 	}
-
-	return nil
 }
 
 // isIPInSeedPeers returns true if the IP is in the list of seed peers.
@@ -275,7 +266,7 @@ func (pb *Peerbook) isIPBanned(ip string) bool {
 }
 
 // removeIPFromBannedIPs removes an IP from the list of banned IPs.
-func (pb *Peerbook) removeIPFromBannedIPs(ip string) error {
+func (pb *Peerbook) removeIPFromBannedIPs(ip string) {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
@@ -286,12 +277,10 @@ func (pb *Peerbook) removeIPFromBannedIPs(ip string) error {
 	if index != -1 {
 		pb.bannedIPs = append(pb.bannedIPs[:index], pb.bannedIPs[index+1:]...)
 	}
-
-	return nil
 }
 
 // removePeerFromKnownPeers removes a peer from the list of known peers and saves it to non-volatile storage (database).
-func (pb *Peerbook) removePeerFromKnownPeers(peerID peer.ID) error {
+func (pb *Peerbook) removePeerFromKnownPeers(peerID peer.ID) {
 	pb.mutex.Lock()
 	index := collection.FindIndex(pb.knownPeers, func(val peer.AddrInfo) bool {
 		return val.ID == peerID
@@ -303,8 +292,6 @@ func (pb *Peerbook) removePeerFromKnownPeers(peerID peer.ID) error {
 		pb.knownPeers = append(pb.knownPeers[:index], pb.knownPeers[index+1:]...)
 		pb.mutex.Unlock()
 	}
-
-	return nil
 }
 
 // peerBookService handles are related jobs (update known peers list, save data to database) for peerbook on a predefined interval.
@@ -322,19 +309,13 @@ func (pb *Peerbook) peerBookService(ctx context.Context, wg *sync.WaitGroup, p *
 			pb.logger.Debugf("List of known peers: %v", pb.KnownPeers())
 
 			for _, connPeer := range p.ConnectedPeers() {
-				err := pb.addPeerToKnownPeers(p.host.Peerstore().PeerInfo(connPeer))
-				if err != nil {
-					pb.logger.Errorf("Failed to add new peer to known peers list: %v", err)
-				}
+				pb.addPeerToKnownPeers(p.host.Peerstore().PeerInfo(connPeer))
 			}
 
 			pb.logger.Debugf("List of banned IPs: %v", pb.BannedIPs())
 			for _, ip := range pb.BannedIPs() {
 				if ip.timestamp+banTimeout < time.Now().Unix() {
-					err := pb.removeIPFromBannedIPs(ip.ip)
-					if err != nil {
-						pb.logger.Errorf("Failed to remove IP from banned IPs list: %v", err)
-					}
+					pb.removeIPFromBannedIPs(ip.ip)
 				}
 			}
 

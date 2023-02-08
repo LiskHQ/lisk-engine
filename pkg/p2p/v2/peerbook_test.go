@@ -79,8 +79,7 @@ func TestPeerbook_Init(t *testing.T) {
 	pb, _ := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
 
 	assert.Nil(pb.logger)
-	err := pb.init(logger)
-	assert.Nil(err)
+	pb.init(logger)
 	assert.NotNil(pb.logger)
 }
 
@@ -104,7 +103,7 @@ func TestPeerbook_InitBlacklistedIPInSeedPeers(t *testing.T) {
 
 	pb, _ := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
 
-	_ = pb.init(&loggerTest)
+	pb.init(&loggerTest)
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Blacklisted IP %s is present in seed peers") })
 	assert.NotEqual(-1, idx)
 }
@@ -129,7 +128,7 @@ func TestPeerbook_InitBlacklistedIPInFixedPeers(t *testing.T) {
 
 	pb, _ := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
 
-	_ = pb.init(&loggerTest)
+	pb.init(&loggerTest)
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Blacklisted IP %s is present in fixed peers") })
 	assert.NotEqual(-1, idx)
 }
@@ -213,8 +212,7 @@ func TestPeerbook_BanIP(t *testing.T) {
 
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, []AddressInfo2{})
 
-	err := pb.BanIP("1.2.3.4")
-	assert.Nil(err)
+	pb.BanIP("1.2.3.4")
 	assert.Equal(1, len(pb.bannedIPs))
 	assert.Equal("1.2.3.4", pb.bannedIPs[0].ip)
 	assert.True(pb.bannedIPs[0].timestamp > 0)
@@ -228,8 +226,7 @@ func TestPeerbook_BanIPAlreadyBanned(t *testing.T) {
 	timestamp := time.Now().Unix() - 10
 	pb.bannedIPs = []BannedIP{BannedIP{ip: "1.2.3.4", timestamp: timestamp}}
 
-	err := pb.BanIP("1.2.3.4")
-	assert.Nil(err)
+	pb.BanIP("1.2.3.4")
 	assert.Equal("1.2.3.4", pb.bannedIPs[0].ip)
 	assert.True(pb.bannedIPs[0].timestamp > timestamp)
 }
@@ -242,10 +239,9 @@ func TestPeerbook_BanIPSeedPeer(t *testing.T) {
 
 	seedPeers := []string{"/ip4/1.1.1.1/tcp/10/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", "/ip4/2.2.2.2/tcp/20/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXB"}
 	pb, _ := NewPeerbook(seedPeers, []string{}, []string{}, []AddressInfo2{})
-	_ = pb.init(&loggerTest)
+	pb.init(&loggerTest)
 
-	err := pb.BanIP("1.1.1.1")
-	assert.Nil(err)
+	pb.BanIP("1.1.1.1")
 	assert.Equal(0, len(pb.bannedIPs))
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "IP %s is present in seed peers, will not ban it") })
 	assert.NotEqual(-1, idx)
@@ -259,10 +255,9 @@ func TestPeerbook_BanIPFixedPeer(t *testing.T) {
 
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/6.6.6.6/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
 	pb, _ := NewPeerbook([]string{}, fixedPeers, []string{}, []AddressInfo2{})
-	_ = pb.init(&loggerTest)
+	pb.init(&loggerTest)
 
-	err := pb.BanIP("6.6.6.6")
-	assert.Nil(err)
+	pb.BanIP("6.6.6.6")
 	assert.Equal(0, len(pb.bannedIPs))
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "IP %s is present in fixed peers, will not ban it") })
 	assert.NotEqual(-1, idx)
@@ -281,8 +276,7 @@ func TestPeerbook_BanIPKnownPeer(t *testing.T) {
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, knownPeers)
 
 	assert.Equal(2, len(pb.knownPeers))
-	err := pb.BanIP("5.6.7.8")
-	assert.Nil(err)
+	pb.BanIP("5.6.7.8")
 	assert.Equal(1, len(pb.bannedIPs))
 	assert.Equal("5.6.7.8", pb.bannedIPs[0].ip)
 	assert.True(pb.bannedIPs[0].timestamp > 0)
@@ -299,8 +293,7 @@ func TestPeerbook_AddPeerToKnownPeers(t *testing.T) {
 	addr, _ := ma.NewMultiaddr("/ip4/1.2.3.4/tcp/80")
 	addrInfo := peer.AddrInfo{ID: "11111", Addrs: []ma.Multiaddr{addr}}
 
-	err := pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(1, len(pb.knownPeers))
 }
 
@@ -313,13 +306,11 @@ func TestPeerbook_AddPeerToKnownPeersAlreadyInList(t *testing.T) {
 	addrInfo := peer.AddrInfo{ID: "11111", Addrs: []ma.Multiaddr{addr}}
 
 	// 1st time
-	err := pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(1, len(pb.knownPeers))
 
 	// 2nd time
-	err = pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(1, len(pb.knownPeers))
 }
 
@@ -332,8 +323,7 @@ func TestPeerbook_AddPeerToKnownPeersSeedPeer(t *testing.T) {
 	addr, _ := ma.NewMultiaddr("/ip4/1.1.1.1/tcp/10")
 	addrInfo := peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", Addrs: []ma.Multiaddr{addr}}
 
-	err := pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(0, len(pb.knownPeers))
 }
 
@@ -346,8 +336,7 @@ func TestPeerbook_AddPeerToKnownPeersFixedPeer(t *testing.T) {
 	addr, _ := ma.NewMultiaddr("/ip4/3.3.3.3/tcp/30")
 	addrInfo := peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", Addrs: []ma.Multiaddr{addr}}
 
-	err := pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(0, len(pb.knownPeers))
 }
 
@@ -360,8 +349,7 @@ func TestPeerbook_AddPeerToKnownPeersBlacklistedIP(t *testing.T) {
 	addr, _ := ma.NewMultiaddr("/ip4/6.6.6.6/tcp/30")
 	addrInfo := peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", Addrs: []ma.Multiaddr{addr}}
 
-	err := pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(0, len(pb.knownPeers))
 }
 
@@ -374,8 +362,7 @@ func TestPeerbook_AddPeerToKnownPeersBannedIP(t *testing.T) {
 	addr, _ := ma.NewMultiaddr("/ip4/7.7.7.7/tcp/30")
 	addrInfo := peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", Addrs: []ma.Multiaddr{addr}}
 
-	err := pb.addPeerToKnownPeers(addrInfo)
-	assert.Nil(err)
+	pb.addPeerToKnownPeers(addrInfo)
 	assert.Equal(0, len(pb.knownPeers))
 }
 
@@ -464,12 +451,10 @@ func TestPeerbook_RemoveIPFromBannedIPs(t *testing.T) {
 	pb.bannedIPs = []BannedIP{BannedIP{ip: "7.7.7.7", timestamp: 12345}, BannedIP{ip: "8.8.8.8", timestamp: 6789}}
 
 	assert.Equal(2, len(pb.bannedIPs))
-	err := pb.removeIPFromBannedIPs("1.2.3.4")
-	assert.Nil(err)
+	pb.removeIPFromBannedIPs("1.2.3.4")
 	assert.Equal(2, len(pb.bannedIPs))
 
-	err = pb.removeIPFromBannedIPs("8.8.8.8")
-	assert.Nil(err)
+	pb.removeIPFromBannedIPs("8.8.8.8")
 	assert.Equal(1, len(pb.bannedIPs))
 	assert.Equal("7.7.7.7", pb.bannedIPs[0].ip)
 }
@@ -487,12 +472,10 @@ func TestPeerbook_RemovePeerFromKnownPeers(t *testing.T) {
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, knownPeers)
 
 	assert.Equal(2, len(pb.knownPeers))
-	err := pb.removePeerFromKnownPeers("33333")
-	assert.Nil(err)
+	pb.removePeerFromKnownPeers("33333")
 	assert.Equal(2, len(pb.knownPeers))
 
-	err = pb.removePeerFromKnownPeers("11111")
-	assert.Nil(err)
+	pb.removePeerFromKnownPeers("11111")
 	assert.Equal(1, len(pb.knownPeers))
 	assert.Equal(peer.ID("22222"), pb.knownPeers[0].ID)
 	assert.Equal("/ip4/5.6.7.8/udp/90", pb.knownPeers[0].Addrs[0].String())

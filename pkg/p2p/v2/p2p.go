@@ -100,17 +100,12 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		cancel()
 		return err
 	}
+	peer.peerbook.init(logger)
 
 	p2p.MessageProtocol.Start(ctx, logger, peer)
 
 	sk := pubsub.NewScoreKeeper()
 	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
-	if err != nil {
-		cancel()
-		return err
-	}
-
-	err = peer.peerbook.init(logger)
 	if err != nil {
 		cancel()
 		return err
