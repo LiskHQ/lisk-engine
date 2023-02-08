@@ -178,9 +178,9 @@ func TestPeer_PeerSource(t *testing.T) {
 	addr3, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
-		AddressInfo2{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
 	}
 
 	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}, KnownPeers: knownPeers}

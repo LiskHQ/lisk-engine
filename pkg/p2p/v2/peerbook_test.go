@@ -24,8 +24,8 @@ func TestPeerbook_NewPeerbook(t *testing.T) {
 	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
 	}
 
 	pb, err := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
@@ -72,8 +72,8 @@ func TestPeerbook_Init(t *testing.T) {
 	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
 	}
 
 	pb, _ := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
@@ -97,8 +97,8 @@ func TestPeerbook_InitBlacklistedIPInSeedPeers(t *testing.T) {
 	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
 	}
 
 	pb, _ := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
@@ -122,8 +122,8 @@ func TestPeerbook_InitBlacklistedIPInFixedPeers(t *testing.T) {
 	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
 	}
 
 	pb, _ := NewPeerbook(seedPeers, fixedPeers, blacklistedIPs, knownPeers)
@@ -177,7 +177,7 @@ func TestPeerbook_BannedIPs(t *testing.T) {
 	assert := assert.New(t)
 
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, []AddressInfo2{})
-	pb.bannedIPs = []BannedIP{BannedIP{ip: "7.7.7.7", timestamp: 12345}, BannedIP{ip: "8.8.8.8", timestamp: 6789}}
+	pb.bannedIPs = []BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
 
 	peers := pb.BannedIPs()
 	assert.Equal(2, len(peers))
@@ -194,8 +194,8 @@ func TestPeerbook_KnownPeers(t *testing.T) {
 	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
 	}
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, knownPeers)
 
@@ -224,7 +224,7 @@ func TestPeerbook_BanIPAlreadyBanned(t *testing.T) {
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, []AddressInfo2{})
 
 	timestamp := time.Now().Unix() - 10
-	pb.bannedIPs = []BannedIP{BannedIP{ip: "1.2.3.4", timestamp: timestamp}}
+	pb.bannedIPs = []BannedIP{{ip: "1.2.3.4", timestamp: timestamp}}
 
 	pb.BanIP("1.2.3.4")
 	assert.Equal("1.2.3.4", pb.bannedIPs[0].ip)
@@ -271,9 +271,9 @@ func TestPeerbook_BanIPKnownPeer(t *testing.T) {
 	addr3, _ := ma.NewMultiaddr("/ip4/9.10.11.12/udp/100")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
-		AddressInfo2{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
 	}
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, knownPeers)
 
@@ -361,7 +361,7 @@ func TestPeerbook_AddPeerToKnownPeersBannedIP(t *testing.T) {
 	assert := assert.New(t)
 
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, []AddressInfo2{})
-	pb.bannedIPs = []BannedIP{BannedIP{ip: "7.7.7.7", timestamp: 12345}, BannedIP{ip: "8.8.8.8", timestamp: 6789}}
+	pb.bannedIPs = []BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
 
 	addr, _ := ma.NewMultiaddr("/ip4/7.7.7.7/tcp/30")
 	addrInfo := peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", Addrs: []ma.Multiaddr{addr}}
@@ -439,7 +439,7 @@ func TestPeerbook_IsIPBanned(t *testing.T) {
 	assert := assert.New(t)
 
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, []AddressInfo2{})
-	pb.bannedIPs = []BannedIP{BannedIP{ip: "7.7.7.7", timestamp: 12345}, BannedIP{ip: "8.8.8.8", timestamp: 6789}}
+	pb.bannedIPs = []BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
 
 	result := pb.isIPBanned("1.2.3.4")
 	assert.False(result)
@@ -452,7 +452,7 @@ func TestPeerbook_RemoveIPFromBannedIPs(t *testing.T) {
 	assert := assert.New(t)
 
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, []AddressInfo2{})
-	pb.bannedIPs = []BannedIP{BannedIP{ip: "7.7.7.7", timestamp: 12345}, BannedIP{ip: "8.8.8.8", timestamp: 6789}}
+	pb.bannedIPs = []BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
 
 	assert.Equal(2, len(pb.bannedIPs))
 	pb.removeIPFromBannedIPs("1.2.3.4")
@@ -470,8 +470,8 @@ func TestPeerbook_RemovePeerFromKnownPeers(t *testing.T) {
 	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
 
 	knownPeers := []AddressInfo2{
-		AddressInfo2{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		AddressInfo2{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
+		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
+		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
 	}
 	pb, _ := NewPeerbook([]string{}, []string{}, []string{}, knownPeers)
 
