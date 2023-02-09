@@ -27,12 +27,14 @@ func TestGossipSub_NewGossipSub(t *testing.T) {
 func TestGossipSub_Start(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	p, _ := NewPeer(ctx, logger, config)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -57,7 +59,9 @@ func TestGossipSub_Start(t *testing.T) {
 func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	wg := &sync.WaitGroup{}
 
 	gs := NewGossipSub()
@@ -121,12 +125,14 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	testHandler := func(event *Event) {
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	p, _ := NewPeer(ctx, logger, config)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -169,12 +175,14 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 func TestGossipSub_Publish(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	p, _ := NewPeer(ctx, logger, config)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -188,9 +196,8 @@ func TestGossipSub_Publish(t *testing.T) {
 func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := context.Background()
 	gs := NewGossipSub()
 
-	err := gs.Publish(ctx, "testTopic", []byte("testMessageData"))
+	err := gs.Publish(context.Background(), "testTopic", []byte("testMessageData"))
 	assert.Equal("topic not found", err.Error())
 }

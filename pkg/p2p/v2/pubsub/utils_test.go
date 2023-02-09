@@ -55,10 +55,12 @@ func TestMessageTopic(t *testing.T) {
 }
 
 func TestHashMsgID(t *testing.T) {
+	assert := assert.New(t)
+
 	msg := pubsub_pb.Message{}
 	hash := HashMsgID(&msg)
 	expected := codec.Hex(crypto.Hash([]byte{})).String()
-	assert.Equal(t, expected, hash)
+	assert.Equal(expected, hash)
 }
 
 func TestUtils_ExtractIP(t *testing.T) {

@@ -8,6 +8,8 @@ import (
 )
 
 func TestAddr_PeerInfoFromMultiAddrs(t *testing.T) {
+	assert := assert.New(t)
+
 	type Want struct {
 		id   string
 		addr string
@@ -62,14 +64,14 @@ func TestAddr_PeerInfoFromMultiAddrs(t *testing.T) {
 			peer, err := PeerInfoFromMultiAddr(tt.addr)
 
 			if tt.want.err == nil {
-				assert.Nil(t, err)
+				assert.Nil(err)
 			} else {
-				assert.Contains(t, err.Error(), tt.want.err.Error())
+				assert.Contains(err.Error(), tt.want.err.Error())
 				return // if error occurs skip the rest of body because it must not be checked
 			}
 
-			assert.Equal(t, tt.want.id, peer.ID.String())
-			assert.Equal(t, tt.want.addr, peer.Addrs[0].String())
+			assert.Equal(tt.want.id, peer.ID.String())
+			assert.Equal(tt.want.addr, peer.Addrs[0].String())
 		})
 	}
 }

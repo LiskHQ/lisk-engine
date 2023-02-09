@@ -9,15 +9,17 @@ import (
 )
 
 func TestScoreKeeper(t *testing.T) {
+	assert := assert.New(t)
+
 	sk := NewScoreKeeper()
 	oldSK := sk.Get()
 	newSK := make(map[peer.ID]*pubsub.PeerScoreSnapshot)
-	assert.Equal(t, oldSK, newSK)
+	assert.Equal(oldSK, newSK)
 
 	oldSK = sk.Get()
 	newSK["test"] = &pubsub.PeerScoreSnapshot{}
-	assert.NotEqual(t, oldSK, newSK)
+	assert.NotEqual(oldSK, newSK)
 	sk.Update(newSK)
 	oldSK = sk.Get()
-	assert.Equal(t, oldSK, newSK)
+	assert.Equal(oldSK, newSK)
 }
