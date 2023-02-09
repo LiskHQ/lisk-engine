@@ -62,9 +62,11 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
 	gs := NewGossipSub()
+	gs.logger = logger
 
 	gs.RegisterEventHandler("testTopic1", func(event *Event) {})
 	gs.RegisterEventHandler("testTopic2", func(event *Event) {})
