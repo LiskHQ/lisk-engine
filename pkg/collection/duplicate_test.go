@@ -7,9 +7,11 @@ import (
 )
 
 func TestRemoveDuplicateInt(t *testing.T) {
+	assert := assert.New(t)
+
 	list := []int{1, 2, 3, 4, 5, 1, 2, 3, 4, 5}
 	result := RemoveDuplicate(list)
-	assert.Equal(t, []int{1, 2, 3, 4, 5}, result)
+	assert.Equal([]int{1, 2, 3, 4, 5}, result)
 
 	testCases := []struct {
 		list []int
@@ -35,14 +37,16 @@ func TestRemoveDuplicateInt(t *testing.T) {
 
 	for _, testCase := range testCases {
 		result := RemoveDuplicate(testCase.list)
-		assert.Equal(t, testCase.want, result)
+		assert.Equal(testCase.want, result)
 	}
 }
 
 func TestRemoveDuplicateString(t *testing.T) {
+	assert := assert.New(t)
+
 	list := []string{"1", "2", "3", "4", "5", "1", "2", "3", "4", "5"}
 	result := RemoveDuplicate(list)
-	assert.Equal(t, []string{"1", "2", "3", "4", "5"}, result)
+	assert.Equal([]string{"1", "2", "3", "4", "5"}, result)
 
 	testCases := []struct {
 		list []string
@@ -68,6 +72,6 @@ func TestRemoveDuplicateString(t *testing.T) {
 
 	for _, testCase := range testCases {
 		result := RemoveDuplicate(testCase.list)
-		assert.Equal(t, testCase.want, result)
+		assert.Equal(testCase.want, result)
 	}
 }
