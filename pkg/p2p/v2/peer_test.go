@@ -88,7 +88,7 @@ func TestPeer_ConnectIPIsBanned(t *testing.T) {
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	// p2 is banned
-	p1.peerbook.bannedIPs = []BannedIP{{ip: "127.0.0.1", timestamp: 123456}}
+	p1.peerbook.bannedIPs = []*BannedIP{{ip: "127.0.0.1", timestamp: 123456}}
 
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)

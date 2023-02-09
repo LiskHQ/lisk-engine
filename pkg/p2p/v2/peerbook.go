@@ -19,11 +19,11 @@ const banTimeout int64 = int64((time.Hour * 24) / time.Nanosecond) // Ban timeou
 type Peerbook struct {
 	logger         log.Logger
 	mutex          sync.Mutex
-	seedPeers      []peer.AddrInfo
-	fixedPeers     []peer.AddrInfo
+	seedPeers      []*peer.AddrInfo
+	fixedPeers     []*peer.AddrInfo
 	blacklistedIPs []string
-	bannedIPs      []BannedIP
-	knownPeers     []peer.AddrInfo
+	bannedIPs      []*BannedIP
+	knownPeers     []*peer.AddrInfo
 }
 
 // BannedIP represents a banned IP and its timestamp.
@@ -34,31 +34,31 @@ type BannedIP struct {
 
 // NewPeerbook returns a new Peerbook.
 func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []string, knownPeers []AddressInfo2) (*Peerbook, error) {
-	seedPeersAddrInfo := make([]peer.AddrInfo, len(seedPeers))
+	seedPeersAddrInfo := make([]*peer.AddrInfo, len(seedPeers))
 	for i, seedPeer := range seedPeers {
 		addrInfo, err := PeerInfoFromMultiAddr(seedPeer)
 		if err != nil {
 			return nil, err
 		}
-		seedPeersAddrInfo[i] = *addrInfo
+		seedPeersAddrInfo[i] = addrInfo
 	}
 
-	fixedPeersAddrInfo := make([]peer.AddrInfo, len(fixedPeers))
+	fixedPeersAddrInfo := make([]*peer.AddrInfo, len(fixedPeers))
 	for i, fixedPeer := range fixedPeers {
 		addrInfo, err := PeerInfoFromMultiAddr(fixedPeer)
 		if err != nil {
 			return nil, err
 		}
-		fixedPeersAddrInfo[i] = *addrInfo
+		fixedPeersAddrInfo[i] = addrInfo
 	}
 
-	knownPeersAddrInfo := make([]peer.AddrInfo, len(knownPeers))
+	knownPeersAddrInfo := make([]*peer.AddrInfo, len(knownPeers))
 	for i, knownPeer := range knownPeers {
-		addrInfo := peer.AddrInfo{ID: knownPeer.ID, Addrs: knownPeer.Addrs}
+		addrInfo := &peer.AddrInfo{ID: knownPeer.ID, Addrs: knownPeer.Addrs}
 		knownPeersAddrInfo[i] = addrInfo
 	}
 
-	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, blacklistedIPs: blacklistedIPs, bannedIPs: []BannedIP{}, knownPeers: knownPeersAddrInfo}
+	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, blacklistedIPs: blacklistedIPs, bannedIPs: []*BannedIP{}, knownPeers: knownPeersAddrInfo}
 	return peerbook, nil
 }
 
@@ -78,14 +78,14 @@ func (pb *Peerbook) init(logger log.Logger) {
 }
 
 // SeedPeers returns seed peers.
-func (pb *Peerbook) SeedPeers() []peer.AddrInfo {
+func (pb *Peerbook) SeedPeers() []*peer.AddrInfo {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.seedPeers
 }
 
 // FixedPeers returns fixed peers.
-func (pb *Peerbook) FixedPeers() []peer.AddrInfo {
+func (pb *Peerbook) FixedPeers() []*peer.AddrInfo {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.fixedPeers
@@ -99,14 +99,14 @@ func (pb *Peerbook) BlacklistedIPs() []string {
 }
 
 // BannedIPs returns banned peers.
-func (pb *Peerbook) BannedIPs() []BannedIP {
+func (pb *Peerbook) BannedIPs() []*BannedIP {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.bannedIPs
 }
 
 // KnownPeers returns known peers.
-func (pb *Peerbook) KnownPeers() []peer.AddrInfo {
+func (pb *Peerbook) KnownPeers() []*peer.AddrInfo {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.knownPeers
@@ -115,7 +115,7 @@ func (pb *Peerbook) KnownPeers() []peer.AddrInfo {
 // BanIP bans an IP address.
 func (pb *Peerbook) BanIP(ip string) {
 	pb.mutex.Lock()
-	index := collection.FindIndex(pb.bannedIPs, func(val BannedIP) bool {
+	index := collection.FindIndex(pb.bannedIPs, func(val *BannedIP) bool {
 		return val.ip == ip
 	})
 	pb.mutex.Unlock()
@@ -146,14 +146,14 @@ func (pb *Peerbook) BanIP(ip string) {
 			}
 		}
 	}
-	pb.bannedIPs = append(pb.bannedIPs, BannedIP{ip: ip, timestamp: time.Now().Unix()})
+	pb.bannedIPs = append(pb.bannedIPs, &BannedIP{ip: ip, timestamp: time.Now().Unix()})
 	pb.mutex.Unlock()
 }
 
 // addPeerToKnownPeers adds a peer to the list of known peers.
-func (pb *Peerbook) addPeerToKnownPeers(newPeer peer.AddrInfo) {
+func (pb *Peerbook) addPeerToKnownPeers(newPeer *peer.AddrInfo) {
 	pb.mutex.Lock()
-	index := collection.FindIndex(pb.knownPeers, func(val peer.AddrInfo) bool {
+	index := collection.FindIndex(pb.knownPeers, func(val *peer.AddrInfo) bool {
 		return val.ID == newPeer.ID
 	})
 	pb.mutex.Unlock()
@@ -238,7 +238,7 @@ func (pb *Peerbook) isInSeedPeers(peerID peer.ID) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
-	index := collection.FindIndex(pb.seedPeers, func(val peer.AddrInfo) bool {
+	index := collection.FindIndex(pb.seedPeers, func(val *peer.AddrInfo) bool {
 		return peer.ID(val.ID.String()) == peerID
 	})
 
@@ -250,7 +250,7 @@ func (pb *Peerbook) isInFixedPeers(peerID peer.ID) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
-	index := collection.FindIndex(pb.fixedPeers, func(val peer.AddrInfo) bool {
+	index := collection.FindIndex(pb.fixedPeers, func(val *peer.AddrInfo) bool {
 		return peer.ID(val.ID.String()) == peerID
 	})
 
@@ -262,7 +262,7 @@ func (pb *Peerbook) isIPBanned(ip string) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
-	index := collection.FindIndex(pb.bannedIPs, func(val BannedIP) bool {
+	index := collection.FindIndex(pb.bannedIPs, func(val *BannedIP) bool {
 		return val.ip == ip
 	})
 
@@ -274,7 +274,7 @@ func (pb *Peerbook) removeIPFromBannedIPs(ip string) {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
-	index := collection.FindIndex(pb.bannedIPs, func(val BannedIP) bool {
+	index := collection.FindIndex(pb.bannedIPs, func(val *BannedIP) bool {
 		return val.ip == ip
 	})
 
@@ -288,7 +288,7 @@ func (pb *Peerbook) removePeerFromKnownPeers(peerID peer.ID) {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
-	index := collection.FindIndex(pb.knownPeers, func(val peer.AddrInfo) bool {
+	index := collection.FindIndex(pb.knownPeers, func(val *peer.AddrInfo) bool {
 		return val.ID == peerID
 	})
 
@@ -313,7 +313,8 @@ func (pb *Peerbook) peerBookService(ctx context.Context, wg *sync.WaitGroup, p *
 
 			// TODO - add to known peers also peers which are retrieved by peer exchange gossipsub messages (GH issue #47)
 			for _, connPeer := range p.ConnectedPeers() {
-				pb.addPeerToKnownPeers(p.host.Peerstore().PeerInfo(connPeer))
+				p := p.host.Peerstore().PeerInfo(connPeer)
+				pb.addPeerToKnownPeers(&p)
 			}
 
 			pb.logger.Debugf("List of banned IPs: %v", pb.BannedIPs())

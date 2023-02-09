@@ -280,7 +280,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 
 		for {
 			select {
-			case peerChan <- knownPeers[numPeers-1]:
+			case peerChan <- *knownPeers[numPeers-1]:
 				numPeers--
 				if numPeers == 0 {
 					return
