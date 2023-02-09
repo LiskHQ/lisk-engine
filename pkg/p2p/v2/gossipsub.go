@@ -20,7 +20,7 @@ const maxAllowedTopics = 10
 // GossipSub type.
 type GossipSub struct {
 	logger log.Logger
-	peerID peer.ID
+	peer   *Peer
 	*pubsub.PubSub
 	topics        map[string]*pubsub.Topic
 	subscriptions map[string]*pubsub.Subscription
@@ -150,7 +150,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	}
 
 	gs.logger = logger
-	gs.peerID = p.GetHost().ID()
+	gs.peer = p
 	gs.PubSub = gossipSub
 
 	err = gs.createSubscriptionHandlers(ctx, wg)
@@ -193,7 +193,7 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 					continue
 				}
 				// Only process messages delivered by others.
-				if msg.ReceivedFrom == gs.peerID {
+				if msg.ReceivedFrom == gs.peer.GetHost().ID() {
 					continue
 				}
 				gs.logger.Debugf("Received message: %s", msg.Data)
