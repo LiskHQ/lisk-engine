@@ -53,7 +53,7 @@ func main() {
 		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
 		AllowIncomingConnections: true,
 		NetworkName:              "lisk-test",
-		SeedNodes:                []string{},
+		SeedPeers:                []string{},
 	}
 	err = cfg.InsertDefault()
 	if err != nil {

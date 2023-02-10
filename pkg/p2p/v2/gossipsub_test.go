@@ -43,7 +43,7 @@ func TestGossipSub_Start(t *testing.T) {
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
-	assert.Equal(p.GetHost().ID(), gs.peerID)
+	assert.NotNil(gs.peer)
 	assert.NotNil(gs.PubSub)
 
 	assert.Equal(1, len(gs.topics))
