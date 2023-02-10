@@ -328,7 +328,9 @@ func TestPeerbook_AddPeerToKnownPeersSeedPeer(t *testing.T) {
 	addrInfo := &peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", Addrs: []ma.Multiaddr{addr}}
 
 	pb.addPeerToKnownPeers(addrInfo)
-	assert.Equal(0, len(pb.knownPeers))
+	assert.Equal(1, len(pb.knownPeers))
+	assert.Equal(peer.ID("12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA"), pb.knownPeers[0].ID)
+	assert.Equal("/ip4/1.1.1.1/tcp/10", pb.knownPeers[0].Addrs[0].String())
 }
 
 func TestPeerbook_AddPeerToKnownPeersFixedPeer(t *testing.T) {
@@ -341,7 +343,9 @@ func TestPeerbook_AddPeerToKnownPeersFixedPeer(t *testing.T) {
 	addrInfo := &peer.AddrInfo{ID: "12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", Addrs: []ma.Multiaddr{addr}}
 
 	pb.addPeerToKnownPeers(addrInfo)
-	assert.Equal(0, len(pb.knownPeers))
+	assert.Equal(1, len(pb.knownPeers))
+	assert.Equal(peer.ID("12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC"), pb.knownPeers[0].ID)
+	assert.Equal("/ip4/3.3.3.3/tcp/30", pb.knownPeers[0].Addrs[0].String())
 }
 
 func TestPeerbook_AddPeerToKnownPeersBlacklistedIP(t *testing.T) {

@@ -162,16 +162,6 @@ func (pb *Peerbook) addPeerToKnownPeers(newPeer *peer.AddrInfo) {
 		for _, addr := range newPeer.Addrs {
 			ip := lps.ExtractIP(addr)
 
-			// If the peer is in seed peers, we won't add it to the list of known peers.
-			if pb.isInSeedPeers(newPeer.ID) {
-				return
-			}
-
-			// If the peer is in fixed peers, we won't add it to the list of known peers.
-			if pb.isInFixedPeers(newPeer.ID) {
-				return
-			}
-
 			// If the peer has an IP address that is blacklisted, we won't add it to the list of known peers.
 			if pb.isIPBlacklisted(ip) {
 				return
