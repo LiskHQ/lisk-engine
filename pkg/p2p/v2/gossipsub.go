@@ -144,6 +144,9 @@ func (gs *GossipSub) Start(ctx context.Context,
 				pubsub.NewAllowlistSubscriptionFilter(topics...),
 				maxAllowedTopics)))
 
+	// We want to hide the author of the message from the topic subscribers.
+	options = append(options, pubsub.WithNoAuthor())
+
 	gossipSub, err := pubsub.NewGossipSub(ctx, p.GetHost(), options...)
 	if err != nil {
 		return err
