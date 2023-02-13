@@ -23,11 +23,12 @@ const (
 )
 
 var (
-	port    = flag.Uint("port", 8010, "listening port")
-	isLocal = flag.Bool("isLocal", false, "run the application in local mode")
+	port         = flag.Uint("port", 8010, "listening port")
+	isLocal      = flag.Bool("isLocal", true, "run the application in local mode")
+	hasValidator = flag.Bool("hasValidator", true, "run the application with message validator")
 )
 
-const topic = "test-chat"
+const roomName = "test-chat"
 
 func main() {
 	logger, err := log.NewDefaultProductionLogger()
@@ -68,7 +69,7 @@ func main() {
 	gs := p2p.NewGossipSub()
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
-	err = gs.RegisterEventHandler(topicName(topic), func(event *p2p.Event) {
+	err = gs.RegisterEventHandler(topicName(roomName), func(event *p2p.Event) {
 		readMessage(event, ch)
 	})
 	if err != nil {
@@ -81,12 +82,20 @@ func main() {
 		panic(err)
 	}
 
+	if *hasValidator {
+		tv := p2p.NewValidator(&ChatMessage{})
+		err = gs.RegisterTopicValidator(topicName(roomName), tv)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	nick := *nickFlag
 	if len(nick) == 0 {
 		nick = defaultNick(p.GetHost().ID())
 	}
 
-	cr, err := JoinChatRoom(ctx, gs, p.GetHost().ID(), ch, nick, topic)
+	cr, err := JoinChatRoom(ctx, gs, p.GetHost().ID(), ch, nick, roomName)
 	if err != nil {
 		panic(err)
 	}

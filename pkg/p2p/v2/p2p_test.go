@@ -1,9 +1,12 @@
 package p2p
 
 import (
+	"bytes"
+	"context"
 	"testing"
 	"time"
 
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/stretchr/testify/assert"
 
 	logger "github.com/LiskHQ/lisk-engine/pkg/log"
@@ -32,6 +35,10 @@ const (
 	testTimeout = time.Second * 3
 )
 
+var (
+	msg = newMessage([]byte("testMessageData"))
+)
+
 type testLogger struct {
 	logger.Logger
 	logs []string
@@ -47,6 +54,20 @@ func (l *testLogger) Warningf(msg string, others ...interface{}) {
 
 func (l *testLogger) Errorf(msg string, others ...interface{}) {
 	l.logs = append(l.logs, msg)
+}
+
+type testValidator struct{}
+
+func (tv *testValidator) ValidateMessage(ctx context.Context, msg *Message) pubsub.ValidationResult {
+	if bytes.Contains(msg.Data, []byte("Invalid")) {
+		return pubsub.ValidationReject
+	} else {
+		return pubsub.ValidationAccept
+	}
+}
+
+func newTestValidator() *testValidator {
+	return &testValidator{}
 }
 
 func TestP2P_NewP2P(t *testing.T) {

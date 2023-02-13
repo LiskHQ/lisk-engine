@@ -46,7 +46,7 @@ func TestGossipSub_Start(t *testing.T) {
 
 	assert.NotNil(gs.logger)
 	assert.NotNil(gs.peer)
-	assert.NotNil(gs.PubSub)
+	assert.NotNil(gs.ps)
 
 	assert.Equal(1, len(gs.topics))
 	assert.Equal(1, len(gs.subscriptions))
@@ -74,7 +74,7 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 
 	host, _ := libp2p.New()
 	gossipSub, _ := pubsub.NewGossipSub(ctx, host)
-	gs.PubSub = gossipSub
+	gs.ps = gossipSub
 
 	err := gs.createSubscriptionHandlers(ctx, wg)
 	assert.Nil(err)
@@ -142,7 +142,7 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 
 	err := gs.RegisterEventHandler(testEvent, testHandler)
 	assert.NotNil(err)
-	assert.Equal("cannot register event handler after GossipSub is started", err.Error())
+	assert.Equal(err, ErrGossipSubIsRunning)
 
 	_, exist := gs.topics[testEvent]
 	assert.False(exist)
@@ -171,7 +171,7 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 
 	err = gs.RegisterEventHandler(testEvent, testHandler)
 	assert.NotNil(err)
-	assert.Equal("eventHandler testEvent is already registered", err.Error())
+	assert.Equal(err, ErrDuplicateHandler)
 }
 
 func TestGossipSub_Publish(t *testing.T) {
@@ -189,9 +189,22 @@ func TestGossipSub_Publish(t *testing.T) {
 
 	gs := NewGossipSub()
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
-	gs.Start(ctx, wg, logger, p, sk, config)
 
-	err := gs.Publish(ctx, testTopic1, []byte(testData))
+	tv := NewValidator(newTestValidator())
+	err := gs.RegisterTopicValidator(testTopic1, tv)
+	assert.Equal(err, ErrGossipSubIsNotRunnig)
+
+	gs.Start(ctx, wg, logger, p, sk, config)
+	assert.Nil(gs.RegisterTopicValidator(testTopic1, tv))
+
+	err = gs.Publish(ctx, testTopic1, msg)
+	assert.Nil(err)
+
+	invalidMsg := newMessage([]byte("testMessageInvalid"))
+	err = gs.Publish(ctx, testTopic1, invalidMsg)
+	assert.EqualError(err, pubsub.RejectValidationFailed)
+	// check the validation nofify once
+	err = gs.Publish(ctx, testTopic1, invalidMsg)
 	assert.Nil(err)
 }
 
@@ -200,6 +213,27 @@ func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 
 	gs := NewGossipSub()
 
-	err := gs.Publish(context.Background(), testTopic1, []byte(testData))
-	assert.Equal("topic not found", err.Error())
+	err := gs.Publish(context.Background(), testTopic1, msg)
+	assert.Equal(err, ErrTopicNotFound)
+}
+
+func TestGossipSub_ListPeers(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx := context.Background()
+	wg := &sync.WaitGroup{}
+	logger, _ := log.NewDefaultProductionLogger()
+	config := Config{}
+	_ = config.InsertDefault()
+	p, _ := NewPeer(context.Background(), logger, config)
+	sk := ps.NewScoreKeeper()
+
+	gs := NewGossipSub()
+	_, err := gs.ListPeers(testTopic1)
+	assert.Equal(err, ErrGossipSubIsNotRunnig)
+	gs.RegisterEventHandler(testTopic1, func(testEvent *Event) {})
+	gs.Start(ctx, wg, logger, p, sk, config)
+	peers, err := gs.ListPeers(testTopic1)
+	assert.Nil(err)
+	assert.Equal(len(peers), 0)
 }

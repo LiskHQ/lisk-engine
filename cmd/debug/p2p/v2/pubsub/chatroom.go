@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
@@ -34,6 +36,20 @@ type ChatMessage struct {
 	SenderNick string
 }
 
+// ValidateMessage validates the message.
+func (cm *ChatMessage) ValidateMessage(ctx context.Context, msg *p2p.Message) pubsub.ValidationResult {
+	err := json.Unmarshal(msg.Data, cm)
+	if err != nil {
+		return pubsub.ValidationIgnore
+	}
+
+	if strings.Contains(cm.Message, "invalid") {
+		return pubsub.ValidationReject
+	} else {
+		return pubsub.ValidationAccept
+	}
+}
+
 // JoinChatRoom tries to subscribe to the PubSub topic for the room name, returning
 // a ChatRoom on success.
 func JoinChatRoom(ctx context.Context, gs *p2p.GossipSub, selfID peer.ID, ch chan *ChatMessage, nickname string, roomName string) (*ChatRoom, error) {
@@ -60,12 +76,15 @@ func (cr *ChatRoom) Publish(message string) error {
 	if err != nil {
 		return err
 	}
-	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msgBytes)
+	msg := new(p2p.Message)
+	msg.Data = msgBytes
+	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msg)
 }
 
 // ListPeers returns an array of ID.
 func (cr *ChatRoom) ListPeers() []peer.ID {
-	return cr.gs.ListPeers(topicName(cr.roomName))
+	peers, _ := cr.gs.ListPeers(topicName(cr.roomName))
+	return peers
 }
 
 // Read messages from the subscription and push them onto the Messages channel.
