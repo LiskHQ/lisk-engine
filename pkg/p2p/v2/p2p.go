@@ -45,7 +45,7 @@ func (c *Config) InsertDefault() error {
 		c.Version = "1.0"
 	}
 	if c.Addresses == nil {
-		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
+		c.Addresses = []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}
 	}
 	if c.ConnectionSecurity == "" {
 		c.ConnectionSecurity = "tls"

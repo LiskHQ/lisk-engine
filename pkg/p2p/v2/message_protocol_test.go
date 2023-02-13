@@ -17,25 +17,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const testTimeout = time.Second * 3 // Timeout for the test
-
-type testLogger struct {
-	log.Logger
-	logs []string
-}
-
-func (l *testLogger) Debugf(msg string, others ...interface{}) {
-	l.logs = append(l.logs, msg)
-}
-
-func (l *testLogger) Warningf(msg string, others ...interface{}) {
-	l.logs = append(l.logs, msg)
-}
-
-func (l *testLogger) Errorf(msg string, others ...interface{}) {
-	l.logs = append(l.logs, msg)
-}
-
 type testConn struct {
 	network.Conn
 }
@@ -115,12 +96,12 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			mp := NewMessageProtocol()
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *RequestMsg) {
 				mp.logger.Debugf("Request received")
-				w.Write([]byte("Test response message"))
+				w.Write([]byte(testResponseData))
 			})
 			mp.Start(ctx, &loggerTest, p)
 
 			stream := testStream{}
-			reqMsg := newRequestMessage("TestRemotePeerID", tt.procedure, []byte(""))
+			reqMsg := newRequestMessage(testPeerID, tt.procedure, []byte(""))
 			data, _ := reqMsg.Encode()
 			stream.data = data
 			mp.onRequest(ctx, stream)
@@ -148,18 +129,18 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	mp := NewMessageProtocol()
 	mp.Start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
-	mp.resCh["123456"] = ch
+	mp.resCh[testReqMsgID] = ch
 
 	stream := testStream{}
-	reqMsg := newResponseMessage("123456", []byte("Test response message"), errors.New("Test error message"))
+	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
 
 	select {
 	case response := <-ch:
-		assert.Equal("Test response message", string(response.Data()))
-		assert.Equal("Test error message", response.Error().Error())
+		assert.Equal(testResponseData, string(response.Data()))
+		assert.Equal(testError, response.Error().Error())
 		break
 	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not created and sent to the channel")
@@ -183,10 +164,10 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	p, _ := NewPeer(ctx, &loggerTest, config)
 	mp := NewMessageProtocol()
 	mp.Start(ctx, &loggerTest, p)
-	// There is no channel for the request ID "123456"
+	// There is no channel for the request ID "testReqMsgID"
 
 	stream := testStream{}
-	reqMsg := newResponseMessage("123456", []byte("Test response message"), nil)
+	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), nil)
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
@@ -202,13 +183,13 @@ func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
 	}
 
 	mp := NewMessageProtocol()
-	err := mp.RegisterRPCHandler("testRPC", testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
 
-	assert.NotNil(mp.rpcHandlers["testRPC"])
+	assert.NotNil(mp.rpcHandlers[testRPC])
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
-	handler := mp.rpcHandlers["testRPC"]
+	handler := mp.rpcHandlers[testRPC]
 	f2 := *(*unsafe.Pointer)(unsafe.Pointer(&handler))
 	assert.True(f1 == f2)
 }
@@ -230,11 +211,11 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	mp := NewMessageProtocol()
 	mp.Start(ctx, logger, p)
 
-	err := mp.RegisterRPCHandler("testRPC", testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.NotNil(err)
 	assert.Equal("cannot register RPC handler after MessageProtocol is started", err.Error())
 
-	_, exist := mp.rpcHandlers["testRPC"]
+	_, exist := mp.rpcHandlers[testRPC]
 	assert.False(exist)
 }
 
@@ -246,12 +227,12 @@ func TestMessageProtocol_RegisterRPCHandlerAlreadyRegistered(t *testing.T) {
 
 	mp := NewMessageProtocol()
 
-	err := mp.RegisterRPCHandler("testRPC", testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
-	_, exist := mp.rpcHandlers["testRPC"]
+	_, exist := mp.rpcHandlers[testRPC]
 	assert.True(exist)
 
-	err = mp.RegisterRPCHandler("testRPC", testHandler)
+	err = mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.NotNil(err)
 	assert.Equal("rpcHandler testRPC is already registered", err.Error())
 }
@@ -263,7 +244,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(ctx, logger, config)
@@ -271,7 +252,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	mp1.Start(ctx, logger, p1)
 	p2, _ := NewPeer(ctx, logger, config)
 	mp2 := NewMessageProtocol()
-	mp2.RegisterRPCHandler("ping", func(w ResponseWriter, req *RequestMsg) {
+	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Write([]byte("Average RTT with you:"))
 	})
 	mp2.Start(ctx, logger, p2)
@@ -281,7 +262,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
-	response, err := mp1.SendRequestMessage(ctx, p2.ID(), "ping", []byte("Test protocol request message"))
+	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(err)
 	assert.Equal(p2.ID().String(), response.PeerID())
 	assert.Contains(string(response.Data()), "Average RTT with you:")
@@ -294,7 +275,7 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(ctx, logger, config)
@@ -302,7 +283,7 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	mp1.Start(ctx, logger, p1)
 	p2, _ := NewPeer(ctx, logger, config)
 	mp2 := NewMessageProtocol()
-	mp2.RegisterRPCHandler("ping", func(w ResponseWriter, req *RequestMsg) {
+	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Error(errors.New("Test RPC handler error!"))
 	})
 	mp2.Start(ctx, logger, p2)
@@ -312,7 +293,7 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
-	response, err := mp1.SendRequestMessage(ctx, p2.ID(), "ping", []byte("Test protocol request message"))
+	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(err)
 	assert.Equal(p2.ID().String(), response.PeerID())
 	assert.Equal([]byte{}, response.Data())
@@ -326,7 +307,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(ctx, logger, config)
@@ -344,7 +325,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
-	response, err := mp1.SendRequestMessage(ctx, p2.ID(), "ping", []byte("Test protocol request message"))
+	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(response)
 	assert.Equal("timeout", err.Error())
 }
@@ -356,7 +337,7 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	p1, _ := NewPeer(ctx, logger, config)
@@ -371,15 +352,15 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 	ch := make(chan *Response, 1)
-	mp2.resCh["123456"] = ch
-	err = mp1.SendResponseMessage(ctx, p2.ID(), "123456", []byte("Test protocol response message"), errors.New("test error"))
+	mp2.resCh[testReqMsgID] = ch
+	err = mp1.SendResponseMessage(ctx, p2.ID(), testReqMsgID, []byte(testResponseData), errors.New(testError))
 	assert.Nil(err)
 
 	select {
 	case response := <-ch:
 		assert.Equal(p1.ID().String(), response.PeerID())
-		assert.Equal("Test protocol response message", string(response.Data()))
-		assert.Equal("test error", response.Error().Error())
+		assert.Equal(testResponseData, string(response.Data()))
+		assert.Equal(testError, response.Error().Error())
 		break
 	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not received")
@@ -405,7 +386,7 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 
@@ -416,7 +397,7 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	_ = p1.Connect(ctx, *p2AddrInfo)
-	msg := newRequestMessage(p1.ID(), "ping", []byte("Test protocol message"))
+	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
 	mp := NewMessageProtocol()
 	mp.Start(ctx, logger, p1)
 	err := mp.sendMessage(ctx, p2.ID(), messageProtocolReqID, msg)
@@ -429,5 +410,5 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 		t.Fatalf("timeout occurs, message was not delivered to a peer")
 	}
 
-	assert.Contains(tmr.msg, "Test protocol message")
+	assert.Contains(tmr.msg, testRequestData)
 }

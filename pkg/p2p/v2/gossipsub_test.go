@@ -38,7 +38,7 @@ func TestGossipSub_Start(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	err := gs.RegisterEventHandler("testTopic", func(event *Event) {})
+	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 	assert.Nil(err)
 
 	err = gs.Start(ctx, wg, logger, p, sk, config)
@@ -50,9 +50,9 @@ func TestGossipSub_Start(t *testing.T) {
 
 	assert.Equal(1, len(gs.topics))
 	assert.Equal(1, len(gs.subscriptions))
-	_, exist := gs.topics["testTopic"]
+	_, exist := gs.topics[testTopic1]
 	assert.True(exist)
-	_, exist = gs.subscriptions["testTopic"]
+	_, exist = gs.subscriptions[testTopic1]
 	assert.True(exist)
 }
 
@@ -68,9 +68,9 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	gs := NewGossipSub()
 	gs.logger = logger
 
-	gs.RegisterEventHandler("testTopic1", func(event *Event) {})
-	gs.RegisterEventHandler("testTopic2", func(event *Event) {})
-	gs.RegisterEventHandler("testTopic3", func(event *Event) {})
+	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
+	gs.RegisterEventHandler(testTopic2, func(event *Event) {})
+	gs.RegisterEventHandler(testTopic3, func(event *Event) {})
 
 	host, _ := libp2p.New()
 	gossipSub, _ := pubsub.NewGossipSub(ctx, host)
@@ -82,19 +82,19 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	assert.Equal(3, len(gs.topics))
 	assert.Equal(3, len(gs.subscriptions))
 
-	_, exist := gs.topics["testTopic1"]
+	_, exist := gs.topics[testTopic1]
 	assert.True(exist)
-	_, exist = gs.subscriptions["testTopic1"]
-	assert.True(exist)
-
-	_, exist = gs.topics["testTopic2"]
-	assert.True(exist)
-	_, exist = gs.subscriptions["testTopic2"]
+	_, exist = gs.subscriptions[testTopic1]
 	assert.True(exist)
 
-	_, exist = gs.topics["testTopic3"]
+	_, exist = gs.topics[testTopic2]
 	assert.True(exist)
-	_, exist = gs.subscriptions["testTopic3"]
+	_, exist = gs.subscriptions[testTopic2]
+	assert.True(exist)
+
+	_, exist = gs.topics[testTopic3]
+	assert.True(exist)
+	_, exist = gs.subscriptions[testTopic3]
 	assert.True(exist)
 }
 
@@ -105,18 +105,18 @@ func TestGossipSub_RegisterEventHandler(t *testing.T) {
 	}
 
 	gs := NewGossipSub()
-	err := gs.RegisterEventHandler("testEvent", testHandler)
+	err := gs.RegisterEventHandler(testEvent, testHandler)
 	assert.Nil(err)
 
-	_, exist := gs.topics["testEvent"]
+	_, exist := gs.topics[testEvent]
 	assert.True(exist)
-	_, exist = gs.subscriptions["testEvent"]
+	_, exist = gs.subscriptions[testEvent]
 	assert.True(exist)
 
-	assert.NotNil(gs.eventHandlers["testEvent"])
+	assert.NotNil(gs.eventHandlers[testEvent])
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
-	handler := gs.eventHandlers["testEvent"]
+	handler := gs.eventHandlers[testEvent]
 	f2 := *(*unsafe.Pointer)(unsafe.Pointer(&handler))
 	assert.True(f1 == f2)
 }
@@ -140,15 +140,15 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	gs := NewGossipSub()
 	gs.Start(ctx, wg, logger, p, sk, config)
 
-	err := gs.RegisterEventHandler("testEvent", testHandler)
+	err := gs.RegisterEventHandler(testEvent, testHandler)
 	assert.NotNil(err)
 	assert.Equal("cannot register event handler after GossipSub is started", err.Error())
 
-	_, exist := gs.topics["testEvent"]
+	_, exist := gs.topics[testEvent]
 	assert.False(exist)
-	_, exist = gs.subscriptions["testEvent"]
+	_, exist = gs.subscriptions[testEvent]
 	assert.False(exist)
-	_, exist = gs.eventHandlers["testEvent"]
+	_, exist = gs.eventHandlers[testEvent]
 	assert.False(exist)
 }
 
@@ -160,16 +160,16 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 
 	gs := NewGossipSub()
 
-	err := gs.RegisterEventHandler("testEvent", testHandler)
+	err := gs.RegisterEventHandler(testEvent, testHandler)
 	assert.Nil(err)
-	_, exist := gs.topics["testEvent"]
+	_, exist := gs.topics[testEvent]
 	assert.True(exist)
-	_, exist = gs.subscriptions["testEvent"]
+	_, exist = gs.subscriptions[testEvent]
 	assert.True(exist)
-	_, exist = gs.eventHandlers["testEvent"]
+	_, exist = gs.eventHandlers[testEvent]
 	assert.True(exist)
 
-	err = gs.RegisterEventHandler("testEvent", testHandler)
+	err = gs.RegisterEventHandler(testEvent, testHandler)
 	assert.NotNil(err)
 	assert.Equal("eventHandler testEvent is already registered", err.Error())
 }
@@ -188,10 +188,10 @@ func TestGossipSub_Publish(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	gs.RegisterEventHandler("testTopic", func(event *Event) {})
+	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 	gs.Start(ctx, wg, logger, p, sk, config)
 
-	err := gs.Publish(ctx, "testTopic", []byte("testMessageData"))
+	err := gs.Publish(ctx, testTopic1, []byte(testData))
 	assert.Nil(err)
 }
 
@@ -200,6 +200,6 @@ func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 
 	gs := NewGossipSub()
 
-	err := gs.Publish(context.Background(), "testTopic", []byte("testMessageData"))
+	err := gs.Publish(context.Background(), testTopic1, []byte(testData))
 	assert.Equal("topic not found", err.Error())
 }

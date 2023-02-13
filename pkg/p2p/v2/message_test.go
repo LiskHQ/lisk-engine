@@ -10,31 +10,31 @@ import (
 func TestMessage_NewRequestMessage(t *testing.T) {
 	assert := assert.New(t)
 
-	msg := newRequestMessage("testPeerID", "knownPeers", []byte("test request data"))
+	msg := newRequestMessage(testPeerID, testProcedure, []byte(testRequestData))
 	assert.NotNil(msg)
 	assert.NotEmpty(msg.ID)
 	assert.NotEmpty(msg.Timestamp)
 	assert.Equal("7YHPeiMNWetQV9", msg.PeerID)
-	assert.Equal("knownPeers", msg.Procedure)
-	assert.Equal([]byte("test request data"), msg.Data)
+	assert.Equal(testProcedure, msg.Procedure)
+	assert.Equal([]byte(testRequestData), msg.Data)
 }
 
 func TestMessage_NewResponseMessage(t *testing.T) {
 	assert := assert.New(t)
 
-	msg := newResponseMessage("123456789", []byte("test response data"), errors.New("test error"))
+	msg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
 	assert.NotNil(msg)
 	assert.NotEmpty(msg.ID)
 	assert.NotEmpty(msg.Timestamp)
-	assert.Equal([]byte("test response data"), msg.Data)
-	assert.Equal("test error", msg.Error)
+	assert.Equal([]byte(testResponseData), msg.Data)
+	assert.Equal(testError, msg.Error)
 }
 
 func TestMessage_NewMessage(t *testing.T) {
 	assert := assert.New(t)
 
-	msg := newMessage([]byte("test data"))
+	msg := newMessage([]byte(testData))
 	assert.NotNil(msg)
 	assert.NotEmpty(msg.Timestamp)
-	assert.Equal([]byte("test data"), msg.Data)
+	assert.Equal([]byte(testData), msg.Data)
 }

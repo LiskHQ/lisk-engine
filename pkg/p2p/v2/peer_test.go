@@ -42,7 +42,7 @@ func TestPeer_Connect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config)
 	p2, _ := NewPeer(ctx, logger, config)
@@ -61,9 +61,9 @@ func TestPeer_ConnectIPIsBlacklisted(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config1 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config1 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config1.InsertDefault()
-	config2 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config2 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config1)
 	p2, _ := NewPeer(ctx, logger, config2)
@@ -85,9 +85,9 @@ func TestPeer_ConnectIPIsBanned(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config1 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config1 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config1.InsertDefault()
-	config2 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config2 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config1)
 	p2, _ := NewPeer(ctx, logger, config2)
@@ -109,7 +109,7 @@ func TestPeer_Disconnect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config)
 	p2, _ := NewPeer(ctx, logger, config)
@@ -132,9 +132,9 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config1 := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config1 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config1.InsertDefault()
-	config2 := Config{AllowIncomingConnections: false, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config2 := Config{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config1)
 	p2, _ := NewPeer(ctx, logger, config2)
@@ -179,7 +179,7 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config)
 	p2, _ := NewPeer(ctx, logger, config)
@@ -199,7 +199,7 @@ func TestPeer_Ping(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	p1, _ := NewPeer(ctx, logger, config)
 	p2, _ := NewPeer(ctx, logger, config)
@@ -229,7 +229,7 @@ func TestPeer_PeerSource(t *testing.T) {
 		{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
 	}
 
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}, KnownPeers: knownPeers}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}, KnownPeers: knownPeers}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(ctx, logger, config)
 
