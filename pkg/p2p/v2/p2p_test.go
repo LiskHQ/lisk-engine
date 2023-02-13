@@ -9,6 +9,46 @@ import (
 	logger "github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
+const (
+	testTimestamp    = int64(123456789)
+	testPeerID       = "testPeerID"
+	testEvent        = "testEvent"
+	testProcedure    = "testProcedure"
+	testRPC          = "testRPC"
+	testData         = "testData"
+	testReqMsgID     = "123456789"
+	testRequestData  = "testRequestData"
+	testResponseData = "testResponseData"
+
+	testIPv4TCP = "/ip4/127.0.0.1/tcp/0"
+	testIPv4UDP = "/ip4/127.0.0.1/udp/0/quic"
+
+	testTopic1 = "testTopic1"
+	testTopic2 = "testTopic2"
+	testTopic3 = "testTopic3"
+
+	testError = "testError"
+
+	testTimeout = time.Second * 3
+)
+
+type testLogger struct {
+	logger.Logger
+	logs []string
+}
+
+func (l *testLogger) Debugf(msg string, others ...interface{}) {
+	l.logs = append(l.logs, msg)
+}
+
+func (l *testLogger) Warningf(msg string, others ...interface{}) {
+	l.logs = append(l.logs, msg)
+}
+
+func (l *testLogger) Errorf(msg string, others ...interface{}) {
+	l.logs = append(l.logs, msg)
+}
+
 func TestP2P_NewP2P(t *testing.T) {
 	assert := assert.New(t)
 
@@ -18,7 +58,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	p2p := NewP2P(config)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.config.Version)
-	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.config.Addresses)
+	assert.Equal([]string{testIPv4TCP, testIPv4UDP}, p2p.config.Addresses)
 	assert.Equal(false, p2p.config.AllowIncomingConnections)
 	assert.Equal(false, p2p.config.EnableNATService)
 	assert.Equal(false, p2p.config.EnableUsingRelayService)

@@ -17,25 +17,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const testTimeout = time.Second * 3 // Timeout for the test
-
-type testLogger struct {
-	log.Logger
-	logs []string
-}
-
-func (l *testLogger) Debugf(msg string, others ...interface{}) {
-	l.logs = append(l.logs, msg)
-}
-
-func (l *testLogger) Warningf(msg string, others ...interface{}) {
-	l.logs = append(l.logs, msg)
-}
-
-func (l *testLogger) Errorf(msg string, others ...interface{}) {
-	l.logs = append(l.logs, msg)
-}
-
 type testConn struct {
 	network.Conn
 }
@@ -74,18 +55,28 @@ func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 }
 
 func TestMessageProtocol_Start(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	p, _ := NewPeer(ctx, logger, config)
 
 	mp := NewMessageProtocol()
-	mp.Start(context.Background(), logger, p)
-	assert.Equal(t, logger, mp.logger)
-	assert.Equal(t, p, mp.peer)
+	mp.Start(ctx, logger, p)
+	assert.Equal(logger, mp.logger)
+	assert.Equal(p, mp.peer)
 }
 
 func TestMessageProtocol_OnRequest(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var tests = []struct {
 		name      string
 		procedure string
@@ -101,78 +92,88 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			loggerTest := testLogger{Logger: logger}
 			config := Config{}
 			_ = config.InsertDefault()
-			p, _ := NewPeer(context.Background(), &loggerTest, config)
+			p, _ := NewPeer(ctx, &loggerTest, config)
 			mp := NewMessageProtocol()
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *RequestMsg) {
 				mp.logger.Debugf("Request received")
-				w.Write([]byte("Test response message"))
+				w.Write([]byte(testResponseData))
 			})
-			mp.Start(context.Background(), &loggerTest, p)
+			mp.Start(ctx, &loggerTest, p)
 
 			stream := testStream{}
-			reqMsg := newRequestMessage("TestRemotePeerID", tt.procedure, []byte(""))
+			reqMsg := newRequestMessage(testPeerID, tt.procedure, []byte(""))
 			data, _ := reqMsg.Encode()
 			stream.data = data
-			mp.onRequest(context.Background(), stream)
+			mp.onRequest(ctx, stream)
 
 			idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Request message received") })
-			assert.NotEqual(t, -1, idx)
+			assert.NotEqual(-1, idx)
 
 			idx = slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, tt.want) })
-			assert.NotEqual(t, -1, idx)
+			assert.NotEqual(-1, idx)
 		})
 	}
 }
 
 func TestMessageProtocol_OnResponse(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), &loggerTest, config)
+	p, _ := NewPeer(ctx, &loggerTest, config)
 	mp := NewMessageProtocol()
-	mp.Start(context.Background(), &loggerTest, p)
+	mp.Start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
-	mp.resCh["123456"] = ch
+	mp.resCh[testReqMsgID] = ch
 
 	stream := testStream{}
-	reqMsg := newResponseMessage("123456", []byte("Test response message"), errors.New("Test error message"))
+	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
 
 	select {
 	case response := <-ch:
-		assert.Equal(t, "Test response message", string(response.Data()))
-		assert.Equal(t, "Test error message", response.Error().Error())
+		assert.Equal(testResponseData, string(response.Data()))
+		assert.Equal(testError, response.Error().Error())
 		break
 	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not created and sent to the channel")
 	}
 
-	assert.Equal(t, 1, len(mp.resCh))
+	assert.Equal(1, len(mp.resCh))
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received") })
-	assert.NotEqual(t, -1, idx)
+	assert.NotEqual(-1, idx)
 }
 
 func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), &loggerTest, config)
+	p, _ := NewPeer(ctx, &loggerTest, config)
 	mp := NewMessageProtocol()
-	mp.Start(context.Background(), &loggerTest, p)
-	// There is no channel for the request ID "123456"
+	mp.Start(ctx, &loggerTest, p)
+	// There is no channel for the request ID "testReqMsgID"
 
 	stream := testStream{}
-	reqMsg := newResponseMessage("123456", []byte("Test response message"), nil)
+	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), nil)
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
 
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received for unknown request ID") })
-	assert.NotEqual(t, -1, idx)
+	assert.NotEqual(-1, idx)
 }
 
 func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
@@ -182,13 +183,13 @@ func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
 	}
 
 	mp := NewMessageProtocol()
-	err := mp.RegisterRPCHandler("testRPC", testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
 
-	assert.NotNil(mp.rpcHandlers["testRPC"])
+	assert.NotNil(mp.rpcHandlers[testRPC])
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
-	handler := mp.rpcHandlers["testRPC"]
+	handler := mp.rpcHandlers[testRPC]
 	f2 := *(*unsafe.Pointer)(unsafe.Pointer(&handler))
 	assert.True(f1 == f2)
 }
@@ -199,20 +200,22 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	testHandler := func(w ResponseWriter, req *RequestMsg) {
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	p, _ := NewPeer(ctx, logger, config)
 
 	mp := NewMessageProtocol()
 	mp.Start(ctx, logger, p)
 
-	err := mp.RegisterRPCHandler("testRPC", testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.NotNil(err)
 	assert.Equal("cannot register RPC handler after MessageProtocol is started", err.Error())
 
-	_, exist := mp.rpcHandlers["testRPC"]
+	_, exist := mp.rpcHandlers[testRPC]
 	assert.False(exist)
 }
 
@@ -224,120 +227,140 @@ func TestMessageProtocol_RegisterRPCHandlerAlreadyRegistered(t *testing.T) {
 
 	mp := NewMessageProtocol()
 
-	err := mp.RegisterRPCHandler("testRPC", testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
-	_, exist := mp.rpcHandlers["testRPC"]
+	_, exist := mp.rpcHandlers[testRPC]
 	assert.True(exist)
 
-	err = mp.RegisterRPCHandler("testRPC", testHandler)
+	err = mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.NotNil(err)
 	assert.Equal("rpcHandler testRPC is already registered", err.Error())
 }
 
 func TestMessageProtocol_SendRequestMessage(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(ctx, logger, config)
 	mp1 := NewMessageProtocol()
-	mp1.Start(context.Background(), logger, p1)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	mp1.Start(ctx, logger, p1)
+	p2, _ := NewPeer(ctx, logger, config)
 	mp2 := NewMessageProtocol()
-	mp2.RegisterRPCHandler("ping", func(w ResponseWriter, req *RequestMsg) {
+	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Write([]byte("Average RTT with you:"))
 	})
-	mp2.Start(context.Background(), logger, p2)
+	mp2.Start(ctx, logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	err := p1.Connect(context.Background(), *p2AddrInfo)
-	assert.Nil(t, err)
+	err := p1.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
 
-	response, err := mp1.SendRequestMessage(context.Background(), p2.ID(), "ping", []byte("Test protocol request message"))
-	assert.Nil(t, err)
-	assert.Equal(t, p2.ID().String(), response.PeerID())
-	assert.Contains(t, string(response.Data()), "Average RTT with you:")
+	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
+	assert.Nil(err)
+	assert.Equal(p2.ID().String(), response.PeerID())
+	assert.Contains(string(response.Data()), "Average RTT with you:")
 }
 
 func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(ctx, logger, config)
 	mp1 := NewMessageProtocol()
-	mp1.Start(context.Background(), logger, p1)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	mp1.Start(ctx, logger, p1)
+	p2, _ := NewPeer(ctx, logger, config)
 	mp2 := NewMessageProtocol()
-	mp2.RegisterRPCHandler("ping", func(w ResponseWriter, req *RequestMsg) {
+	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Error(errors.New("Test RPC handler error!"))
 	})
-	mp2.Start(context.Background(), logger, p2)
+	mp2.Start(ctx, logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	err := p1.Connect(context.Background(), *p2AddrInfo)
-	assert.Nil(t, err)
+	err := p1.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
 
-	response, err := mp1.SendRequestMessage(context.Background(), p2.ID(), "ping", []byte("Test protocol request message"))
-	assert.Nil(t, err)
-	assert.Equal(t, p2.ID().String(), response.PeerID())
-	assert.Equal(t, []byte{}, response.Data())
-	assert.Contains(t, response.Error().Error(), "Test RPC handler error!")
+	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
+	assert.Nil(err)
+	assert.Equal(p2.ID().String(), response.PeerID())
+	assert.Equal([]byte{}, response.Data())
+	assert.Contains(response.Error().Error(), "Test RPC handler error!")
 }
 
 func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(ctx, logger, config)
 	mp1 := NewMessageProtocol()
-	mp1.Start(context.Background(), logger, p1)
+	mp1.Start(ctx, logger, p1)
 	mp1.timeout = time.Millisecond * 20 // Reduce timeout to 20 ms to speed up test
 	// Remove response message stream handler to simulate timeout
 	p1.host.RemoveStreamHandler(messageProtocolResID)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p2, _ := NewPeer(ctx, logger, config)
 	mp2 := NewMessageProtocol()
-	mp2.Start(context.Background(), logger, p2)
+	mp2.Start(ctx, logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	err := p1.Connect(context.Background(), *p2AddrInfo)
-	assert.Nil(t, err)
+	err := p1.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
 
-	response, err := mp1.SendRequestMessage(context.Background(), p2.ID(), "ping", []byte("Test protocol request message"))
-	assert.Nil(t, response)
-	assert.Equal(t, "timeout", err.Error())
+	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
+	assert.Nil(response)
+	assert.Equal("timeout", err.Error())
 }
 
 func TestMessageProtocol_SendResponseMessage(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
-	p1, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(ctx, logger, config)
 	mp1 := NewMessageProtocol()
-	mp1.Start(context.Background(), logger, p1)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	mp1.Start(ctx, logger, p1)
+	p2, _ := NewPeer(ctx, logger, config)
 	mp2 := NewMessageProtocol()
-	mp2.Start(context.Background(), logger, p2)
+	mp2.Start(ctx, logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	err := p1.Connect(context.Background(), *p2AddrInfo)
-	assert.Nil(t, err)
+	err := p1.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
 	ch := make(chan *Response, 1)
-	mp2.resCh["123456"] = ch
-	err = mp1.SendResponseMessage(context.Background(), p2.ID(), "123456", []byte("Test protocol response message"), errors.New("test error"))
-	assert.Nil(t, err)
+	mp2.resCh[testReqMsgID] = ch
+	err = mp1.SendResponseMessage(ctx, p2.ID(), testReqMsgID, []byte(testResponseData), errors.New(testError))
+	assert.Nil(err)
 
 	select {
 	case response := <-ch:
-		assert.Equal(t, p1.ID().String(), response.PeerID())
-		assert.Equal(t, "Test protocol response message", string(response.Data()))
-		assert.Equal(t, "test error", response.Error().Error())
+		assert.Equal(p1.ID().String(), response.PeerID())
+		assert.Equal(testResponseData, string(response.Data()))
+		assert.Equal(testError, response.Error().Error())
 		break
 	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not received")
@@ -357,23 +380,28 @@ func (tmr *TestMessageReceive) onMessageReceive(s network.Stream) {
 }
 
 func TestMessageProtocol_SendProtoMessage(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 
-	p1, _ := NewPeer(context.Background(), logger, config)
-	p2, _ := NewPeer(context.Background(), logger, config)
+	p1, _ := NewPeer(ctx, logger, config)
+	p2, _ := NewPeer(ctx, logger, config)
 	p2.host.SetStreamHandler(messageProtocolReqID, tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	_ = p1.Connect(context.Background(), *p2AddrInfo)
-	msg := newRequestMessage(p1.ID(), "ping", []byte("Test protocol message"))
+	_ = p1.Connect(ctx, *p2AddrInfo)
+	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
 	mp := NewMessageProtocol()
-	mp.Start(context.Background(), logger, p1)
-	err := mp.sendMessage(context.Background(), p2.ID(), messageProtocolReqID, msg)
-	assert.Nil(t, err)
+	mp.Start(ctx, logger, p1)
+	err := mp.sendMessage(ctx, p2.ID(), messageProtocolReqID, msg)
+	assert.Nil(err)
 
 	select {
 	case <-tmr.done:
@@ -382,5 +410,5 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 		t.Fatalf("timeout occurs, message was not delivered to a peer")
 	}
 
-	assert.Contains(t, tmr.msg, "Test protocol message")
+	assert.Contains(tmr.msg, testRequestData)
 }
