@@ -72,7 +72,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	p2p := NewP2P(config)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.config.Version)
-	assert.Equal([]string{testIPv4TCP, testIPv4UDP}, p2p.config.Addresses)
+	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.config.Addresses)
 	assert.Equal(false, p2p.config.AllowIncomingConnections)
 	assert.Equal(false, p2p.config.EnableNATService)
 	assert.Equal(false, p2p.config.EnableUsingRelayService)

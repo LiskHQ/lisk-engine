@@ -1,7 +1,6 @@
 package pubsub
 
 import (
-	"context"
 	"testing"
 
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
@@ -15,17 +14,14 @@ import (
 func TestParseAddresses(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	// empty array
 	stringAddresses := []string{}
-	_, err := ParseAddresses(ctx, stringAddresses)
+	_, err := ParseAddresses(stringAddresses)
 	assert.Nilf(err, "empty array should not return an error")
 
 	// empty addresses
 	stringAddresses = []string{"", ""}
-	_, err = ParseAddresses(ctx, stringAddresses)
+	_, err = ParseAddresses(stringAddresses)
 	assert.Errorf(err, "empty string as an address should return an error")
 
 	// valid address
@@ -35,7 +31,7 @@ func TestParseAddresses(t *testing.T) {
 		"/ip4/172.20.10.6/udp/49529/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1REW41BR",
 		"/ip6/2001:0db8:85a3:0000:0000:8a2e:0370:7334/p2p/12D3KooWGQTQuV6JfgpKpc847NMsxaFnKXDEpkN5kbeH1SDFW34S",
 	}
-	_, err = ParseAddresses(ctx, stringAddresses)
+	_, err = ParseAddresses(stringAddresses)
 	assert.Nilf(err, "valid address should parse successfully")
 
 	// invalid address
@@ -46,7 +42,7 @@ func TestParseAddresses(t *testing.T) {
 		"/ip4/7.7.7.7/tcp/4242/p2p/QmRelay/p2p-circuit/p2p/QmRelayedPeer",
 		"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
 	}
-	_, err = ParseAddresses(ctx, stringAddresses)
+	_, err = ParseAddresses(stringAddresses)
 	assert.Errorf(err, "invalid address are not acceptable")
 }
 

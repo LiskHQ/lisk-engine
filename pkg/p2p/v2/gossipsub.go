@@ -51,7 +51,11 @@ func (gs *GossipSub) Start(ctx context.Context,
 	sk *lps.ScoreKeeper,
 	cfg Config,
 ) error {
-	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedPeers)
+	seedNodes, err := lps.ParseAddresses(cfg.SeedPeers)
+	if err != nil {
+		return err
+	}
+	fixedNodes, err := lps.ParseAddresses(cfg.FixedPeers)
 	if err != nil {
 		return err
 	}
@@ -145,7 +149,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	options = append(options, pubsub.WithPeerGater(pgParams))
 
 	options = append(options,
-		pubsub.WithDirectPeers(seedNodes),
+		pubsub.WithDirectPeers(fixedNodes),
 		pubsub.WithSubscriptionFilter(
 			pubsub.WrapLimitSubscriptionFilter(
 				pubsub.NewAllowlistSubscriptionFilter(topics...),

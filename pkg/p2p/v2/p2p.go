@@ -4,14 +4,17 @@ package p2p
 import (
 	"context"
 	"errors"
+	"io"
 	"sync"
 	"time"
 
+	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
 type AddressInfo2 peer.AddrInfo // TODO - Rename this type to AddressInfo. (GH issue #19)
@@ -45,7 +48,7 @@ func (c *Config) InsertDefault() error {
 		c.Version = "1.0"
 	}
 	if c.Addresses == nil {
-		c.Addresses = []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}
+		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
 	}
 	if c.ConnectionSecurity == "" {
 		c.ConnectionSecurity = "tls"
@@ -76,10 +79,11 @@ func (c *Config) InsertDefault() error {
 
 // P2P type - a p2p service.
 type P2P struct {
-	logger log.Logger
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
-	config Config
+	logger     log.Logger
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	config     Config
+	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
 	*GossipSub
@@ -111,9 +115,22 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		return err
 	}
 
+	// Start peer discovery bootstrap process.
+	seedPeers, err := lps.ParseAddresses(p2p.config.SeedPeers)
+	if err != nil {
+		cancel()
+		return err
+	}
+	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, bootstrap.BootstrapConfigWithPeers(seedPeers))
+	if err != nil {
+		cancel()
+		return err
+	}
+
 	p2p.logger = logger
 	p2p.cancel = cancel
 	p2p.Peer = peer
+	p2p.bootCloser = bootCloser
 
 	p2p.wg.Add(1)
 	go natTraversalService(ctx, &p2p.wg, p2p.config, p2p.MessageProtocol)
@@ -134,6 +151,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 // Stop function stops a P2P.
 func (p2p *P2P) Stop() error {
 	p2p.cancel()
+	p2p.bootCloser.Close()
 
 	waitCh := make(chan struct{})
 	go func() {
