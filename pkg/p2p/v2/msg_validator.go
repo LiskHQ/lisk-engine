@@ -39,6 +39,5 @@ func NewValidator(mv Validator) MessageValidator {
 		}
 
 		return mv(ctx, lskMsg)
-
 	}
 }

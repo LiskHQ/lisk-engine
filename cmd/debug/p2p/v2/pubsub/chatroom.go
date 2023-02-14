@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"strings"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
@@ -34,20 +32,6 @@ type ChatMessage struct {
 	Message    string
 	SenderID   string
 	SenderNick string
-}
-
-// ValidateMessage validates the message.
-func (cm *ChatMessage) ValidateMessage(ctx context.Context, msg *p2p.Message) pubsub.ValidationResult {
-	err := json.Unmarshal(msg.Data, cm)
-	if err != nil {
-		return pubsub.ValidationIgnore
-	}
-
-	if strings.Contains(cm.Message, "invalid") {
-		return pubsub.ValidationReject
-	} else {
-		return pubsub.ValidationAccept
-	}
 }
 
 // JoinChatRoom tries to subscribe to the PubSub topic for the room name, returning

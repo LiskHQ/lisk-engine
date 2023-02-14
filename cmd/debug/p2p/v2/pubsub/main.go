@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -83,7 +85,19 @@ func main() {
 	}
 
 	if *hasValidator {
-		tv := p2p.NewValidator(&ChatMessage{})
+		tv := p2p.NewValidator(func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+			cm := new(ChatMessage)
+			err := json.Unmarshal(msg.Data, cm)
+			if err != nil {
+				return p2p.ValidationIgnore
+			}
+
+			if strings.Contains(cm.Message, "invalid") {
+				return p2p.ValidationReject
+			} else {
+				return p2p.ValidationAccept
+			}
+		})
 		err = gs.RegisterTopicValidator(topicName(roomName), tv)
 		if err != nil {
 			panic(err)

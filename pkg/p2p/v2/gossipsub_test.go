@@ -190,17 +190,16 @@ func TestGossipSub_Publish(t *testing.T) {
 	gs := NewGossipSub()
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 
-	tv := NewValidator(newTestValidator())
-	err := gs.RegisterTopicValidator(testTopic1, tv)
+	v := NewValidator(testMV)
+	err := gs.RegisterTopicValidator(testTopic1, v)
 	assert.Equal(err, ErrGossipSubIsNotRunnig)
 
 	gs.Start(ctx, wg, logger, p, sk, config)
-	assert.Nil(gs.RegisterTopicValidator(testTopic1, tv))
+	assert.Nil(gs.RegisterTopicValidator(testTopic1, v))
 
 	err = gs.Publish(ctx, testTopic1, msg)
 	assert.Nil(err)
 
-	invalidMsg := newMessage([]byte("testMessageInvalid"))
 	err = gs.Publish(ctx, testTopic1, invalidMsg)
 	assert.EqualError(err, pubsub.RejectValidationFailed)
 	// check the validation nofify once

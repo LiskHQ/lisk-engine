@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/stretchr/testify/assert"
 
 	logger "github.com/LiskHQ/lisk-engine/pkg/log"
@@ -36,7 +35,15 @@ const (
 )
 
 var (
-	msg = newMessage([]byte("testMessageData"))
+	msg        = newMessage([]byte("testMessageData"))
+	invalidMsg = newMessage([]byte("testMessageInvalid"))
+	testMV     = func(ctx context.Context, msg *Message) ValidationResult {
+		if bytes.Contains(msg.Data, []byte("Invalid")) {
+			return ValidationReject
+		} else {
+			return ValidationAccept
+		}
+	}
 )
 
 type testLogger struct {
@@ -54,20 +61,6 @@ func (l *testLogger) Warningf(msg string, others ...interface{}) {
 
 func (l *testLogger) Errorf(msg string, others ...interface{}) {
 	l.logs = append(l.logs, msg)
-}
-
-type testValidator struct{}
-
-func (tv *testValidator) ValidateMessage(ctx context.Context, msg *Message) pubsub.ValidationResult {
-	if bytes.Contains(msg.Data, []byte("Invalid")) {
-		return pubsub.ValidationReject
-	} else {
-		return pubsub.ValidationAccept
-	}
-}
-
-func newTestValidator() *testValidator {
-	return &testValidator{}
 }
 
 func TestP2P_NewP2P(t *testing.T) {
@@ -110,6 +103,42 @@ func TestP2P_Start(t *testing.T) {
 	assert.NotNil(p2p.host)
 	assert.NotNil(p2p.MessageProtocol)
 	assert.NotNil(p2p.Peer.peerbook)
+}
+
+func TestP2P_AddPenalty(t *testing.T) {
+	assert := assert.New(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	config := Config{
+		AllowIncomingConnections: true,
+	}
+	_ = config.InsertDefault()
+	node1 := NewP2P(config)
+	node2 := NewP2P(config)
+	logger, _ := logger.NewDefaultProductionLogger()
+	node1.RegisterEventHandler(testTopic1, func(event *Event) {})
+	node2.RegisterEventHandler(testTopic1, func(event *Event) {})
+	err := node1.Start(logger)
+	assert.Nil(err)
+	err = node2.Start(logger)
+	assert.Nil(err)
+
+	err = node2.Publish(ctx, testTopic1, msg)
+	assert.Nil(err)
+	p2Addrs, err := node2.P2PAddrs()
+	assert.Nil(err)
+	p2AddrInfo, err := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	assert.Nil(err)
+	err = node1.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+
+	node1.ApplyPenalty(ctx, *p2AddrInfo, 10)
+
+	assert.Equal(node2.ID(), node1.ConnectedPeers()[0])
+
+	node1.ApplyPenalty(ctx, *p2AddrInfo, 100)
+	assert.Equal(len(node1.ConnectedPeers()), 0)
 }
 
 func TestP2P_Stop(t *testing.T) {

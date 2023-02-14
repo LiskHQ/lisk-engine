@@ -233,9 +233,6 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 	return nil
 }
 
-func (gs *GossipSub) AddPenalty() {
-}
-
 // ListPeers returns an array of ID based on given topic.
 func (gs *GossipSub) ListPeers(topic string) ([]peer.ID, error) {
 	if gs.ps == nil {
@@ -246,12 +243,12 @@ func (gs *GossipSub) ListPeers(topic string) ([]peer.ID, error) {
 }
 
 // RegisterValidator registers a validator for given topic.
-func (gs *GossipSub) RegisterTopicValidator(topic string, mtv *MessageValidator) error {
+func (gs *GossipSub) RegisterTopicValidator(topic string, mv MessageValidator) error {
 	if gs.ps == nil {
 		return ErrGossipSubIsNotRunnig
 	}
 
-	return gs.ps.RegisterTopicValidator(topic, mtv.Validator(), mtv.Opts()...)
+	return gs.ps.RegisterTopicValidator(topic, mv)
 }
 
 // RegisterEventHandler registers an event handler for an event type.

@@ -33,9 +33,10 @@ const (
 
 // Peer type - a p2p node.
 type Peer struct {
-	logger   log.Logger
-	host     host.Host
-	peerbook *Peerbook
+	logger    log.Logger
+	host      host.Host
+	peerbook  *Peerbook
+	peerScore *PeerScore
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -146,7 +147,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		return nil, err
 	}
 
-	p = &Peer{logger: logger, host: host, peerbook: peerbook}
+	p = &Peer{logger: logger, host: host, peerbook: peerbook, peerScore: NewPeerScore()}
 	p.logger.Infof("Peer successfully created")
 	return p, nil
 }
@@ -292,4 +293,9 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	}()
 
 	return peerChan
+}
+
+// addPenalty will update the score of given peer ID.
+func (p *Peer) addPenalty(pid peer.ID, score int) int {
+	return p.peerScore.addPenalty(pid, score)
 }
