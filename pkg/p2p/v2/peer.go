@@ -151,7 +151,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 		return nil, err
 	}
 
-	peerbook, err := NewPeerbook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs, config.KnownPeers)
+	peerbook, err := NewPeerbook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -208,14 +208,20 @@ func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
 	return peer.AddrInfoToP2pAddrs(&peerInfo)
 }
 
-// ConnectedPeers returns a list of all connected peers.
-func (p *Peer) ConnectedPeers() []peer.ID {
+// ConnectedPeers returns a list of all connected peers IDs.
+func (p *Peer) ConnectedPeers() peer.IDSlice {
 	return p.host.Network().Peers()
 }
 
-// KnownPeers returns a list of all known peers.
-func (p *Peer) KnownPeers() peer.IDSlice {
-	return p.host.Peerstore().Peers()
+// KnownPeers returns a list of all known peers with their addresses.
+func (p *Peer) KnownPeers() []peer.AddrInfo {
+	peers := make([]peer.AddrInfo, 0)
+
+	for _, peerID := range p.host.Peerstore().Peers() {
+		peers = append(peers, p.host.Peerstore().PeerInfo(peerID))
+	}
+
+	return peers
 }
 
 // GetHost returns a libp2p host.
@@ -273,7 +279,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	go func() {
 		defer close(peerChan)
 
-		knownPeers := p.peerbook.KnownPeers()
+		knownPeers := p.KnownPeers()
 
 		// Shuffle known peers to avoid always returning the same peers.
 		for i := range knownPeers {
@@ -292,7 +298,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 
 		for {
 			select {
-			case peerChan <- *knownPeers[numPeers-1]:
+			case peerChan <- knownPeers[numPeers-1]:
 				numPeers--
 				if numPeers == 0 {
 					return

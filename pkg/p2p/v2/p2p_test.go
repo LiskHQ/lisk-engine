@@ -81,7 +81,6 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal([]string{}, p2p.config.SeedPeers)
 	assert.Equal([]string{}, p2p.config.FixedPeers)
 	assert.Equal([]string{}, p2p.config.BlacklistedIPs)
-	assert.Equal([]AddressInfo2{}, p2p.config.KnownPeers)
 	assert.Equal(100, p2p.config.MaxInboundConnections)
 	assert.Equal(20, p2p.config.MaxOutboundConnections)
 	assert.Equal(false, p2p.config.IsSeedNode)

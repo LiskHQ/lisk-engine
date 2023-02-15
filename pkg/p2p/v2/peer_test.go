@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
@@ -230,28 +229,41 @@ func TestPeer_PeerSource(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 
-	addr1, _ := ma.NewMultiaddr("/ip4/1.2.3.4/tcp/80")
-	addr2, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
-	addr3, _ := ma.NewMultiaddr("/ip4/5.6.7.8/udp/90")
-
-	knownPeers := []AddressInfo2{
-		{ID: "11111", Addrs: []ma.Multiaddr{addr1}},
-		{ID: "22222", Addrs: []ma.Multiaddr{addr2}},
-		{ID: "33333", Addrs: []ma.Multiaddr{addr3}},
-	}
-
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}, KnownPeers: knownPeers}
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
-	wg := &sync.WaitGroup{}
-	p, _ := NewPeer(ctx, wg, logger, config)
 
+	// Peer 1
+	p1, _ := NewPeer(ctx, logger, config)
+	p1Addrs, _ := p1.P2PAddrs()
+	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
+
+	// Peer 2
+	p2, _ := NewPeer(ctx, logger, config)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	// Peer 3
+	p3, _ := NewPeer(ctx, logger, config)
+	p3Addrs, _ := p3.P2PAddrs()
+	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+
+	// Peer which will be connected to other peers
+	p, _ := NewPeer(ctx, logger, config)
+	err := p.Connect(ctx, *p1AddrInfo)
+	assert.Nil(err)
+	err = p.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+	err = p.Connect(ctx, *p3AddrInfo)
+	assert.Nil(err)
+
+	// Test peer source
 	ch := p.peerSource(ctx, 3)
 
 	for i := 0; i < 3; i++ {
 		select {
 		case addr := <-ch:
 			assert.NotNil(addr)
-			assert.Equal(1, len(addr.Addrs))
+			assert.Equal(2, len(addr.Addrs))
 			break
 		case <-time.After(testTimeout):
 			t.Fatalf("timeout occurs, peer address info was not sent to the channel")
