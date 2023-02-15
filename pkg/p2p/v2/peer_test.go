@@ -82,31 +82,6 @@ func TestPeer_ConnectIPIsBlacklisted(t *testing.T) {
 	assert.Equal(0, len(p1.ConnectedPeers()))
 }
 
-func TestPeer_ConnectIPIsBanned(t *testing.T) {
-	assert := assert.New(t)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	logger, _ := log.NewDefaultProductionLogger()
-	config1 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = config1.InsertDefault()
-	config2 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = config2.InsertDefault()
-	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, config1)
-	p2, _ := NewPeer(ctx, wg, logger, config2)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
-
-	// p2 is banned
-	p1.peerbook.bannedIPs = []*BannedIP{{ip: "127.0.0.1", timestamp: 123456}}
-
-	err := p1.Connect(ctx, *p2AddrInfo)
-	assert.Nil(err)
-	assert.Equal(0, len(p1.ConnectedPeers()))
-}
-
 func TestPeer_Disconnect(t *testing.T) {
 	assert := assert.New(t)
 

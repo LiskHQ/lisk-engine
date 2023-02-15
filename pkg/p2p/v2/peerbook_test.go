@@ -3,7 +3,6 @@ package p2p
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
@@ -132,76 +131,6 @@ func TestPeerbook_BlacklistedIPs(t *testing.T) {
 	assert.Equal("6.6.6.6", peers[1])
 }
 
-func TestPeerbook_BannedIPs(t *testing.T) {
-	assert := assert.New(t)
-
-	pb, _ := NewPeerbook([]string{}, []string{}, []string{})
-	pb.bannedIPs = []*BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
-
-	peers := pb.BannedIPs()
-	assert.Equal(2, len(peers))
-	assert.Equal("7.7.7.7", peers[0].ip)
-	assert.Equal(int64(12345), peers[0].timestamp)
-	assert.Equal("8.8.8.8", peers[1].ip)
-	assert.Equal(int64(6789), peers[1].timestamp)
-}
-
-func TestPeerbook_BanIP(t *testing.T) {
-	assert := assert.New(t)
-
-	pb, _ := NewPeerbook([]string{}, []string{}, []string{})
-
-	pb.BanIP("1.2.3.4")
-	assert.Equal(1, len(pb.bannedIPs))
-	assert.Equal("1.2.3.4", pb.bannedIPs[0].ip)
-	assert.True(pb.bannedIPs[0].timestamp > 0)
-}
-
-func TestPeerbook_BanIPAlreadyBanned(t *testing.T) {
-	assert := assert.New(t)
-
-	pb, _ := NewPeerbook([]string{}, []string{}, []string{})
-
-	timestamp := time.Now().Unix() - 10
-	pb.bannedIPs = []*BannedIP{{ip: "1.2.3.4", timestamp: timestamp}}
-
-	pb.BanIP("1.2.3.4")
-	assert.Equal("1.2.3.4", pb.bannedIPs[0].ip)
-	assert.True(pb.bannedIPs[0].timestamp > timestamp)
-}
-
-func TestPeerbook_BanIPSeedPeer(t *testing.T) {
-	assert := assert.New(t)
-
-	logger, _ := log.NewDefaultProductionLogger()
-	loggerTest := testLogger{Logger: logger}
-
-	seedPeers := []string{"/ip4/1.1.1.1/tcp/10/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", "/ip4/2.2.2.2/tcp/20/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXB"}
-	pb, _ := NewPeerbook(seedPeers, []string{}, []string{})
-	pb.init(&loggerTest)
-
-	pb.BanIP("1.1.1.1")
-	assert.Equal(0, len(pb.bannedIPs))
-	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "IP %s is present in seed peers, will not ban it") })
-	assert.NotEqual(-1, idx)
-}
-
-func TestPeerbook_BanIPFixedPeer(t *testing.T) {
-	assert := assert.New(t)
-
-	logger, _ := log.NewDefaultProductionLogger()
-	loggerTest := testLogger{Logger: logger}
-
-	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/6.6.6.6/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
-	pb, _ := NewPeerbook([]string{}, fixedPeers, []string{})
-	pb.init(&loggerTest)
-
-	pb.BanIP("6.6.6.6")
-	assert.Equal(0, len(pb.bannedIPs))
-	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "IP %s is present in fixed peers, will not ban it") })
-	assert.NotEqual(-1, idx)
-}
-
 func TestPeerbook_IsIPInSeedPeers(t *testing.T) {
 	assert := assert.New(t)
 
@@ -265,32 +194,4 @@ func TestPeerbook_IsInFixedPeers(t *testing.T) {
 
 	result = pb.isInFixedPeers("12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC")
 	assert.True(result)
-}
-
-func TestPeerbook_IsIPBanned(t *testing.T) {
-	assert := assert.New(t)
-
-	pb, _ := NewPeerbook([]string{}, []string{}, []string{})
-	pb.bannedIPs = []*BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
-
-	result := pb.isIPBanned("1.2.3.4")
-	assert.False(result)
-
-	result = pb.isIPBanned("8.8.8.8")
-	assert.True(result)
-}
-
-func TestPeerbook_RemoveIPFromBannedIPs(t *testing.T) {
-	assert := assert.New(t)
-
-	pb, _ := NewPeerbook([]string{}, []string{}, []string{})
-	pb.bannedIPs = []*BannedIP{{ip: "7.7.7.7", timestamp: 12345}, {ip: "8.8.8.8", timestamp: 6789}}
-
-	assert.Equal(2, len(pb.bannedIPs))
-	pb.removeIPFromBannedIPs("1.2.3.4")
-	assert.Equal(2, len(pb.bannedIPs))
-
-	pb.removeIPFromBannedIPs("8.8.8.8")
-	assert.Equal(1, len(pb.bannedIPs))
-	assert.Equal("7.7.7.7", pb.bannedIPs[0].ip)
 }

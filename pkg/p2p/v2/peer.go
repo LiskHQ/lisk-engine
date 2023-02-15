@@ -180,13 +180,13 @@ func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
 			p.logger.Warningf("IP %s is blacklisted. Will not connect to a peer %s", ip, peer.ID)
 			return nil
 		}
-		if p.peerbook.isIPBanned(ip) {
-			p.logger.Warningf("IP %s is banned. Will not connect to a peer %s", ip, peer.ID)
-			return nil
-		}
+	}
+	err := p.host.Connect(ctx, peer)
+	if err != nil {
+		return err
 	}
 	p.host.Peerstore().AddAddrs(peer.ID, peer.Addrs, peerstore.PermanentAddrTTL)
-	return p.host.Connect(ctx, peer)
+	return nil
 }
 
 // Disconnect from a peer.

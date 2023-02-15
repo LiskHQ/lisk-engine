@@ -22,7 +22,6 @@ type Peerbook struct {
 	seedPeers      []*peer.AddrInfo
 	fixedPeers     []*peer.AddrInfo
 	blacklistedIPs []string
-	bannedIPs      []*BannedIP
 }
 
 // BannedIP represents a banned IP and its timestamp.
@@ -51,7 +50,7 @@ func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []strin
 		fixedPeersAddrInfo[i] = addrInfo
 	}
 
-	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, blacklistedIPs: blacklistedIPs, bannedIPs: []*BannedIP{}}
+	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, blacklistedIPs: blacklistedIPs}
 	return peerbook, nil
 }
 
@@ -89,43 +88,6 @@ func (pb *Peerbook) BlacklistedIPs() []string {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.blacklistedIPs
-}
-
-// BannedIPs returns banned peers.
-func (pb *Peerbook) BannedIPs() []*BannedIP {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
-	return pb.bannedIPs
-}
-
-// BanIP bans an IP address.
-func (pb *Peerbook) BanIP(ip string) {
-	pb.mutex.Lock()
-	index := collection.FindIndex(pb.bannedIPs, func(val *BannedIP) bool {
-		return val.ip == ip
-	})
-	pb.mutex.Unlock()
-
-	if index > -1 {
-		pb.mutex.Lock()
-		pb.bannedIPs[index].timestamp = time.Now().Unix()
-		pb.mutex.Unlock()
-		return
-	}
-
-	// Warn if the IP is present in seed peers or fixed peers and do not ban it.
-	if pb.isIPInSeedPeers(ip) {
-		pb.logger.Warningf("IP %s is present in seed peers, will not ban it", ip)
-		return
-	}
-	if pb.isIPInFixedPeers(ip) {
-		pb.logger.Warningf("IP %s is present in fixed peers, will not ban it", ip)
-		return
-	}
-
-	pb.mutex.Lock()
-	pb.bannedIPs = append(pb.bannedIPs, &BannedIP{ip: ip, timestamp: time.Now().Unix()})
-	pb.mutex.Unlock()
 }
 
 // isIPInSeedPeers returns true if the IP is in the list of seed peers.
@@ -196,32 +158,6 @@ func (pb *Peerbook) isInFixedPeers(peerID peer.ID) bool {
 	return index != -1
 }
 
-// isIPBanned returns true if the IP is banned.
-func (pb *Peerbook) isIPBanned(ip string) bool {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
-
-	index := collection.FindIndex(pb.bannedIPs, func(val *BannedIP) bool {
-		return val.ip == ip
-	})
-
-	return index != -1
-}
-
-// removeIPFromBannedIPs removes an IP from the list of banned IPs.
-func (pb *Peerbook) removeIPFromBannedIPs(ip string) {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
-
-	index := collection.FindIndex(pb.bannedIPs, func(val *BannedIP) bool {
-		return val.ip == ip
-	})
-
-	if index != -1 {
-		pb.bannedIPs = append(pb.bannedIPs[:index], pb.bannedIPs[index+1:]...)
-	}
-}
-
 // peerBookService handles are related jobs (update known peers list, manage banning/unbanning peers) for peerbook on a predefined interval.
 func (pb *Peerbook) peerBookService(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 	defer wg.Done()
@@ -235,13 +171,6 @@ func (pb *Peerbook) peerBookService(ctx context.Context, wg *sync.WaitGroup, p *
 		case <-t.C:
 			pb.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
 			pb.logger.Debugf("List of known peers: %v", p.KnownPeers())
-
-			pb.logger.Debugf("List of banned IPs: %v", pb.BannedIPs())
-			for _, ip := range pb.BannedIPs() {
-				if ip.timestamp+banTimeout < time.Now().Unix() {
-					pb.removeIPFromBannedIPs(ip.ip)
-				}
-			}
 
 			t.Reset(peerbookUpdateTimeout)
 		case <-ctx.Done():
