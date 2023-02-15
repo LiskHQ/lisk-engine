@@ -133,9 +133,6 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.wg.Add(1)
 	go gossipSubEventHandler(ctx, &p2p.wg, peer, p2p.GossipSub)
 
-	p2p.wg.Add(1)
-	go p2p.peerbook.peerBookService(ctx, &p2p.wg, peer)
-
 	logger.Infof("P2P module successfully started")
 	return nil
 }

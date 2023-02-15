@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -149,26 +148,4 @@ func (pb *Peerbook) isInFixedPeers(peerID peer.ID) bool {
 	})
 
 	return index != -1
-}
-
-// peerBookService handles are related jobs (update known peers list, manage banning/unbanning peers) for peerbook on a predefined interval.
-func (pb *Peerbook) peerBookService(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
-	defer wg.Done()
-	pb.logger.Infof("Peerbook service started")
-
-	// Set up a ticker to update the peerbook on a predefined interval.
-	t := time.NewTicker(peerbookUpdateTimeout)
-
-	for {
-		select {
-		case <-t.C:
-			pb.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
-			pb.logger.Debugf("List of known peers: %v", p.KnownPeers())
-
-			t.Reset(peerbookUpdateTimeout)
-		case <-ctx.Done():
-			pb.logger.Infof("Peerbook service stopped")
-			return
-		}
-	}
 }

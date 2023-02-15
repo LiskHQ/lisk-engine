@@ -325,7 +325,9 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 			}
 			counter++
 
-			p.logger.Debugf("List of banned IPs: %v", gs.BlacklistedPeers())
+			p.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
+			p.logger.Debugf("List of known peers: %v", p.KnownPeers())
+			p.logger.Debugf("List of blacklisted peers: %v", gs.BlacklistedPeers())
 
 			t.Reset(10 * time.Second)
 		case <-ctx.Done():
