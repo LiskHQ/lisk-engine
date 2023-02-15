@@ -128,7 +128,6 @@ func (gs *GossipSub) Start(ctx context.Context,
 		pubsub.GossipSubDlazy = 64
 		pubsub.GossipSubGossipFactor = 0.25
 		pubsub.GossipSubPruneBackoff = 5 * time.Minute
-		options = append(options, pubsub.WithPeerExchange(true))
 	}
 
 	pgTopicWeights := map[string]float64{}
@@ -159,8 +158,12 @@ func (gs *GossipSub) Start(ctx context.Context,
 	// We want to hide the author of the message from the topic subscribers.
 	options = append(options, pubsub.WithNoAuthor())
 
+	// We want to provide our own blacklist map to be able to check if a peer is blacklisted.
 	blacklist := pubsub.NewMapBlacklist()
 	options = append(options, pubsub.WithBlacklist(blacklist))
+
+	// We want to enable peer exchange for all peers and not only for seed peers.
+	options = append(options, pubsub.WithPeerExchange(true))
 
 	gossipSub, err := pubsub.NewGossipSub(ctx, p.GetHost(), options...)
 	if err != nil {
@@ -288,6 +291,8 @@ func (gs *GossipSub) BlacklistedPeers() []peer.AddrInfo {
 			blacklistedPeers = append(blacklistedPeers, p)
 		}
 	}
+
+	// TODO - append blacklisted peers from the conngater
 
 	return blacklistedPeers
 }
