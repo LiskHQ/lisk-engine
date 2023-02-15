@@ -12,22 +12,15 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
-const peerbookUpdateTimeout = time.Second * 5                      // Peerbook update timeout in nanoseconds.
-const banTimeout int64 = int64((time.Hour * 24) / time.Nanosecond) // Ban timeout in seconds (24 hours).
+const peerbookUpdateTimeout = time.Second * 5 // Peerbook update timeout in nanoseconds.
 
 // Peerbook keeps track of different lists of peers.
 type Peerbook struct {
-	logger         log.Logger
-	mutex          sync.Mutex
-	seedPeers      []*peer.AddrInfo
-	fixedPeers     []*peer.AddrInfo
-	blacklistedIPs []string
-}
-
-// BannedIP represents a banned IP and its timestamp.
-type BannedIP struct {
-	ip        string
-	timestamp int64
+	logger                    log.Logger
+	mutex                     sync.Mutex
+	seedPeers                 []*peer.AddrInfo
+	fixedPeers                []*peer.AddrInfo
+	permanentlyBlacklistedIPs []string
 }
 
 // NewPeerbook returns a new Peerbook.
@@ -50,7 +43,7 @@ func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []strin
 		fixedPeersAddrInfo[i] = addrInfo
 	}
 
-	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, blacklistedIPs: blacklistedIPs}
+	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, permanentlyBlacklistedIPs: blacklistedIPs}
 	return peerbook, nil
 }
 
@@ -58,13 +51,13 @@ func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []strin
 func (pb *Peerbook) init(logger log.Logger) {
 	pb.logger = logger
 
-	for _, ip := range pb.blacklistedIPs {
-		// Only warn if the blacklisted IP is present in seed peers or fixed peers.
+	for _, ip := range pb.permanentlyBlacklistedIPs {
+		// Only warn if the permanently blacklisted IP is present in seed peers or fixed peers.
 		if pb.isIPInSeedPeers(ip) {
-			pb.logger.Errorf("Blacklisted IP %s is present in seed peers", ip)
+			pb.logger.Errorf("Permanently blacklisted IP %s is present in seed peers", ip)
 		}
 		if pb.isIPInFixedPeers(ip) {
-			pb.logger.Errorf("Blacklisted IP %s is present in fixed peers", ip)
+			pb.logger.Errorf("Permanently blacklisted IP %s is present in fixed peers", ip)
 		}
 	}
 }
@@ -83,11 +76,11 @@ func (pb *Peerbook) FixedPeers() []*peer.AddrInfo {
 	return pb.fixedPeers
 }
 
-// BlacklistedIPs returns blacklisted IPs.
-func (pb *Peerbook) BlacklistedIPs() []string {
+// PermanentlyBlacklistedIPs returns permanently blacklisted IPs.
+func (pb *Peerbook) PermanentlyBlacklistedIPs() []string {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
-	return pb.blacklistedIPs
+	return pb.permanentlyBlacklistedIPs
 }
 
 // isIPInSeedPeers returns true if the IP is in the list of seed peers.
@@ -122,12 +115,12 @@ func (pb *Peerbook) isIPInFixedPeers(ip string) bool {
 	return false
 }
 
-// isIPBlacklisted returns true if the IP is blacklisted.
-func (pb *Peerbook) isIPBlacklisted(ip string) bool {
+// isIPPermanentlyBlacklisted returns true if the IP is permanently blacklisted.
+func (pb *Peerbook) isIPPermanentlyBlacklisted(ip string) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
-	index := collection.FindIndex(pb.blacklistedIPs, func(val string) bool {
+	index := collection.FindIndex(pb.permanentlyBlacklistedIPs, func(val string) bool {
 		return val == ip
 	})
 

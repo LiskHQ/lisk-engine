@@ -176,7 +176,7 @@ func (p *Peer) Close() error {
 func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
 	for _, addr := range peer.Addrs {
 		ip := lps.ExtractIP(addr)
-		if p.peerbook.isIPBlacklisted(ip) {
+		if p.peerbook.isIPPermanentlyBlacklisted(ip) {
 			p.logger.Warningf("IP %s is blacklisted. Will not connect to a peer %s", ip, peer.ID)
 			return nil
 		}

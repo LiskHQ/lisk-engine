@@ -75,7 +75,7 @@ func TestPeer_ConnectIPIsBlacklisted(t *testing.T) {
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	// p2 is blacklisted
-	p1.peerbook.blacklistedIPs = []string{"127.0.0.1"}
+	p1.peerbook.permanentlyBlacklistedIPs = []string{"127.0.0.1"}
 
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
