@@ -26,9 +26,11 @@ import (
 const (
 	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
 	pingTimeout              = time.Second * 5  // Ping service timeout in seconds.
+    const connectionTimeout = time.Second * 30 // Connection timeout in seconds.
 	expireTimeOfConnGater    = time.Hour * 24   // Peers will be disconnected after this time
 	intervalCheckOfConnGater = time.Second * 10 // Check the blocked list based on this period
 )
+
 
 // Connection security option type.
 const (
@@ -181,7 +183,9 @@ func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
 			return nil
 		}
 	}
-	err := p.host.Connect(ctx, peer)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, connectionTimeout)
+	err := p.host.Connect(ctxWithTimeout, peer)
+	cancel()
 	if err != nil {
 		return err
 	}
