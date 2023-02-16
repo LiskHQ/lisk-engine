@@ -312,9 +312,15 @@ func (p *Peer) deletePeer(pid peer.ID) {
 }
 
 // BlockPeer blocks the given peer ID.
-func (p *Peer) BlockPeer(pid peer.ID) {
+func (p *Peer) BlockPeer(pid peer.ID) error {
+	return p.connGater.BlockPeer(pid)
+}
+
+// BlockAndDisconnectPeer blocks the given peer ID and immediately try to close the connection.
+func (p *Peer) BlockAndDisconnectPeer(ctx context.Context, pid peer.ID) error {
 	err := p.connGater.BlockPeer(pid)
 	if err != nil {
-		p.logger.Error("Block peer with error:", err)
+		return err
 	}
+	return p.Disconnect(ctx, pid)
 }

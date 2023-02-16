@@ -61,27 +61,25 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	blockPeer := func() {
-		remoteID := s.Conn().RemotePeer()
-		mp.peer.BlockPeer(remoteID)
-		closeErr := mp.peer.Disconnect(ctx, remoteID)
-		if closeErr != nil {
-			mp.logger.Errorf("Blocked peer is not disconnected with error:", err)
-		}
-	}
-
+	remoteID := s.Conn().RemotePeer()
 	newMsg := newRequestMessage(s.Conn().RemotePeer(), "", nil)
 	if err := newMsg.Decode(buf); err != nil {
-		blockPeer()
 		mp.logger.Errorf("Error while decoding message: %v", err)
+		err = mp.peer.BlockAndDisconnectPeer(ctx, remoteID)
+		if err != nil {
+			mp.logger.Error("BlockAndDisconnet error:", err)
+		}
 		return
 	}
 	mp.logger.Debugf("Request message received: %+v", newMsg)
 
 	handler, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
-		blockPeer()
 		mp.logger.Errorf("rpcHandler %s is not registered", newMsg.Procedure)
+		err = mp.peer.BlockAndDisconnectPeer(ctx, remoteID)
+		if err != nil {
+			mp.logger.Error("BlockAndDisconnet error:", err)
+		}
 		return
 	}
 	mp.logger.Debugf("%s request received", newMsg.Procedure)
@@ -108,12 +106,11 @@ func (mp *MessageProtocol) onResponse(ctx context.Context, s network.Stream) {
 	newMsg := newResponseMessage("", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
 		remoteID := s.Conn().RemotePeer()
-		mp.peer.BlockPeer(remoteID)
-		closeErr := mp.peer.Disconnect(ctx, remoteID)
-		if closeErr != nil {
-			mp.logger.Errorf("Blocked peer is not disconnected with error:", err)
-		}
 		mp.logger.Errorf("Error while decoding message: %v", err)
+		err = mp.peer.BlockAndDisconnectPeer(ctx, remoteID)
+		if err != nil {
+			mp.logger.Error("BlockAndDisconnet error:", err)
+		}
 		return
 	}
 	mp.logger.Debugf("Response message received: %+v", newMsg)

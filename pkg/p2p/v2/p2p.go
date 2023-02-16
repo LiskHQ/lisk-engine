@@ -192,17 +192,22 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
-func (p2p *P2P) ApplyPenalty(ctx context.Context, pai PeerAddrInfo, score int) (err error) {
+func (p2p *P2P) ApplyPenalty(ctx context.Context, pai PeerAddrInfo, score int) error {
 	newScore := p2p.addPenalty(pai.ID, score)
 	if newScore >= 100 {
 		p2p.logger.Infof("Banning peer for exceeding max penalty")
-		p2p.BlockPeer(pai.ID)
+		err := p2p.BlockPeer(pai.ID)
+		if err != nil {
+			p2p.logger.Error("Banned peer is not added to connGater with error:", err)
+			return err
+		}
 		err = p2p.Disconnect(ctx, pai.ID)
 		if err != nil {
 			p2p.logger.Error("Banned peer is not disconnected with error:", err)
+			return err
 		}
 		p2p.deletePeer(pai.ID)
 	}
 
-	return
+	return nil
 }
