@@ -44,7 +44,9 @@ func (mp *MessageProtocol) Start(ctx context.Context, logger log.Logger, peer *P
 	peer.host.SetStreamHandler(messageProtocolReqID, func(s network.Stream) {
 		mp.onRequest(ctx, s)
 	})
-	peer.host.SetStreamHandler(messageProtocolResID, mp.onResponse)
+	peer.host.SetStreamHandler(messageProtocolResID, func(s network.Stream) {
+		mp.onResponse(ctx, s)
+	})
 	mp.logger.Infof("Message protocol is started")
 }
 
@@ -59,9 +61,18 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
+	blockPeer := func() {
+		remoteID := s.Conn().RemotePeer()
+		mp.peer.BlockPeer(remoteID)
+		closeErr := mp.peer.Disconnect(ctx, remoteID)
+		if closeErr != nil {
+			mp.logger.Errorf("Blocked peer is not disconnected with error:", err)
+		}
+	}
+
 	newMsg := newRequestMessage(s.Conn().RemotePeer(), "", nil)
 	if err := newMsg.Decode(buf); err != nil {
-		mp.peer.BlockPeer(s.Conn().RemotePeer())
+		blockPeer()
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
@@ -69,7 +80,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 
 	handler, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
-		mp.peer.BlockPeer(s.Conn().RemotePeer())
+		blockPeer()
 		mp.logger.Errorf("rpcHandler %s is not registered", newMsg.Procedure)
 		return
 	}
@@ -84,7 +95,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 }
 
 // onResponse is a handler for a received response message.
-func (mp *MessageProtocol) onResponse(s network.Stream) {
+func (mp *MessageProtocol) onResponse(ctx context.Context, s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
@@ -96,9 +107,12 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 
 	newMsg := newResponseMessage("", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
-		// TODO we should disconnect the peer, read the doc of the BlockPeer func in
-		// connectionGater
-		mp.peer.BlockPeer(s.Conn().RemotePeer())
+		remoteID := s.Conn().RemotePeer()
+		mp.peer.BlockPeer(remoteID)
+		closeErr := mp.peer.Disconnect(ctx, remoteID)
+		if closeErr != nil {
+			mp.logger.Errorf("Blocked peer is not disconnected with error:", err)
+		}
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
