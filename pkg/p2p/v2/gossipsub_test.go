@@ -47,6 +47,7 @@ func TestGossipSub_Start(t *testing.T) {
 	assert.NotNil(gs.logger)
 	assert.NotNil(gs.peer)
 	assert.NotNil(gs.ps)
+	assert.NotNil(gs.blacklist)
 
 	assert.Equal(1, len(gs.topics))
 	assert.Equal(1, len(gs.subscriptions))

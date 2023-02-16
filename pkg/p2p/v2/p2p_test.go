@@ -102,6 +102,7 @@ func TestP2P_Start(t *testing.T) {
 	assert.NotNil(p2p.host)
 	assert.NotNil(p2p.MessageProtocol)
 	assert.NotNil(p2p.Peer.peerbook)
+	assert.NotNil(p2p.bootCloser)
 }
 
 func TestP2P_AddPenalty(t *testing.T) {
