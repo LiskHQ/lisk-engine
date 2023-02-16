@@ -109,7 +109,7 @@ func main() {
 		nick = defaultNick(p.GetHost().ID())
 	}
 
-	cr, err := JoinChatRoom(ctx, gs, p.GetHost().ID(), ch, nick, roomName)
+	cr, err := JoinChatRoom(ctx, gs, p, ch, nick, roomName)
 	if err != nil {
 		panic(err)
 	}

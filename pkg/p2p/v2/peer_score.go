@@ -6,22 +6,22 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-// PeerScore keeps a map based on peer ID and its score.
-type PeerScore struct {
+// peerScore keeps a map based on peer ID and its score.
+type peerScore struct {
 	peers map[peer.ID]int
 	mutex sync.Mutex
 }
 
-// NewPeerSocre returns a new PeerScore.
-func NewPeerScore() *PeerScore {
-	return &PeerScore{
+// newPeerScore returns a new peerScore.
+func newPeerScore() *peerScore {
+	return &peerScore{
 		peers: make(map[peer.ID]int),
 		mutex: sync.Mutex{},
 	}
 }
 
 // addPenalty will update the score of given peer ID.
-func (ps *PeerScore) addPenalty(pid peer.ID, score int) int {
+func (ps *peerScore) addPenalty(pid peer.ID, score int) int {
 	ps.mutex.Lock()
 	defer ps.mutex.Unlock()
 	if peer, ok := ps.peers[pid]; ok {
@@ -31,4 +31,11 @@ func (ps *PeerScore) addPenalty(pid peer.ID, score int) int {
 
 	ps.peers[pid] = score
 	return ps.peers[pid]
+}
+
+// deletePeer removes the given peer ID from Peers.
+func (ps *peerScore) deletePeer(pid peer.ID) {
+	ps.mutex.Lock()
+	defer ps.mutex.Unlock()
+	delete(ps.peers, pid)
 }

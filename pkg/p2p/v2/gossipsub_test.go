@@ -215,24 +215,3 @@ func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	err := gs.Publish(context.Background(), testTopic1, msg)
 	assert.Equal(err, ErrTopicNotFound)
 }
-
-func TestGossipSub_ListPeers(t *testing.T) {
-	assert := assert.New(t)
-
-	ctx := context.Background()
-	wg := &sync.WaitGroup{}
-	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
-	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
-	sk := ps.NewScoreKeeper()
-
-	gs := NewGossipSub()
-	_, err := gs.ListPeers(testTopic1)
-	assert.Equal(err, ErrGossipSubIsNotRunnig)
-	gs.RegisterEventHandler(testTopic1, func(testEvent *Event) {})
-	gs.Start(ctx, wg, logger, p, sk, config)
-	peers, err := gs.ListPeers(testTopic1)
-	assert.Nil(err)
-	assert.Equal(len(peers), 0)
-}

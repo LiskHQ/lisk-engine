@@ -233,17 +233,8 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 	return nil
 }
 
-// ListPeers returns an array of ID based on given topic.
-func (gs *GossipSub) ListPeers(topic string) ([]peer.ID, error) {
-	if gs.ps == nil {
-		return []peer.ID{}, ErrGossipSubIsNotRunnig
-	}
-
-	return gs.ps.ListPeers(topic), nil
-}
-
 // RegisterValidator registers a validator for given topic.
-func (gs *GossipSub) RegisterTopicValidator(topic string, mv MessageValidator) error {
+func (gs *GossipSub) RegisterTopicValidator(topic string, mv messageValidator) error {
 	if gs.ps == nil {
 		return ErrGossipSubIsNotRunnig
 	}

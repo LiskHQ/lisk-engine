@@ -36,7 +36,7 @@ type Peer struct {
 	logger    log.Logger
 	host      host.Host
 	peerbook  *Peerbook
-	peerScore *PeerScore
+	peerScore *peerScore
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -147,7 +147,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		return nil, err
 	}
 
-	p = &Peer{logger: logger, host: host, peerbook: peerbook, peerScore: NewPeerScore()}
+	p = &Peer{logger: logger, host: host, peerbook: peerbook, peerScore: newPeerScore()}
 	p.logger.Infof("Peer successfully created")
 	return p, nil
 }
@@ -295,7 +295,12 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	return peerChan
 }
 
-// addPenalty will update the score of given peer ID.
+// addPenalty will update the score of the given peer ID in peerScore.
 func (p *Peer) addPenalty(pid peer.ID, score int) int {
 	return p.peerScore.addPenalty(pid, score)
+}
+
+// deletePeer removes the given peer ID from peerScore.
+func (p *Peer) deletePeer(pid peer.ID) {
+	p.peerScore.deletePeer(pid)
 }

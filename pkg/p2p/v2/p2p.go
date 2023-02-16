@@ -198,6 +198,7 @@ func (p2p *P2P) ApplyPenalty(ctx context.Context, pid PeerAddrInfo, score int) (
 		p2p.logger.Infof("Banning peer for exceeding max penalty")
 		err = p2p.Disconnect(ctx, pid.ID)
 		p2p.ps.BlacklistPeer(pid.ID)
+		p2p.deletePeer(pid.ID)
 	}
 
 	return

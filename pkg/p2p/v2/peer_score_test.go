@@ -10,10 +10,16 @@ import (
 func Test_PeerScore(t *testing.T) {
 	assert := assert.New(t)
 
-	pid := peer.ID("A")
-	ps := NewPeerScore()
-	socre := ps.addPenalty(pid, 0)
+	pidA := peer.ID("A")
+	pidB := peer.ID("B")
+	ps := newPeerScore()
+	socre := ps.addPenalty(pidA, 0)
 	assert.Equal(socre, 0)
-	socre = ps.addPenalty(pid, 10)
+	ps.addPenalty(pidB, 0)
+	socre = ps.addPenalty(pidA, 10)
 	assert.Equal(socre, 10)
+
+	assert.Equal(len(ps.peers), 2)
+	ps.deletePeer(pidB)
+	assert.Equal(len(ps.peers), 1)
 }
