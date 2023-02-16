@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"sync"
-	"time"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
@@ -10,8 +9,6 @@ import (
 	log "github.com/LiskHQ/lisk-engine/pkg/log"
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
-
-const peerbookUpdateTimeout = time.Second * 5 // Peerbook update timeout in nanoseconds.
 
 // Peerbook keeps track of different lists of peers.
 type Peerbook struct {

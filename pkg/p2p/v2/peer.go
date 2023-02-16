@@ -104,6 +104,12 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 	}
 	opts = append(opts, connGaterOpt)
 
+	// Configure TTLs for libp2p's peerstore.
+	peerstore.AddressTTL = time.Hour                      // AddressTTL is the expiration time of addresses.
+	peerstore.TempAddrTTL = time.Minute * 2               // TempAddrTTL is the ttl used for a short lived address.
+	peerstore.RecentlyConnectedAddrTTL = time.Minute * 30 // RecentlyConnectedAddrTTL is used when we recently connected to a peer.
+	peerstore.OwnObservedAddrTTL = time.Minute * 30       // OwnObservedAddrTTL is used for our own external addresses observed by peers.
+
 	// Configure connection security.
 	security := strings.ToLower(config.ConnectionSecurity)
 	switch security {
