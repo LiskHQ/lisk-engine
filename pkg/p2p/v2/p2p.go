@@ -113,7 +113,10 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		cancel()
 		return err
 	}
-	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, bootstrap.BootstrapConfigWithPeers(seedPeers))
+	cfgBootStrap := bootstrap.BootstrapConfigWithPeers(seedPeers)
+	// If number of connections is less than 90% of max connections, then bootstrap process will try to connect to seed peers.
+	cfgBootStrap.MinPeerThreshold = int(float64(p2p.config.MaxInboundConnections+p2p.config.MaxOutboundConnections) * 0.9)
+	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, cfgBootStrap)
 	if err != nil {
 		cancel()
 		return err
