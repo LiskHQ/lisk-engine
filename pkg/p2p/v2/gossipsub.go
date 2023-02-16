@@ -287,12 +287,21 @@ func (gs *GossipSub) BlacklistedPeers() []peer.AddrInfo {
 	blacklistedPeers := make([]peer.AddrInfo, 0)
 
 	for _, p := range gs.peer.KnownPeers() {
+		// Check if the peer is blacklisted in gossipsub.
 		if gs.blacklist.Contains(p.ID) {
 			blacklistedPeers = append(blacklistedPeers, p)
+			continue
+		}
+
+		// Check if the peer is blacklisted in the config (peerbook)
+		for _, addr := range p.Addrs {
+			ip := lps.ExtractIP(addr)
+			if gs.peer.peerbook.isIPPermanentlyBlacklisted(ip) {
+				blacklistedPeers = append(blacklistedPeers, p)
+				break
+			}
 		}
 	}
-
-	// TODO - append blacklisted peers from the conngater
 
 	return blacklistedPeers
 }
