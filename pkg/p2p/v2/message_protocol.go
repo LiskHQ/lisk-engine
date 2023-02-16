@@ -61,7 +61,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 
 	newMsg := newRequestMessage(s.Conn().RemotePeer(), "", nil)
 	if err := newMsg.Decode(buf); err != nil {
-		// TODO - ban peer if message is invalid (GH issue #16)
+		mp.peer.BlockPeer(s.Conn().RemotePeer())
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}
@@ -69,7 +69,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 
 	handler, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
-		// TODO - ban peer if RPC handler is not registered (GH issue #16)
+		mp.peer.BlockPeer(s.Conn().RemotePeer())
 		mp.logger.Errorf("rpcHandler %s is not registered", newMsg.Procedure)
 		return
 	}
@@ -96,7 +96,9 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 
 	newMsg := newResponseMessage("", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
-		// TODO - ban peer if message is invalid (GH issue #16)
+		// TODO we should disconnect the peer, read the doc of the BlockPeer func in
+		// connectionGater
+		mp.peer.BlockPeer(s.Conn().RemotePeer())
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		return
 	}

@@ -12,24 +12,22 @@ import (
 // is usable to reject incoming and outgoing connections based on blacklists.
 // Locally verifying the blacklist in unit test is not feasible because it needs multiple IPs.
 // It is tested in the network.
-func ConnectionGaterOption(bl []string) (libp2p.Option, error) {
-	blIPs := []net.IP{}
-	for _, ipStr := range bl {
-		ip := net.ParseIP(ipStr)
-		if ip == nil {
-			return nil, fmt.Errorf("IP %s is invalid", ipStr)
+func ConnectionGaterOption(cg *conngater.BasicConnectionGater, bl []string) (libp2p.Option, error) {
+	if len(bl) > 0 {
+		blIPs := []net.IP{}
+		for _, ipStr := range bl {
+			ip := net.ParseIP(ipStr)
+			if ip == nil {
+				return nil, fmt.Errorf("IP %s is invalid", ipStr)
+			}
+			blIPs = append(blIPs, ip)
 		}
-		blIPs = append(blIPs, ip)
-	}
 
-	cg, err := conngater.NewBasicConnectionGater(nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, adr := range blIPs {
-		err := cg.BlockAddr(adr)
-		if err != nil {
-			return nil, err
+		for _, adr := range blIPs {
+			err := cg.BlockAddr(adr)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
