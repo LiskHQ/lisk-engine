@@ -286,6 +286,10 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, msg *Message
 func (gs *GossipSub) BlacklistedPeers() []peer.AddrInfo {
 	blacklistedPeers := make([]peer.AddrInfo, 0)
 
+	if gs.peer == nil {
+		return blacklistedPeers
+	}
+
 	for _, p := range gs.peer.KnownPeers() {
 		// Check if the peer is blacklisted in gossipsub.
 		if gs.blacklist.Contains(p.ID) {
