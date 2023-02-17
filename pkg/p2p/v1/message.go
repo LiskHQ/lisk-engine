@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/socket"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v1/socket"
 )
 
 // Event holds event message from a peer

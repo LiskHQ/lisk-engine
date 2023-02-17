@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v1/addressbook"
 )
 
 var upgrader = websocket.Upgrader{}
