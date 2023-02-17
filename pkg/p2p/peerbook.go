@@ -7,7 +7,7 @@ import (
 
 	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
 	log "github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 // Peerbook keeps track of different lists of peers.

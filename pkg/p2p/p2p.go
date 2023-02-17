@@ -12,7 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.

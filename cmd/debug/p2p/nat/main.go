@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
-	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 // ChatRoomBufSize is the number of incoming messages to buffer for each topic.

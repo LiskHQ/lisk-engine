@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/socket"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v1/socket"
 )
 
 /*************************************************************************************************************************

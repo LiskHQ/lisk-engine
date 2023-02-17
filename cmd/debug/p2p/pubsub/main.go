@@ -13,8 +13,8 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const (

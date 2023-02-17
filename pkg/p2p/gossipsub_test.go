@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 func TestGossipSub_NewGossipSub(t *testing.T) {

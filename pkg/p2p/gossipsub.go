@@ -12,7 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const maxAllowedTopics = 10

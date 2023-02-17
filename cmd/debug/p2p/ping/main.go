@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p/v2"
+	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 func main() {

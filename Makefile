@@ -29,13 +29,13 @@ run.testapp:
 	cd ./cmd/debug/app && go run . start
 
 run.testping:
-	cd ./cmd/debug/p2p/v2/ping && go run . $(addr)
+	cd ./cmd/debug/p2p/ping && go run . $(addr)
 
 run.pubsub:
-	cd ./cmd/debug/p2p/v2/pubsub && go run . $(addr)
+	cd ./cmd/debug/p2p/pubsub && go run . $(addr)
 
 run.testnat:
-	cd ./cmd/debug/p2p/v2/nat && go run . $(addr)
+	cd ./cmd/debug/p2p/nat && go run . $(addr)
 
 generate.codec:
 	go generate ./...

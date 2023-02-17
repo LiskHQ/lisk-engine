@@ -20,7 +20,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 type PeerIDs = peer.IDSlice
