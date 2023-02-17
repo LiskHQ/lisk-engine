@@ -24,14 +24,20 @@ import (
 var (
 	errInvalidDuration       = errors.New("the value of duration is invalid")
 	errConnGaterIsNotrunning = errors.New("to be able add new peer, please call start function")
+	maxScore                 = 100
 )
+
+type peerInfo struct {
+	score      int
+	expiration int64
+}
 
 // connectionGater extendis the BasicConnectionGater of the libp2p to use expire
 // time to remove peer ID from blockedPeers.
 type connectionGater struct {
 	sync.RWMutex
 
-	blockedPeers map[peer.ID]int64
+	blockedPeers map[peer.ID]peerInfo
 	blockedAddrs map[string]struct{}
 
 	logger        log.Logger
@@ -47,11 +53,39 @@ func newConnGater(ex, iCheck time.Duration) (*connectionGater, error) {
 	}
 
 	return &connectionGater{
-		blockedPeers:  make(map[peer.ID]int64),
+		blockedPeers:  make(map[peer.ID]peerInfo),
 		blockedAddrs:  make(map[string]struct{}),
 		expiration:    ex,
 		intervalCheck: iCheck,
 	}, nil
+}
+
+// addPenalty will update the score of given peer ID.
+func (cg *connectionGater) addPenalty(pid peer.ID, score int) error {
+	if !cg.isStarted {
+		return errConnGaterIsNotrunning
+	}
+
+	cg.Lock()
+	if info, ok := cg.blockedPeers[pid]; ok {
+		score = info.score + score
+		cg.blockedPeers[pid] = peerInfo{
+			score:      score,
+			expiration: info.expiration,
+		}
+	} else {
+		cg.blockedPeers[pid] = peerInfo{
+			score: score,
+		}
+	}
+
+	if score >= maxScore {
+		cg.Unlock()
+		return cg.blockPeer(pid)
+	}
+
+	cg.Unlock()
+	return nil
 }
 
 // blockPeer blocks the given peer ID.
@@ -62,7 +96,15 @@ func (cg *connectionGater) blockPeer(pid peer.ID) error {
 
 	cg.Lock()
 	defer cg.Unlock()
-	cg.blockedPeers[pid] = time.Now().Unix() + int64(cg.expiration.Seconds())
+	exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
+	if info, ok := cg.blockedPeers[pid]; ok {
+		info.expiration = exTime
+		cg.blockedPeers[pid] = info
+	} else {
+		cg.blockedPeers[pid] = peerInfo{
+			expiration: exTime,
+		}
+	}
 
 	return nil
 }
@@ -73,8 +115,10 @@ func (cg *connectionGater) listBlockedPeers() []peer.ID {
 	defer cg.RUnlock()
 
 	result := make([]peer.ID, 0, len(cg.blockedPeers))
-	for p := range cg.blockedPeers {
-		result = append(result, p)
+	for p, info := range cg.blockedPeers {
+		if info.expiration != 0 {
+			result = append(result, p)
+		}
 	}
 
 	return result
@@ -89,8 +133,8 @@ func (cg *connectionGater) start(ctx context.Context) {
 			for {
 				select {
 				case <-t.C:
-					for p, t := range cg.blockedPeers {
-						if time.Now().Unix() > t {
+					for p, info := range cg.blockedPeers {
+						if time.Now().Unix() > info.expiration {
 							cg.Lock()
 							delete(cg.blockedPeers, p)
 							cg.Unlock()
@@ -166,8 +210,8 @@ func (cg *connectionGater) InterceptPeerDial(p peer.ID) (allow bool) {
 	cg.RLock()
 	defer cg.RUnlock()
 
-	_, block := cg.blockedPeers[p]
-	return !block
+	info, block := cg.blockedPeers[p]
+	return !(block && info.expiration != 0)
 }
 
 func (cg *connectionGater) InterceptAddrDial(p peer.ID, a ma.Multiaddr) (allow bool) {
@@ -211,8 +255,8 @@ func (cg *connectionGater) InterceptSecured(dir network.Direction, p peer.ID, cm
 	cg.RLock()
 	defer cg.RUnlock()
 
-	_, block := cg.blockedPeers[p]
-	return !block
+	info, block := cg.blockedPeers[p]
+	return !(block && info.expiration != 0)
 }
 
 func (cg *connectionGater) InterceptUpgraded(network.Conn) (allow bool, reason control.DisconnectReason) {

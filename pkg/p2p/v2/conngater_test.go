@@ -94,58 +94,58 @@ func TestConnGater_ExpireTime(t *testing.T) {
 	assert.Equal(0, len(cg.listBlockedPeers()))
 }
 
-func TestConnectionGater(t *testing.T) {
+func TestConneGater(t *testing.T) {
 	assert := assert.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	peerA := peer.ID("A")
-	peerB := peer.ID("B")
+	pidA := peer.ID("A")
+	pidB := peer.ID("B")
 
 	cg, err := newConnGater(time.Second*2, time.Second*1)
 	assert.Nil(err)
 	cg.start(ctx)
 
 	// test peer blocking
-	assert.Truef(cg.InterceptPeerDial(peerA), "expected gater to allow peerA")
-	assert.Truef(cg.InterceptPeerDial(peerB), "expected gater to allow peerB")
+	assert.Truef(cg.InterceptPeerDial(pidA), "expected gater to allow peer A")
+	assert.Truef(cg.InterceptPeerDial(pidB), "expected gater to allow peer B")
 
-	allow := cg.InterceptSecured(network.DirInbound, peerA, &mockConnMultiaddrs{local: nil, remote: nil})
-	assert.Truef(allow, "expected gater to allow peerA")
+	allow := cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to allow peer A")
 
-	allow = cg.InterceptSecured(network.DirInbound, peerB, &mockConnMultiaddrs{local: nil, remote: nil})
-	assert.Truef(allow, "expected gater to allow peerB")
+	allow = cg.InterceptSecured(network.DirInbound, pidB, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to allow peer B")
 
-	assert.Nil(cg.blockPeer(peerA))
-	assert.Falsef(cg.InterceptPeerDial(peerA), "expected gater to deny peerA")
-	assert.Truef(cg.InterceptPeerDial(peerB), "expected gater to allow peerB")
+	assert.Nil(cg.blockPeer(pidA))
+	assert.Falsef(cg.InterceptPeerDial(pidA), "expected gater to deny peer A")
+	assert.Truef(cg.InterceptPeerDial(pidB), "expected gater to allow peer B")
 
-	allow = cg.InterceptSecured(network.DirInbound, peerA, &mockConnMultiaddrs{local: nil, remote: nil})
-	assert.Falsef(allow, "expected gater to allow peerA")
+	allow = cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Falsef(allow, "expected gater to deny peer A")
 
-	allow = cg.InterceptSecured(network.DirInbound, peerB, &mockConnMultiaddrs{local: nil, remote: nil})
-	assert.Truef(allow, "expected gater to allow peerB")
+	allow = cg.InterceptSecured(network.DirInbound, pidB, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to allow peer B")
 
 	ip1 := net.ParseIP("1.2.3.4")
 	cg.blockAddr(ip1)
 
-	allow = cg.InterceptAddrDial(peerB, ma.StringCast("/ip4/1.2.3.4/tcp/1234"))
-	assert.Falsef(allow, "expected gater to deny peerB in 1.2.3.4")
+	allow = cg.InterceptAddrDial(pidB, ma.StringCast("/ip4/1.2.3.4/tcp/1234"))
+	assert.Falsef(allow, "expected gater to deny peer B in 1.2.3.4")
 
 	allow = cg.InterceptAccept(&mockConnMultiaddrs{local: nil, remote: ma.StringCast("/ip4/1.2.3.4/tcp/1234")})
-	assert.Falsef(allow, " expected gater to deny peerB in 1.2.3.4")
+	assert.Falsef(allow, " expected gater to deny peer B in 1.2.3.4")
 
-	allow = cg.InterceptAddrDial(peerB, ma.StringCast("/ip4/1.2.3.5/tcp/1234"))
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.5")
+	allow = cg.InterceptAddrDial(pidB, ma.StringCast("/ip4/1.2.3.5/tcp/1234"))
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.5")
 
 	allow = cg.InterceptAccept(&mockConnMultiaddrs{local: nil, remote: ma.StringCast("/ip4/1.2.3.5/tcp/1234")})
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.5")
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.5")
 
-	allow = cg.InterceptAddrDial(peerB, ma.StringCast("/ip4/2.3.4.5/tcp/1234"))
-	assert.Truef(allow, "expected gater to allow peerB in 2.3.4.5")
+	allow = cg.InterceptAddrDial(pidB, ma.StringCast("/ip4/2.3.4.5/tcp/1234"))
+	assert.Truef(allow, "expected gater to allow peer B in 2.3.4.5")
 
 	allow = cg.InterceptAccept(&mockConnMultiaddrs{local: nil, remote: ma.StringCast("/ip4/2.3.4.5/tcp/1234")})
-	assert.Truef(allow, "expected gater to allow peerB in 2.3.4.5")
+	assert.Truef(allow, "expected gater to allow peer B in 2.3.4.5")
 
 	// undo the blocks to ensure that we can unblock stuff
 	cg.unblockAddr(ip1)
@@ -153,32 +153,72 @@ func TestConnectionGater(t *testing.T) {
 	time.Sleep(time.Millisecond * 3100)
 	assert.Equal(0, len(cg.listBlockedPeers()))
 
-	assert.Truef(cg.InterceptPeerDial(peerA), "expected gater to allow peerA")
-	assert.Truef(cg.InterceptPeerDial(peerB), "expected gater to allow peerB")
+	assert.Truef(cg.InterceptPeerDial(pidA), "expected gater to allow peer A")
+	assert.Truef(cg.InterceptPeerDial(pidB), "expected gater to allow peer B")
 
-	allow = cg.InterceptSecured(network.DirInbound, peerA, &mockConnMultiaddrs{local: nil, remote: nil})
-	assert.Truef(allow, "expected gater to allow peerA")
+	allow = cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to allow peer A")
 
-	allow = cg.InterceptSecured(network.DirInbound, peerB, &mockConnMultiaddrs{local: nil, remote: nil})
-	assert.Truef(allow, "expected gater to allow peerB")
+	allow = cg.InterceptSecured(network.DirInbound, pidB, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to allow peer B")
 
-	allow = cg.InterceptAddrDial(peerB, ma.StringCast("/ip4/1.2.3.4/tcp/1234"))
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.4")
+	allow = cg.InterceptAddrDial(pidB, ma.StringCast("/ip4/1.2.3.4/tcp/1234"))
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.4")
 
 	allow = cg.InterceptAccept(&mockConnMultiaddrs{local: nil, remote: ma.StringCast("/ip4/1.2.3.4/tcp/1234")})
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.4")
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.4")
 
-	allow = cg.InterceptAddrDial(peerB, ma.StringCast("/ip4/1.2.3.5/tcp/1234"))
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.5")
+	allow = cg.InterceptAddrDial(pidB, ma.StringCast("/ip4/1.2.3.5/tcp/1234"))
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.5")
 
 	allow = cg.InterceptAccept(&mockConnMultiaddrs{local: nil, remote: ma.StringCast("/ip4/1.2.3.5/tcp/1234")})
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.5")
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.5")
 
-	allow = cg.InterceptAddrDial(peerB, ma.StringCast("/ip4/2.3.4.5/tcp/1234"))
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.5")
+	allow = cg.InterceptAddrDial(pidB, ma.StringCast("/ip4/2.3.4.5/tcp/1234"))
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.5")
 
 	allow = cg.InterceptAccept(&mockConnMultiaddrs{local: nil, remote: ma.StringCast("/ip4/2.3.4.5/tcp/1234")})
-	assert.Truef(allow, "expected gater to allow peerB in 1.2.3.5")
+	assert.Truef(allow, "expected gater to allow peer B in 1.2.3.5")
+}
+
+func TestConnGater_Score(t *testing.T) {
+	assert := assert.New(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cg, err := newConnGater(time.Second*2, time.Second*1)
+	assert.Nil(err)
+	pidA := peer.ID("A")
+	assert.Equal(errConnGaterIsNotrunning, cg.addPenalty(pidA, 0))
+
+	cg.start(ctx)
+	assert.Nil(cg.addPenalty(pidA, 0))
+	pidB := peer.ID("B")
+	assert.Nil(cg.addPenalty(pidB, 0))
+	assert.Equal(0, len(cg.listBlockedPeers()))
+	assert.Nil(cg.addPenalty(pidA, 10))
+	assert.Equal(0, len(cg.listBlockedPeers()))
+	assert.Nil(cg.addPenalty(pidA, 100))
+	assert.Equal(1, len(cg.listBlockedPeers()))
+
+	assert.Falsef(cg.InterceptPeerDial(pidA), "expected gater to deny peer A")
+	assert.Truef(cg.InterceptPeerDial(pidB), "expected gater to allow peer B")
+	allow := cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Falsef(allow, "expected gater to deny peer A")
+
+	allow = cg.InterceptSecured(network.DirInbound, pidB, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to allow peer B")
+
+	time.Sleep(time.Millisecond * 3100)
+	assert.Equal(0, len(cg.listBlockedPeers()))
+	assert.Truef(cg.InterceptPeerDial(pidA), "expected gater to deny peer A")
+	allow = cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: nil})
+	assert.Truef(allow, "expected gater to deny peer A")
+
+	assert.Equal(0, len(cg.listBlockedPeers()))
+	pidC := peer.ID("C")
+	assert.Nil(cg.addPenalty(pidC, 100))
+	assert.Equal(pidC, cg.listBlockedPeers()[0])
 }
 
 type mockConnMultiaddrs struct {
