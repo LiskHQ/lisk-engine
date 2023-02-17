@@ -10,9 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
-	"github.com/libp2p/go-libp2p/p2p/net/conngater"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
@@ -39,7 +37,7 @@ type Peer struct {
 	host      host.Host
 	peerbook  *Peerbook
 	peerScore *peerScore
-	connGater *conngater.BasicConnectionGater
+	connGater *connectionGater
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -87,13 +85,13 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
-	connGater, err := conngater.NewBasicConnectionGater(nil)
+	connGater, err := newConnGater(time.Hour*24, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
 
 	// Load Blacklist
-	connGaterOpt, err := ConnectionGaterOption(connGater, config.BlacklistedIPs)
+	connGaterOpt, err := connGater.optionWithBlacklist(config.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +153,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 
 	p = &Peer{logger: logger, host: host, peerbook: peerbook, peerScore: newPeerScore(), connGater: connGater}
 	p.logger.Infof("Peer successfully created")
+	p.connGater.start(ctx)
 	return p, nil
 }
 
@@ -313,12 +312,12 @@ func (p *Peer) deletePeer(pid peer.ID) {
 
 // BlockPeer blocks the given peer ID.
 func (p *Peer) BlockPeer(pid peer.ID) error {
-	return p.connGater.BlockPeer(pid)
+	return p.connGater.blockPeer(pid)
 }
 
 // BlockAndDisconnectPeer blocks the given peer ID and immediately try to close the connection.
 func (p *Peer) BlockAndDisconnectPeer(ctx context.Context, pid peer.ID) error {
-	err := p.connGater.BlockPeer(pid)
+	err := p.connGater.blockPeer(pid)
 	if err != nil {
 		return err
 	}

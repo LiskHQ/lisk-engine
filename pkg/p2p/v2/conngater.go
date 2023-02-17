@@ -1,6 +1,8 @@
 package p2p
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
@@ -9,71 +11,101 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/net/conngater"
+
+	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-type Gater struct {
-	gc          *conngater.BasicConnectionGater
-	blockedPeer map[peer.ID]int64
-	expireTime  time.Duration
-	interval    time.Duration
-	mutex       sync.RWMutex
+var (
+	errInvalidDuration       = errors.New("the value of duration is invalid")
+	errConnGaterIsNotrunning = errors.New("to be able add new peer, please call start function")
+)
+
+// connectionGater extendis the BasicConnectionGater of the libp2p to use expire
+// time to remove peer ID from blockPeers.
+type connectionGater struct {
+	logger         log.Logger
+	connGater      *conngater.BasicConnectionGater
+	blockedPeers   map[peer.ID]int64
+	expireDuration time.Duration
+	intervalCheck  time.Duration
+	mutex          sync.RWMutex
+	isStarted      bool
 }
 
-func newGater(expireTime, interval time.Duration) (*Gater, error) {
-	gc, err := conngater.NewBasicConnectionGater(nil)
+// newConnGater returns a new connectionGater.
+func newConnGater(exDuration, iCheck time.Duration) (*connectionGater, error) {
+	if exDuration <= 0 || iCheck <= 0 {
+		return nil, errInvalidDuration
+	}
+
+	cg, err := conngater.NewBasicConnectionGater(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Gater{
-		gc:          gc,
-		blockedPeer: make(map[peer.ID]int64),
-		expireTime:  expireTime,
-		interval:    interval,
-		mutex:       sync.RWMutex{},
+	return &connectionGater{
+		connGater:      cg,
+		blockedPeers:   make(map[peer.ID]int64),
+		expireDuration: exDuration,
+		intervalCheck:  iCheck,
+		mutex:          sync.RWMutex{},
 	}, nil
 }
 
-func (g *Gater) addPeer(pid peer.ID) error {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+// blockPeer blocks the given peer ID.
+func (cg *connectionGater) blockPeer(pid peer.ID) error {
+	if !cg.isStarted {
+		return errConnGaterIsNotrunning
+	}
 
-	err := g.gc.BlockPeer(pid)
+	err := cg.connGater.BlockPeer(pid)
 	if err != nil {
 		return err
 	}
-	g.blockedPeer[pid] = time.Now().Unix() + int64(g.expireTime.Seconds())
+
+	cg.mutex.Lock()
+	defer cg.mutex.Unlock()
+	cg.blockedPeers[pid] = time.Now().Unix() + int64(cg.expireDuration.Seconds())
 
 	return nil
 }
 
-func (g *Gater) start() {
-	go func() {
-		for range time.Tick(g.interval) {
-			for p, t := range g.blockedPeer {
-				if time.Now().Unix() > t {
-					err := g.gc.UnblockPeer(p)
-					if err != nil {
-						panic(err)
+// start runs a new goroutine to check the expiration time based on
+// intervaliCheck, it will be run automatically.
+func (cg *connectionGater) start(ctx context.Context) {
+	if !cg.isStarted {
+		t := time.NewTicker(cg.intervalCheck)
+		go func() {
+			for {
+				select {
+				case <-t.C:
+					for p, t := range cg.blockedPeers {
+						if time.Now().Unix() > t {
+							err := cg.connGater.UnblockPeer(p)
+							if err != nil {
+								cg.logger.Error("UnblockPeer with error:", err)
+								// Just make a log
+							} else {
+								cg.mutex.Lock()
+								delete(cg.blockedPeers, p)
+								cg.mutex.Unlock()
+							}
+						}
 					}
-					g.mutex.Lock()
-					delete(g.blockedPeer, p)
-					g.mutex.Unlock()
+				case <-ctx.Done():
+					return
 				}
 			}
-		}
-	}()
+		}()
+		cg.isStarted = true
+	}
 }
 
-func (g *Gater) connectionGater() *conngater.BasicConnectionGater {
-	return g.gc
-}
-
-// ConnectionGaterOption returns the ConnectionGater option of the libp2p which
+// optionWithBlacklist returns the ConnectionGater option of the libp2p which
 // is usable to reject incoming and outgoing connections based on blacklists.
 // Locally verifying the blacklist in unit test is not feasible because it needs multiple IPs.
 // It is tested in the network.
-func ConnectionGaterOption(cg *conngater.BasicConnectionGater, bl []string) (libp2p.Option, error) {
+func (cg *connectionGater) optionWithBlacklist(bl []string) (libp2p.Option, error) {
 	if len(bl) > 0 {
 		blIPs := []net.IP{}
 		for _, ipStr := range bl {
@@ -85,12 +117,12 @@ func ConnectionGaterOption(cg *conngater.BasicConnectionGater, bl []string) (lib
 		}
 
 		for _, adr := range blIPs {
-			err := cg.BlockAddr(adr)
+			err := cg.connGater.BlockAddr(adr)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	return libp2p.ConnectionGater(cg), nil
+	return libp2p.ConnectionGater(cg.connGater), nil
 }

@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/p2p/net/conngater"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
-func TestBlacklistIPs(t *testing.T) {
+func TestConnGater_BlacklistIPs(t *testing.T) {
 	assert := assert.New(t)
 
-	cg, err := conngater.NewBasicConnectionGater(nil)
+	cg, err := newConnGater(10, 5)
 	assert.Nil(err)
 
 	containsInvalidIPs := []string{
@@ -20,43 +20,60 @@ func TestBlacklistIPs(t *testing.T) {
 		"1.222.2222.12.12",
 		"12.30.28.110",
 	}
-	_, err = ConnectionGaterOption(cg, containsInvalidIPs)
+	_, err = cg.optionWithBlacklist(containsInvalidIPs)
 	assert.ErrorContains(err, "is invalid")
 
 	validIPs := []string{
 		"127.0.0.1",
 		"192.168.2.30",
 	}
-	_, err = ConnectionGaterOption(cg, validIPs)
+	_, err = cg.optionWithBlacklist(validIPs)
 	assert.Nil(err)
+}
+
+func TestConnGater_Errors(t *testing.T) {
+	assert := assert.New(t)
+
+	_, err := newConnGater(0, 0)
+	assert.Equal(errInvalidDuration, err)
+
+	_, err = newConnGater(10, -1)
+	assert.Equal(errInvalidDuration, err)
+
+	cg, err := newConnGater(1, 1)
+	assert.Nil(err)
+
+	assert.Equal(errConnGaterIsNotrunning, cg.blockPeer(peer.ID("A")))
 }
 
 func TestConnGater_ExpireTime(t *testing.T) {
 	assert := assert.New(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	g, err := newGater(time.Second*4, time.Second*2)
+	cg, err := newConnGater(time.Second*4, time.Second*2)
 	assert.Nil(err)
-	g.start()
+	cg.start(ctx)
 
 	pidA := peer.ID("A")
-	g.addPeer(pidA)
+	cg.blockPeer(pidA)
 
 	time.Sleep(time.Second)
 	pidB := peer.ID("B")
-	g.addPeer(pidB)
+	cg.blockPeer(pidB)
 	pidC := peer.ID("C")
-	g.addPeer(pidC)
+	cg.blockPeer(pidC)
 
-	gater := g.connectionGater()
-	assert.Equal(3, len(gater.ListBlockedPeers()))
+	assert.Equal(3, len(cg.connGater.ListBlockedPeers()))
 	time.Sleep(time.Second)
 	pidD := peer.ID("D")
-	g.addPeer(pidD)
+	cg.blockPeer(pidD)
 
 	time.Sleep(time.Second * 3)
-	assert.Equal(4, len(gater.ListBlockedPeers()))
+	assert.Equal(4, len(cg.connGater.ListBlockedPeers()))
 	time.Sleep(time.Second * 2)
-	assert.Equal(1, len(gater.ListBlockedPeers()))
+	assert.Equal(1, len(cg.connGater.ListBlockedPeers()))
+	assert.Equal(pidD, cg.connGater.ListBlockedPeers()[0])
 	time.Sleep(time.Second)
-	assert.Equal(0, len(gater.ListBlockedPeers()))
+	assert.Equal(0, len(cg.connGater.ListBlockedPeers()))
 }
