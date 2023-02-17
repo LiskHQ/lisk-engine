@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/control"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/p2p/net/conngater"
 
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -27,6 +25,7 @@ var (
 	maxScore                 = 100
 )
 
+// peerInfo keeps information of each peer ID in the blockedPeers of the connectionGater.
 type peerInfo struct {
 	score      int
 	expiration int64
@@ -61,9 +60,9 @@ func newConnGater(ex, iCheck time.Duration) (*connectionGater, error) {
 }
 
 // addPenalty will update the score of given peer ID.
-func (cg *connectionGater) addPenalty(pid peer.ID, score int) error {
+func (cg *connectionGater) addPenalty(pid peer.ID, score int) (int, error) {
 	if !cg.isStarted {
-		return errConnGaterIsNotrunning
+		return 0, errConnGaterIsNotrunning
 	}
 
 	cg.Lock()
@@ -81,11 +80,11 @@ func (cg *connectionGater) addPenalty(pid peer.ID, score int) error {
 
 	if score >= maxScore {
 		cg.Unlock()
-		return cg.blockPeer(pid)
+		return score, cg.blockPeer(pid)
 	}
 
 	cg.Unlock()
-	return nil
+	return score, nil
 }
 
 // blockPeer blocks the given peer ID.
@@ -203,9 +202,9 @@ func (cg *connectionGater) optionWithBlacklist(bl []string) (libp2p.Option, erro
 	return libp2p.ConnectionGater(cg), nil
 }
 
-// ConnectionGater interface.
-var _ connmgr.ConnectionGater = (*conngater.BasicConnectionGater)(nil)
-
+// InterceptPeerDial tests whether we're permitted to Dial the specified peer.
+//
+// This is called by the network.Network implementation when dialling a peer.
 func (cg *connectionGater) InterceptPeerDial(p peer.ID) (allow bool) {
 	cg.RLock()
 	defer cg.RUnlock()
@@ -214,6 +213,11 @@ func (cg *connectionGater) InterceptPeerDial(p peer.ID) (allow bool) {
 	return !(block && info.expiration != 0)
 }
 
+// InterceptAddrDial tests whether we're permitted to dial the specified
+// multiaddr for the given peer.
+//
+// This is called by the network.Network implementation after it has
+// resolved the peer's addrs, and prior to dialling each.
 func (cg *connectionGater) InterceptAddrDial(p peer.ID, a ma.Multiaddr) (allow bool) {
 	// we have already filtered blocked peers in InterceptPeerDial, so we just check the IP
 	cg.RLock()
@@ -229,6 +233,10 @@ func (cg *connectionGater) InterceptAddrDial(p peer.ID, a ma.Multiaddr) (allow b
 	return !block
 }
 
+// InterceptAccept tests whether an incipient inbound connection is allowed.
+//
+// This is called by the upgrader, or by the transport directly (e.g. QUIC,
+// Bluetooth), straight after it has accepted a connection from its socket.
 func (cg *connectionGater) InterceptAccept(cma network.ConnMultiaddrs) (allow bool) {
 	cg.RLock()
 	defer cg.RUnlock()
@@ -245,6 +253,12 @@ func (cg *connectionGater) InterceptAccept(cma network.ConnMultiaddrs) (allow bo
 	return !block
 }
 
+// InterceptSecured tests whether a given connection, now authenticated,
+// is allowed.
+//
+// This is called by the upgrader, after it has performed the security
+// handshake, and before it negotiates the muxer, or by the directly by the
+// transport, at the exact same checkpoint.
 func (cg *connectionGater) InterceptSecured(dir network.Direction, p peer.ID, cma network.ConnMultiaddrs) (allow bool) {
 	if dir == network.DirOutbound {
 		// we have already filtered those in InterceptPeerDial/InterceptAddrDial
@@ -259,6 +273,13 @@ func (cg *connectionGater) InterceptSecured(dir network.Direction, p peer.ID, cm
 	return !(block && info.expiration != 0)
 }
 
+// InterceptUpgraded tests whether a fully capable connection is allowed.
+//
+// At this point, the connection a multiplexer has been selected.
+// When rejecting a connection, the gater can return a DisconnectReason.
+// Refer to the godoc on the ConnectionGater type for more information.
+//
+// NOTE: the go-libp2p implementation currently IGNORES the disconnect reason.
 func (cg *connectionGater) InterceptUpgraded(network.Conn) (allow bool, reason control.DisconnectReason) {
 	return true, 0
 }

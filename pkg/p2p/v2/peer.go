@@ -36,7 +36,6 @@ type Peer struct {
 	logger    log.Logger
 	host      host.Host
 	peerbook  *Peerbook
-	peerScore *peerScore
 	connGater *connectionGater
 }
 
@@ -151,7 +150,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		return nil, err
 	}
 
-	p = &Peer{logger: logger, host: host, peerbook: peerbook, peerScore: newPeerScore(), connGater: connGater}
+	p = &Peer{logger: logger, host: host, peerbook: peerbook, connGater: connGater}
 	p.logger.Infof("Peer successfully created")
 	p.connGater.start(ctx)
 	return p, nil
@@ -300,14 +299,20 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	return peerChan
 }
 
-// addPenalty will update the score of the given peer ID in peerScore.
-func (p *Peer) addPenalty(pid peer.ID, score int) int {
-	return p.peerScore.addPenalty(pid, score)
-}
+// addPenalty will update the score of the given peer ID in connGater blocks the peer if the
+// score exceeded. Also disconnected the peer immediately.
+func (p *Peer) addPenalty(ctx context.Context, pid peer.ID, score int) error {
+	newScore, err := p.connGater.addPenalty(pid, score)
+	if err != nil {
+		return err
+	} else if newScore >= maxScore {
+		err = p.Disconnect(ctx, pid)
+		if err != nil {
+			return err
+		}
+	}
 
-// deletePeer removes the given peer ID from peerScore.
-func (p *Peer) deletePeer(pid peer.ID) {
-	p.peerScore.deletePeer(pid)
+	return nil
 }
 
 // BlockPeer blocks the given peer ID.

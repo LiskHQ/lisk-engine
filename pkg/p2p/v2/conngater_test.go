@@ -189,16 +189,19 @@ func TestConnGater_Score(t *testing.T) {
 	cg, err := newConnGater(time.Second*2, time.Second*1)
 	assert.Nil(err)
 	pidA := peer.ID("A")
-	assert.Equal(errConnGaterIsNotrunning, cg.addPenalty(pidA, 0))
+	_, err = cg.addPenalty(pidA, 0)
+	assert.Equal(errConnGaterIsNotrunning, err)
 
 	cg.start(ctx)
-	assert.Nil(cg.addPenalty(pidA, 0))
+	cg.addPenalty(pidA, 0)
 	pidB := peer.ID("B")
-	assert.Nil(cg.addPenalty(pidB, 0))
+	cg.addPenalty(pidB, 0)
 	assert.Equal(0, len(cg.listBlockedPeers()))
-	assert.Nil(cg.addPenalty(pidA, 10))
+	newScore, _ := cg.addPenalty(pidA, 10)
+	assert.Equal(10, newScore)
 	assert.Equal(0, len(cg.listBlockedPeers()))
-	assert.Nil(cg.addPenalty(pidA, 100))
+	newScore, _ = cg.addPenalty(pidA, 100)
+	assert.Equal(110, newScore)
 	assert.Equal(1, len(cg.listBlockedPeers()))
 
 	assert.Falsef(cg.InterceptPeerDial(pidA), "expected gater to deny peer A")
@@ -217,7 +220,7 @@ func TestConnGater_Score(t *testing.T) {
 
 	assert.Equal(0, len(cg.listBlockedPeers()))
 	pidC := peer.ID("C")
-	assert.Nil(cg.addPenalty(pidC, 100))
+	cg.addPenalty(pidC, 100)
 	assert.Equal(pidC, cg.listBlockedPeers()[0])
 }
 
