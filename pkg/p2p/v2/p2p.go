@@ -31,8 +31,8 @@ type Config struct {
 	SeedPeers                []string `json:"seedPeers"`
 	FixedPeers               []string `json:"fixedPeers,omitempty"`
 	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
-	MaxInboundConnections    int      `json:"maxInboundConnections"`
-	MaxOutboundConnections   int      `json:"maxOutboundConnections"`
+	MinNumOfConnections      int      `json:"minNumOfConnections"`
+	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
 	// GossipSub configuration
 	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
 	NetworkName string `json:"networkName"`
@@ -57,11 +57,11 @@ func (c *Config) InsertDefault() error {
 	if c.BlacklistedIPs == nil {
 		c.BlacklistedIPs = []string{}
 	}
-	if c.MaxInboundConnections == 0 {
-		c.MaxInboundConnections = 100
+	if c.MinNumOfConnections == 0 {
+		c.MinNumOfConnections = 20
 	}
-	if c.MaxOutboundConnections == 0 {
-		c.MaxOutboundConnections = 20
+	if c.MaxNumOfConnections == 0 {
+		c.MaxNumOfConnections = 100
 	}
 	if c.NetworkName == "" {
 		c.NetworkName = "lisk-test"
@@ -114,8 +114,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 		return err
 	}
 	cfgBootStrap := bootstrap.BootstrapConfigWithPeers(seedPeers)
-	// If number of connections is less than 90% of max connections, then bootstrap process will try to connect to seed peers.
-	cfgBootStrap.MinPeerThreshold = int(float64(p2p.config.MaxInboundConnections+p2p.config.MaxOutboundConnections) * 0.9)
+	cfgBootStrap.MinPeerThreshold = p2p.config.MinNumOfConnections
 	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, cfgBootStrap)
 	if err != nil {
 		cancel()
