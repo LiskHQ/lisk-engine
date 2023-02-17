@@ -9,8 +9,14 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/connmgr"
+	"github.com/libp2p/go-libp2p/core/control"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/net/conngater"
+
+	ma "github.com/multiformats/go-multiaddr"
+	manet "github.com/multiformats/go-multiaddr/net"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
@@ -21,34 +27,30 @@ var (
 )
 
 // connectionGater extendis the BasicConnectionGater of the libp2p to use expire
-// time to remove peer ID from blockPeers.
+// time to remove peer ID from blockedPeers.
 type connectionGater struct {
-	logger         log.Logger
-	connGater      *conngater.BasicConnectionGater
-	blockedPeers   map[peer.ID]int64
-	expireDuration time.Duration
-	intervalCheck  time.Duration
-	mutex          sync.RWMutex
-	isStarted      bool
+	sync.RWMutex
+
+	blockedPeers map[peer.ID]int64
+	blockedAddrs map[string]struct{}
+
+	logger        log.Logger
+	expiration    time.Duration
+	intervalCheck time.Duration
+	isStarted     bool
 }
 
 // newConnGater returns a new connectionGater.
-func newConnGater(exDuration, iCheck time.Duration) (*connectionGater, error) {
-	if exDuration <= 0 || iCheck <= 0 {
+func newConnGater(ex, iCheck time.Duration) (*connectionGater, error) {
+	if ex <= 0 || iCheck <= 0 {
 		return nil, errInvalidDuration
 	}
 
-	cg, err := conngater.NewBasicConnectionGater(nil)
-	if err != nil {
-		return nil, err
-	}
-
 	return &connectionGater{
-		connGater:      cg,
-		blockedPeers:   make(map[peer.ID]int64),
-		expireDuration: exDuration,
-		intervalCheck:  iCheck,
-		mutex:          sync.RWMutex{},
+		blockedPeers:  make(map[peer.ID]int64),
+		blockedAddrs:  make(map[string]struct{}),
+		expiration:    ex,
+		intervalCheck: iCheck,
 	}, nil
 }
 
@@ -58,16 +60,24 @@ func (cg *connectionGater) blockPeer(pid peer.ID) error {
 		return errConnGaterIsNotrunning
 	}
 
-	err := cg.connGater.BlockPeer(pid)
-	if err != nil {
-		return err
-	}
-
-	cg.mutex.Lock()
-	defer cg.mutex.Unlock()
-	cg.blockedPeers[pid] = time.Now().Unix() + int64(cg.expireDuration.Seconds())
+	cg.Lock()
+	defer cg.Unlock()
+	cg.blockedPeers[pid] = time.Now().Unix() + int64(cg.expiration.Seconds())
 
 	return nil
+}
+
+// listBlockedPeers return a list of blocked peers.
+func (cg *connectionGater) listBlockedPeers() []peer.ID {
+	cg.RLock()
+	defer cg.RUnlock()
+
+	result := make([]peer.ID, 0, len(cg.blockedPeers))
+	for p := range cg.blockedPeers {
+		result = append(result, p)
+	}
+
+	return result
 }
 
 // start runs a new goroutine to check the expiration time based on
@@ -81,15 +91,9 @@ func (cg *connectionGater) start(ctx context.Context) {
 				case <-t.C:
 					for p, t := range cg.blockedPeers {
 						if time.Now().Unix() > t {
-							err := cg.connGater.UnblockPeer(p)
-							if err != nil {
-								cg.logger.Error("UnblockPeer with error:", err)
-								// Just make a log
-							} else {
-								cg.mutex.Lock()
-								delete(cg.blockedPeers, p)
-								cg.mutex.Unlock()
-							}
+							cg.Lock()
+							delete(cg.blockedPeers, p)
+							cg.Unlock()
 						}
 					}
 				case <-ctx.Done():
@@ -99,6 +103,37 @@ func (cg *connectionGater) start(ctx context.Context) {
 		}()
 		cg.isStarted = true
 	}
+}
+
+// blockAddr adds an IP address to the set of blocked addresses.
+// Note: active connections to the IP address are not automatically closed.
+func (cg *connectionGater) blockAddr(ip net.IP) {
+	cg.Lock()
+	defer cg.Unlock()
+
+	cg.blockedAddrs[ip.String()] = struct{}{}
+}
+
+// unblockAddr removes an IP address from the set of blocked addresses.
+func (cg *connectionGater) unblockAddr(ip net.IP) {
+	cg.Lock()
+	defer cg.Unlock()
+
+	delete(cg.blockedAddrs, ip.String())
+}
+
+// listBlockedAddrs return a list of blocked IP addresses.
+func (cg *connectionGater) listBlockedAddrs() []net.IP {
+	cg.RLock()
+	defer cg.RUnlock()
+
+	result := make([]net.IP, 0, len(cg.blockedAddrs))
+	for ipStr := range cg.blockedAddrs {
+		ip := net.ParseIP(ipStr)
+		result = append(result, ip)
+	}
+
+	return result
 }
 
 // optionWithBlacklist returns the ConnectionGater option of the libp2p which
@@ -117,12 +152,69 @@ func (cg *connectionGater) optionWithBlacklist(bl []string) (libp2p.Option, erro
 		}
 
 		for _, adr := range blIPs {
-			err := cg.connGater.BlockAddr(adr)
-			if err != nil {
-				return nil, err
-			}
+			cg.blockAddr(adr)
 		}
 	}
 
-	return libp2p.ConnectionGater(cg.connGater), nil
+	return libp2p.ConnectionGater(cg), nil
+}
+
+// ConnectionGater interface.
+var _ connmgr.ConnectionGater = (*conngater.BasicConnectionGater)(nil)
+
+func (cg *connectionGater) InterceptPeerDial(p peer.ID) (allow bool) {
+	cg.RLock()
+	defer cg.RUnlock()
+
+	_, block := cg.blockedPeers[p]
+	return !block
+}
+
+func (cg *connectionGater) InterceptAddrDial(p peer.ID, a ma.Multiaddr) (allow bool) {
+	// we have already filtered blocked peers in InterceptPeerDial, so we just check the IP
+	cg.RLock()
+	defer cg.RUnlock()
+
+	ip, err := manet.ToIP(a)
+	if err != nil {
+		cg.logger.Warningf("error converting multiaddr to IP addr: %s", err)
+		return true
+	}
+
+	_, block := cg.blockedAddrs[ip.String()]
+	return !block
+}
+
+func (cg *connectionGater) InterceptAccept(cma network.ConnMultiaddrs) (allow bool) {
+	cg.RLock()
+	defer cg.RUnlock()
+
+	a := cma.RemoteMultiaddr()
+
+	ip, err := manet.ToIP(a)
+	if err != nil {
+		cg.logger.Warningf("error converting multiaddr to IP addr: %s", err)
+		return true
+	}
+
+	_, block := cg.blockedAddrs[ip.String()]
+	return !block
+}
+
+func (cg *connectionGater) InterceptSecured(dir network.Direction, p peer.ID, cma network.ConnMultiaddrs) (allow bool) {
+	if dir == network.DirOutbound {
+		// we have already filtered those in InterceptPeerDial/InterceptAddrDial
+		return true
+	}
+
+	// we have already filtered addrs in InterceptAccept, so we just check the peer ID
+	cg.RLock()
+	defer cg.RUnlock()
+
+	_, block := cg.blockedPeers[p]
+	return !block
+}
+
+func (cg *connectionGater) InterceptUpgraded(network.Conn) (allow bool, reason control.DisconnectReason) {
+	return true, 0
 }
