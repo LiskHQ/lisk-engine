@@ -84,7 +84,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
-	connGater, err := newConnGater(time.Hour*24, time.Second*10)
+	connGater, err := newConnGater(logger, time.Hour*24, time.Second*10)
 	if err != nil {
 		return nil, err
 	}

@@ -46,14 +46,17 @@ type connectionGater struct {
 }
 
 // newConnGater returns a new connectionGater.
-func newConnGater(ex, iCheck time.Duration) (*connectionGater, error) {
+func newConnGater(l log.Logger, ex, iCheck time.Duration) (*connectionGater, error) {
 	if ex <= 0 || iCheck <= 0 {
 		return nil, errInvalidDuration
 	}
 
 	return &connectionGater{
-		blockedPeers:  make(map[peer.ID]peerInfo),
-		blockedAddrs:  make(map[string]struct{}),
+		logger: l,
+
+		blockedPeers: make(map[peer.ID]peerInfo),
+		blockedAddrs: make(map[string]struct{}),
+
 		expiration:    ex,
 		intervalCheck: iCheck,
 	}, nil

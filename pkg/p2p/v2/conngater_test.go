@@ -8,15 +8,19 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/stretchr/testify/assert"
 
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
 func TestConnGater_BlacklistIPs(t *testing.T) {
 	assert := assert.New(t)
 
-	cg, err := newConnGater(10, 5)
+	logger, _ := log.NewDefaultProductionLogger()
+
+	cg, err := newConnGater(logger, 10, 5)
 	assert.Nil(err)
 
 	containsInvalidIPs := []string{
@@ -50,13 +54,15 @@ func TestConnGater_BlacklistIPs(t *testing.T) {
 func TestConnGater_Errors(t *testing.T) {
 	assert := assert.New(t)
 
-	_, err := newConnGater(0, 0)
+	logger, _ := log.NewDefaultProductionLogger()
+
+	_, err := newConnGater(logger, 0, 0)
 	assert.Equal(errInvalidDuration, err)
 
-	_, err = newConnGater(10, -1)
+	_, err = newConnGater(logger, 10, -1)
 	assert.Equal(errInvalidDuration, err)
 
-	cg, err := newConnGater(1, 1)
+	cg, err := newConnGater(logger, 1, 1)
 	assert.Nil(err)
 
 	assert.Equal(errConnGaterIsNotrunning, cg.blockPeer(peer.ID("A")))
@@ -67,7 +73,8 @@ func TestConnGater_ExpireTime(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cg, err := newConnGater(time.Second*4, time.Second*2)
+	logger, _ := log.NewDefaultProductionLogger()
+	cg, err := newConnGater(logger, time.Second*4, time.Second*2)
 	assert.Nil(err)
 	cg.start(ctx)
 
@@ -99,12 +106,13 @@ func TestConneGater(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	pidA := peer.ID("A")
-	pidB := peer.ID("B")
-
-	cg, err := newConnGater(time.Second*2, time.Second*1)
+	logger, _ := log.NewDefaultProductionLogger()
+	cg, err := newConnGater(logger, time.Second*2, time.Second*1)
 	assert.Nil(err)
 	cg.start(ctx)
+
+	pidA := peer.ID("A")
+	pidB := peer.ID("B")
 
 	// test peer blocking
 	assert.Truef(cg.InterceptPeerDial(pidA), "expected gater to allow peer A")
@@ -186,7 +194,8 @@ func TestConnGater_Score(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cg, err := newConnGater(time.Second*2, time.Second*1)
+	logger, _ := log.NewDefaultProductionLogger()
+	cg, err := newConnGater(logger, time.Second*2, time.Second*1)
 	assert.Nil(err)
 	pidA := peer.ID("A")
 	_, err = cg.addPenalty(pidA, 0)
