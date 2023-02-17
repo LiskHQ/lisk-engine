@@ -23,14 +23,14 @@ const (
 	ValidationIgnore = ValidationResult(2)
 )
 
+// Validator should be implemented for each type that we want to validate it.
+type Validator = func(context.Context, *Message) ValidationResult
+
 // messageValidator can be used to register a new validator for the GossipSub.
 type messageValidator = func(context.Context, peer.ID, *pubsub.Message) ValidationResult
 
-// validator should be implemented for each type that we want to validate it.
-type validator = func(context.Context, *Message) ValidationResult
-
-// NewValidator returns a messageValidator using `mv` for message validation.
-func NewValidator(mv validator) messageValidator {
+// newMessageValidator returns a messageValidator using `mv` for message validation.
+func newMessageValidator(mv Validator) messageValidator {
 	return func(ctx context.Context, p peer.ID, msg *pubsub.Message) pubsub.ValidationResult {
 		lskMsg := new(Message)
 		err := lskMsg.Decode(msg.GetData())

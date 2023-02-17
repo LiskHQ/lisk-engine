@@ -190,12 +190,11 @@ func TestGossipSub_Publish(t *testing.T) {
 	gs := NewGossipSub()
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 
-	v := NewValidator(testMV)
-	err := gs.RegisterTopicValidator(testTopic1, v)
+	err := gs.RegisterTopicValidator(testTopic1, testMV)
 	assert.Equal(err, ErrGossipSubIsNotRunnig)
 
 	gs.Start(ctx, wg, logger, p, sk, config)
-	assert.Nil(gs.RegisterTopicValidator(testTopic1, v))
+	assert.Nil(gs.RegisterTopicValidator(testTopic1, testMV))
 
 	err = gs.Publish(ctx, testTopic1, msg)
 	assert.Nil(err)

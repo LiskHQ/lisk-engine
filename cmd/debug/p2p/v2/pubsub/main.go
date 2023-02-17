@@ -85,7 +85,7 @@ func main() {
 	}
 
 	if *hasValidator {
-		tv := p2p.NewValidator(func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+		tv := func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 			cm := new(ChatMessage)
 			err := json.Unmarshal(msg.Data, cm)
 			if err != nil {
@@ -97,7 +97,7 @@ func main() {
 			} else {
 				return p2p.ValidationAccept
 			}
-		})
+		}
 		err = gs.RegisterTopicValidator(topicName(roomName), tv)
 		if err != nil {
 			panic(err)

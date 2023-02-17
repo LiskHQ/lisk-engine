@@ -234,12 +234,12 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 }
 
 // RegisterValidator registers a validator for given topic.
-func (gs *GossipSub) RegisterTopicValidator(topic string, mv messageValidator) error {
+func (gs *GossipSub) RegisterTopicValidator(topic string, v Validator) error {
 	if gs.ps == nil {
 		return ErrGossipSubIsNotRunnig
 	}
 
-	return gs.ps.RegisterTopicValidator(topic, mv)
+	return gs.ps.RegisterTopicValidator(topic, newMessageValidator(v))
 }
 
 // RegisterEventHandler registers an event handler for an event type.
