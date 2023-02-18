@@ -31,6 +31,13 @@ type peerInfo struct {
 	expiration int64
 }
 
+func newPeerInfo(expiration int64, score int) *peerInfo {
+	return &peerInfo{
+		expiration: expiration,
+		score:      score,
+	}
+}
+
 // connectionGater extendis the BasicConnectionGater of the libp2p to use expire
 // time to remove peer ID from peerScore.
 type connectionGater struct {
@@ -70,42 +77,32 @@ func (cg *connectionGater) addPenalty(pid peer.ID, score int) (int, error) {
 	}
 
 	cg.mutex.Lock()
+	defer cg.mutex.Unlock()
+
 	if info, ok := cg.peerScore[pid]; ok {
 		score = info.score + score
 		info.score = score
 	} else {
-		info = new(peerInfo)
-		info.score = score
-		cg.peerScore[pid] = info
+		cg.peerScore[pid] = newPeerInfo(0, score)
 	}
 
 	if score >= maxScore {
-		cg.mutex.Unlock()
-		return score, cg.blockPeer(pid)
+		exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
+		if info, ok := cg.peerScore[pid]; ok {
+			info.expiration = exTime
+		} else {
+			cg.peerScore[pid] = newPeerInfo(exTime, 0)
+		}
+		return score, nil
 	}
 
-	cg.mutex.Unlock()
 	return score, nil
 }
 
 // blockPeer blocks the given peer ID.
 func (cg *connectionGater) blockPeer(pid peer.ID) error {
-	if !cg.isStarted {
-		return errConnGaterIsNotrunning
-	}
-
-	cg.mutex.Lock()
-	defer cg.mutex.Unlock()
-	exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
-	if info, ok := cg.peerScore[pid]; ok {
-		info.expiration = exTime
-	} else {
-		newInfo := new(peerInfo)
-		newInfo.expiration = exTime
-		cg.peerScore[pid] = newInfo
-	}
-
-	return nil
+	_, err := cg.addPenalty(pid, maxScore)
+	return err
 }
 
 // listBlockedPeers return a list of blocked peers.
