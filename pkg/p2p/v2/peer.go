@@ -21,8 +21,12 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
-const numOfPingMessages = 5         // Number of sent ping messages in Ping service.
-const pingTimeout = time.Second * 5 // Ping service timeout in seconds.
+const (
+	numOfPingMessages        = 5               // Number of sent ping messages in Ping service.
+	pingTimeout              = time.Second * 5 // Ping service timeout in seconds.
+	expireTimeOfConnGater    = time.Hour * 24
+	intervalCheckOfConnGater = time.Second * 10
+)
 
 // Connection security option type.
 const (
@@ -84,7 +88,7 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
-	connGater, err := newConnGater(logger, time.Hour*24, time.Second*10)
+	connGater, err := newConnGater(logger, expireTimeOfConnGater, intervalCheckOfConnGater)
 	if err != nil {
 		return nil, err
 	}
@@ -315,13 +319,8 @@ func (p *Peer) addPenalty(ctx context.Context, pid peer.ID, score int) error {
 	return nil
 }
 
-// BlockPeer blocks the given peer ID.
-func (p *Peer) BlockPeer(pid peer.ID) error {
-	return p.connGater.blockPeer(pid)
-}
-
-// BlockAndDisconnectPeer blocks the given peer ID and immediately try to close the connection.
-func (p *Peer) BlockAndDisconnectPeer(ctx context.Context, pid peer.ID) error {
+// BlockPeer blocks the given peer ID and immediately try to close the connection.
+func (p *Peer) BlockPeer(ctx context.Context, pid peer.ID) error {
 	err := p.connGater.blockPeer(pid)
 	if err != nil {
 		return err
