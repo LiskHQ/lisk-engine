@@ -66,7 +66,8 @@ func TestConnGater_Errors(t *testing.T) {
 	cg, err := newConnGater(logger, 1, 1)
 	assert.Nil(err)
 
-	assert.Equal(errConnGaterIsNotrunning, cg.blockPeer(peer.ID("A")))
+	_, err = cg.addPenalty(peer.ID("A"), maxScore)
+	assert.Equal(errConnGaterIsNotrunning, err)
 }
 
 func TestConnGater_ExpireTime(t *testing.T) {
@@ -81,18 +82,19 @@ func TestConnGater_ExpireTime(t *testing.T) {
 	cg.start(ctx, wg)
 
 	pidA := peer.ID("A")
-	assert.Nil(cg.blockPeer(pidA))
+	_, err = cg.addPenalty(pidA, maxScore)
+	assert.Nil(err)
 
 	time.Sleep(time.Second)
 	pidB := peer.ID("B")
-	cg.blockPeer(pidB)
+	cg.addPenalty(pidB, maxScore)
 	pidC := peer.ID("C")
-	cg.blockPeer(pidC)
+	cg.addPenalty(pidC, maxScore)
 
 	assert.Equal(3, len(cg.listBlockedPeers()))
 	time.Sleep(time.Second)
 	pidD := peer.ID("D")
-	cg.blockPeer(pidD)
+	cg.addPenalty(pidD, maxScore)
 
 	time.Sleep(time.Second * 3)
 	assert.Equal(4, len(cg.listBlockedPeers()))
@@ -127,7 +129,8 @@ func TestConneGater(t *testing.T) {
 	allow = cg.InterceptSecured(network.DirInbound, pidB, &mockConnMultiaddrs{local: nil, remote: nil})
 	assert.Truef(allow, "expected gater to allow peer B")
 
-	assert.Nil(cg.blockPeer(pidA))
+	_, err = cg.addPenalty(pidA, maxScore)
+	assert.Nil(err)
 	assert.Falsef(cg.InterceptPeerDial(pidA), "expected gater to deny peer A")
 	assert.Truef(cg.InterceptPeerDial(pidB), "expected gater to allow peer B")
 

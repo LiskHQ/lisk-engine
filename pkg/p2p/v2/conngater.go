@@ -100,12 +100,6 @@ func (cg *connectionGater) addPenalty(pid peer.ID, score int) (int, error) {
 	return newScore, nil
 }
 
-// blockPeer blocks the given peer ID.
-func (cg *connectionGater) blockPeer(pid peer.ID) error {
-	_, err := cg.addPenalty(pid, maxScore)
-	return err
-}
-
 // listBlockedPeers return a list of blocked peers.
 func (cg *connectionGater) listBlockedPeers() []peer.ID {
 	cg.mutex.RLock()

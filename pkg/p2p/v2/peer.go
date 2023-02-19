@@ -320,7 +320,7 @@ func (p *Peer) addPenalty(ctx context.Context, pid peer.ID, score int) error {
 
 // BlockPeer blocks the given peer ID and immediately try to close the connection.
 func (p *Peer) BlockPeer(ctx context.Context, pid peer.ID) error {
-	err := p.connGater.blockPeer(pid)
+	_, err := p.connGater.addPenalty(pid, maxScore)
 	if err != nil {
 		return err
 	}
