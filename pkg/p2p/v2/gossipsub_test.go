@@ -34,7 +34,7 @@ func TestGossipSub_Start(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, logger, config)
+	p, _ := NewPeer(ctx, wg, logger, config)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -134,7 +134,7 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, logger, config)
+	p, _ := NewPeer(ctx, wg, logger, config)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -184,7 +184,7 @@ func TestGossipSub_Publish(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, logger, config)
+	p, _ := NewPeer(ctx, wg, logger, config)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()

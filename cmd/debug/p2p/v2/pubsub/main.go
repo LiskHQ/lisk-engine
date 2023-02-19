@@ -63,7 +63,7 @@ func main() {
 		panic(err)
 	}
 
-	p, err := p2p.NewPeer(ctx, logger, cfg)
+	p, err := p2p.NewPeer(ctx, wg, logger, cfg)
 	if err != nil {
 		panic(err)
 	}

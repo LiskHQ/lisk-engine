@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -76,7 +77,8 @@ func TestConnGater_ExpireTime(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cg, err := newConnGater(logger, time.Second*4, time.Second*2)
 	assert.Nil(err)
-	cg.start(ctx)
+	wg := &sync.WaitGroup{}
+	cg.start(ctx, wg)
 
 	pidA := peer.ID("A")
 	assert.Nil(cg.blockPeer(pidA))
@@ -109,7 +111,8 @@ func TestConneGater(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cg, err := newConnGater(logger, time.Second*2, time.Second*1)
 	assert.Nil(err)
-	cg.start(ctx)
+	wg := &sync.WaitGroup{}
+	cg.start(ctx, wg)
 
 	pidA := peer.ID("A")
 	pidB := peer.ID("B")
@@ -201,7 +204,8 @@ func TestConnGater_Score(t *testing.T) {
 	_, err = cg.addPenalty(pidA, 0)
 	assert.Equal(errConnGaterIsNotrunning, err)
 
-	cg.start(ctx)
+	wg := &sync.WaitGroup{}
+	cg.start(ctx, wg)
 	cg.addPenalty(pidA, 0)
 	pidB := peer.ID("B")
 	cg.addPenalty(pidB, 0)

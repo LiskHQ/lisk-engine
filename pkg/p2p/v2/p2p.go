@@ -95,7 +95,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, logger, p2p.config)
+	peer, err := NewPeer(ctx, &p2p.wg, logger, p2p.config)
 	if err != nil {
 		cancel()
 		return err

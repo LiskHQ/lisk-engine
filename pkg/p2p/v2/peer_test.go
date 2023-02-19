@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -18,7 +19,8 @@ func TestPeer_New(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, err := NewPeer(context.Background(), logger, config)
+	wg := &sync.WaitGroup{}
+	p, err := NewPeer(context.Background(), wg, logger, config)
 	assert.Nil(err)
 	assert.NotNil(p.host)
 	assert.NotNil(p.peerbook)
@@ -30,7 +32,8 @@ func TestPeer_Close(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(context.Background(), logger, config)
+	wg := &sync.WaitGroup{}
+	p, _ := NewPeer(context.Background(), wg, logger, config)
 	err := p.Close()
 	assert.Nil(err)
 }
@@ -44,8 +47,9 @@ func TestPeer_Connect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config)
-	p2, _ := NewPeer(ctx, logger, config)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -65,8 +69,9 @@ func TestPeer_ConnectIPIsBlacklisted(t *testing.T) {
 	_ = config1.InsertDefault()
 	config2 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config1)
-	p2, _ := NewPeer(ctx, logger, config2)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config1)
+	p2, _ := NewPeer(ctx, wg, logger, config2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -89,8 +94,9 @@ func TestPeer_ConnectIPIsBanned(t *testing.T) {
 	_ = config1.InsertDefault()
 	config2 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config1)
-	p2, _ := NewPeer(ctx, logger, config2)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config1)
+	p2, _ := NewPeer(ctx, wg, logger, config2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -111,8 +117,9 @@ func TestPeer_Disconnect(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config)
-	p2, _ := NewPeer(ctx, logger, config)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -136,8 +143,9 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	_ = config1.InsertDefault()
 	config2 := Config{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config1)
-	p2, _ := NewPeer(ctx, logger, config2)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config1)
+	p2, _ := NewPeer(ctx, wg, logger, config2)
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 	p2Addrs, _ := p2.P2PAddrs()
@@ -164,7 +172,8 @@ func TestP2PAddrs(t *testing.T) {
 	ip4tcp := fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", 12345)
 	config := Config{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
 	_ = config.InsertDefault()
-	p, err := NewPeer(context.Background(), logger, config)
+	wg := &sync.WaitGroup{}
+	p, err := NewPeer(context.Background(), wg, logger, config)
 	assert.Nil(err)
 
 	addrs, err := p.P2PAddrs()
@@ -181,8 +190,9 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config)
-	p2, _ := NewPeer(ctx, logger, config)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -201,8 +211,9 @@ func TestPeer_Ping(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
-	p1, _ := NewPeer(ctx, logger, config)
-	p2, _ := NewPeer(ctx, logger, config)
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
@@ -231,7 +242,8 @@ func TestPeer_PeerSource(t *testing.T) {
 
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}, KnownPeers: knownPeers}
 	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, logger, config)
+	wg := &sync.WaitGroup{}
+	p, _ := NewPeer(ctx, wg, logger, config)
 
 	ch := p.peerSource(ctx, 3)
 

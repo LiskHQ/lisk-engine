@@ -22,7 +22,7 @@ import (
 var (
 	errInvalidDuration       = errors.New("invalid duration")
 	errConnGaterIsNotrunning = errors.New("failed to add new peer, start needs to be called first")
-	maxScore                 = 100
+	maxScore                 = 100 // When a peer exceeded the maxScore, it should be blocked
 )
 
 // peerInfo keeps information of each peer ID in the peerScore of the connectionGater.
@@ -79,24 +79,25 @@ func (cg *connectionGater) addPenalty(pid peer.ID, score int) (int, error) {
 	cg.mutex.Lock()
 	defer cg.mutex.Unlock()
 
+	newScore := score
 	if info, ok := cg.peerScore[pid]; ok {
-		score = info.score + score
-		info.score = score
+		newScore = info.score + score
+		info.score = newScore
 	} else {
-		cg.peerScore[pid] = newPeerInfo(0, score)
+		cg.peerScore[pid] = newPeerInfo(0, newScore)
 	}
 
-	if score >= maxScore {
+	if newScore >= maxScore {
 		exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
 		if info, ok := cg.peerScore[pid]; ok {
 			info.expiration = exTime
 		} else {
 			cg.peerScore[pid] = newPeerInfo(exTime, 0)
 		}
-		return score, nil
+		return newScore, nil
 	}
 
-	return score, nil
+	return newScore, nil
 }
 
 // blockPeer blocks the given peer ID.
@@ -122,10 +123,13 @@ func (cg *connectionGater) listBlockedPeers() []peer.ID {
 
 // start runs a new goroutine to check the expiration time based on
 // intervaliCheck, it will be run automatically.
-func (cg *connectionGater) start(ctx context.Context) {
+func (cg *connectionGater) start(ctx context.Context, wg *sync.WaitGroup) {
 	if !cg.isStarted {
 		t := time.NewTicker(cg.intervalCheck)
+		cg.logger.Infof("ConnectionGater is started")
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			for {
 				select {
 				case <-t.C:
