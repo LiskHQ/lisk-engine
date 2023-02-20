@@ -29,7 +29,6 @@ require (
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/google/pprof v0.0.0-20221203041831-ce31453925ec // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/ipfs/go-datastore v0.6.0 // indirect
 	github.com/ipfs/go-log v1.0.5 // indirect
 	github.com/jbenet/goprocess v0.1.4 // indirect
 	github.com/libp2p/zeroconf/v2 v2.2.0 // indirect
