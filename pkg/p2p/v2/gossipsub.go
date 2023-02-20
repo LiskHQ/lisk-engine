@@ -283,14 +283,14 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, msg *Message
 }
 
 // BlacklistedPeers returns a list of blacklisted peers and their addresses.
-func (gs *GossipSub) BlacklistedPeers() []peer.AddrInfo {
+func (gs *GossipSub) BlacklistedPeers() []PeerAddrInfo {
 	blacklistedPeers := make([]peer.AddrInfo, 0)
 
 	if gs.peer == nil {
 		return blacklistedPeers
 	}
 
-	for _, p := range gs.peer.KnownPeers() {
+	for _, p := range gs.peer.knownPeers() {
 		// Check if the peer is blacklisted in gossipsub.
 		if gs.blacklist.Contains(p.ID) {
 			blacklistedPeers = append(blacklistedPeers, p)
@@ -344,7 +344,7 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 			counter++
 
 			p.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
-			p.logger.Debugf("List of known peers: %v", p.KnownPeers())
+			p.logger.Debugf("List of known peers: %v", p.knownPeers())
 			p.logger.Debugf("List of blacklisted peers: %v", gs.BlacklistedPeers())
 
 			t.Reset(10 * time.Second)

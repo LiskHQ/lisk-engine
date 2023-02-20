@@ -23,6 +23,8 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
+type PeerIDs = peer.IDSlice
+
 const (
 	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
 	pingTimeout              = time.Second * 5  // Ping service timeout in seconds.
@@ -219,12 +221,12 @@ func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
 }
 
 // ConnectedPeers returns a list of all connected peers IDs.
-func (p *Peer) ConnectedPeers() peer.IDSlice {
+func (p *Peer) ConnectedPeers() PeerIDs {
 	return p.host.Network().Peers()
 }
 
-// KnownPeers returns a list of all known peers with their addresses.
-func (p *Peer) KnownPeers() []peer.AddrInfo {
+// knownPeers returns a list of all known peers with their addresses.
+func (p *Peer) knownPeers() []peer.AddrInfo {
 	peers := make([]peer.AddrInfo, 0)
 
 	for _, peerID := range p.host.Peerstore().Peers() {
@@ -289,7 +291,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	go func() {
 		defer close(peerChan)
 
-		knownPeers := p.KnownPeers()
+		knownPeers := p.knownPeers()
 
 		// Shuffle known peers to avoid always returning the same peers.
 		for i := range knownPeers {
