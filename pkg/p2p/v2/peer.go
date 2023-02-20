@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -21,8 +22,12 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
-const numOfPingMessages = 5         // Number of sent ping messages in Ping service.
-const pingTimeout = time.Second * 5 // Ping service timeout in seconds.
+const (
+	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
+	pingTimeout              = time.Second * 5  // Ping service timeout in seconds.
+	expireTimeOfConnGater    = time.Hour * 24   // Peers will be disconnected after this time
+	intervalCheckOfConnGater = time.Second * 10 // Check the blocked list based on this period
+)
 
 // Connection security option type.
 const (
@@ -33,9 +38,10 @@ const (
 
 // Peer type - a p2p node.
 type Peer struct {
-	logger   log.Logger
-	host     host.Host
-	peerbook *Peerbook
+	logger    log.Logger
+	host      host.Host
+	peerbook  *Peerbook
+	connGater *connectionGater
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -63,7 +69,7 @@ var relayServiceOptions = []relay.Option{
 }
 
 // NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, error) {
+func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config Config) (*Peer, error) {
 	// Create a Peer variable in advance to be able to use it in the libp2p options.
 	var p *Peer
 
@@ -83,14 +89,17 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
-	// Load Blacklist
-	if len(config.BlacklistedIPs) > 0 {
-		connGaterOpt, err := ConnectionGaterOption(config.BlacklistedIPs)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, connGaterOpt)
+	connGater, err := newConnGater(logger, expireTimeOfConnGater, intervalCheckOfConnGater)
+	if err != nil {
+		return nil, err
 	}
+
+	// Load Blacklist
+	connGaterOpt, err := connGater.optionWithBlacklist(config.BlacklistedIPs)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, connGaterOpt)
 
 	// Configure connection security.
 	security := strings.ToLower(config.ConnectionSecurity)
@@ -146,8 +155,9 @@ func NewPeer(ctx context.Context, logger log.Logger, config Config) (*Peer, erro
 		return nil, err
 	}
 
-	p = &Peer{logger: logger, host: host, peerbook: peerbook}
+	p = &Peer{logger: logger, host: host, peerbook: peerbook, connGater: connGater}
 	p.logger.Infof("Peer successfully created")
+	p.connGater.start(ctx, wg)
 	return p, nil
 }
 
@@ -292,4 +302,27 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	}()
 
 	return peerChan
+}
+
+// addPenalty will update the score of the given peer ID in connGater.
+// The peer will block if the socre exceeded in maxScore and then disconnected the peer immediately.
+func (p *Peer) addPenalty(ctx context.Context, pid peer.ID, score int) error {
+	newScore, err := p.connGater.addPenalty(pid, score)
+	if err != nil {
+		return err
+	}
+	if newScore >= maxScore {
+		return p.Disconnect(ctx, pid)
+	}
+
+	return nil
+}
+
+// BlockPeer blocks the given peer ID and immediately try to close the connection.
+func (p *Peer) BlockPeer(ctx context.Context, pid peer.ID) error {
+	_, err := p.connGater.addPenalty(pid, maxScore)
+	if err != nil {
+		return err
+	}
+	return p.Disconnect(ctx, pid)
 }

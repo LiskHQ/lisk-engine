@@ -95,7 +95,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, logger, p2p.config)
+	peer, err := NewPeer(ctx, &p2p.wg, logger, p2p.config)
 	if err != nil {
 		cancel()
 		return err
@@ -188,4 +188,10 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 			return
 		}
 	}
+}
+
+// ApplyPenalty updates the score of the given PeerID and blocks the peer if the
+// score exceeded. Also disconnected the peer immediately.
+func (p2p *P2P) ApplyPenalty(ctx context.Context, pai PeerAddrInfo, score int) error {
+	return p2p.addPenalty(ctx, pai.ID, score)
 }

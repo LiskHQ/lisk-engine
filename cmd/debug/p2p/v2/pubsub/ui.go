@@ -204,9 +204,10 @@ func (ui *ChatUI) handleEvents() {
 			// when the user types in a line, publish it to the chat room and print to the message window
 			err := ui.cr.Publish(input)
 			if err != nil {
-				printErr("publish error: %s", err)
+				ui.displaySelfMessage(fmt.Sprintf("%spublish error %s for {%s}", ErrorPrefix, err, input))
+			} else {
+				ui.displaySelfMessage(input)
 			}
-			ui.displaySelfMessage(input)
 
 		case m := <-ui.cr.Messages:
 			// when we receive a message from the chat room, print it to the message window

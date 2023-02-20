@@ -17,11 +17,18 @@ import (
 
 const maxAllowedTopics = 10
 
+var (
+	ErrGossipSubIsNotRunnig = errors.New("gossipSub is not running")
+	ErrGossipSubIsRunning   = errors.New("gossipSub is running the action is not possible")
+	ErrDuplicateHandler     = errors.New("eventHandler is already registered")
+	ErrTopicNotFound        = errors.New("topic not found")
+)
+
 // GossipSub type.
 type GossipSub struct {
-	logger log.Logger
-	peer   *Peer
-	*pubsub.PubSub
+	logger        log.Logger
+	peer          *Peer
+	ps            *pubsub.PubSub
 	topics        map[string]*pubsub.Topic
 	subscriptions map[string]*pubsub.Subscription
 	eventHandlers map[string]EventHandler
@@ -154,7 +161,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 
 	gs.logger = logger
 	gs.peer = p
-	gs.PubSub = gossipSub
+	gs.ps = gossipSub
 
 	err = gs.createSubscriptionHandlers(ctx, wg)
 	if err != nil {
@@ -166,9 +173,13 @@ func (gs *GossipSub) Start(ctx context.Context,
 
 // createSubscriptionHandlers creates a subscription handler for each topic.
 func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.WaitGroup) error {
+	if gs.ps == nil {
+		return ErrGossipSubIsNotRunnig
+	}
+
 	// Join all topics and create a subscription for each of them.
 	for t := range gs.topics {
-		topic, err := gs.Join(t)
+		topic, err := gs.ps.Join(t)
 		if err != nil {
 			return err
 		}
@@ -222,14 +233,23 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 	return nil
 }
 
+// RegisterValidator registers a validator for given topic.
+func (gs *GossipSub) RegisterTopicValidator(topic string, v Validator) error {
+	if gs.ps == nil {
+		return ErrGossipSubIsNotRunnig
+	}
+
+	return gs.ps.RegisterTopicValidator(topic, newMessageValidator(v))
+}
+
 // RegisterEventHandler registers an event handler for an event type.
 func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) error {
-	if gs.PubSub != nil {
-		return errors.New("cannot register event handler after GossipSub is started")
+	if gs.ps != nil {
+		return ErrGossipSubIsRunning
 	}
 	_, exist := gs.eventHandlers[name]
 	if exist {
-		return fmt.Errorf("eventHandler %s is already registered", name)
+		return ErrDuplicateHandler
 	}
 	gs.topics[name] = nil
 	gs.subscriptions[name] = nil
@@ -238,15 +258,14 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) err
 }
 
 // Publish publishes a message to a topic.
-func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte) error {
-	msg := newMessage(data)
+func (gs *GossipSub) Publish(ctx context.Context, topicName string, msg *Message) error {
 	data, err := msg.Encode()
 	if err != nil {
 		return err
 	}
 	topic := gs.topics[topicName]
 	if topic == nil {
-		return errors.New("topic not found")
+		return ErrTopicNotFound
 	}
 	return topic.Publish(ctx, data)
 }
@@ -267,15 +286,18 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 			topicTransactions := "transactions" // Test topic which will be removed after testing
 			topicBlocks := "blocks"             // Test topic which will be removed after testing
 			topicEvents := "events"             // Test topic which will be removed after testing
-			err := gs.Publish(ctx, topicTransactions, []byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter)))
+			txMsg := newMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter)))
+			err := gs.Publish(ctx, topicTransactions, txMsg)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
-			err = gs.Publish(ctx, topicBlocks, []byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter)))
+			blkMsg := newMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter)))
+			err = gs.Publish(ctx, topicBlocks, blkMsg)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
-			err = gs.Publish(ctx, topicEvents, []byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter)))
+			entMsg := newMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter)))
+			err = gs.Publish(ctx, topicEvents, entMsg)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}

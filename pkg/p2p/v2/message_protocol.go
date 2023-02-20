@@ -44,7 +44,9 @@ func (mp *MessageProtocol) Start(ctx context.Context, logger log.Logger, peer *P
 	peer.host.SetStreamHandler(messageProtocolReqID, func(s network.Stream) {
 		mp.onRequest(ctx, s)
 	})
-	peer.host.SetStreamHandler(messageProtocolResID, mp.onResponse)
+	peer.host.SetStreamHandler(messageProtocolResID, func(s network.Stream) {
+		mp.onResponse(ctx, s)
+	})
 	mp.logger.Infof("Message protocol is started")
 }
 
@@ -59,18 +61,25 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
+	remoteID := s.Conn().RemotePeer()
 	newMsg := newRequestMessage(s.Conn().RemotePeer(), "", nil)
 	if err := newMsg.Decode(buf); err != nil {
-		// TODO - ban peer if message is invalid (GH issue #16)
 		mp.logger.Errorf("Error while decoding message: %v", err)
+		err = mp.peer.BlockPeer(ctx, remoteID)
+		if err != nil {
+			mp.logger.Error("BlockAndDisconnet error:", err)
+		}
 		return
 	}
 	mp.logger.Debugf("Request message received: %+v", newMsg)
 
 	handler, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
-		// TODO - ban peer if RPC handler is not registered (GH issue #16)
 		mp.logger.Errorf("rpcHandler %s is not registered", newMsg.Procedure)
+		err = mp.peer.BlockPeer(ctx, remoteID)
+		if err != nil {
+			mp.logger.Error("BlockAndDisconnet error:", err)
+		}
 		return
 	}
 	mp.logger.Debugf("%s request received", newMsg.Procedure)
@@ -84,7 +93,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 }
 
 // onResponse is a handler for a received response message.
-func (mp *MessageProtocol) onResponse(s network.Stream) {
+func (mp *MessageProtocol) onResponse(ctx context.Context, s network.Stream) {
 	buf, err := io.ReadAll(s)
 	if err != nil {
 		_ = s.Reset()
@@ -96,8 +105,12 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 
 	newMsg := newResponseMessage("", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
-		// TODO - ban peer if message is invalid (GH issue #16)
+		remoteID := s.Conn().RemotePeer()
 		mp.logger.Errorf("Error while decoding message: %v", err)
+		err = mp.peer.BlockPeer(ctx, remoteID)
+		if err != nil {
+			mp.logger.Error("BlockAndDisconnet error:", err)
+		}
 		return
 	}
 	mp.logger.Debugf("Response message received: %+v", newMsg)

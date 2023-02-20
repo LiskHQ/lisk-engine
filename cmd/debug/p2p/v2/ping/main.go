@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -34,7 +35,8 @@ func main() {
 		panic(err)
 	}
 
-	node, err := p2p.NewPeer(ctx, logger, config)
+	wg := &sync.WaitGroup{}
+	node, err := p2p.NewPeer(ctx, wg, logger, config)
 	if err != nil {
 		panic(err)
 	}

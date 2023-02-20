@@ -19,8 +19,9 @@ type ChatRoom struct {
 	// Messages is a channel of messages received from other peers in the chat room
 	Messages chan *ChatMessage
 
-	ctx context.Context
-	gs  *p2p.GossipSub
+	ctx  context.Context
+	gs   *p2p.GossipSub
+	host *p2p.Peer
 
 	roomName string
 	self     peer.ID
@@ -36,11 +37,12 @@ type ChatMessage struct {
 
 // JoinChatRoom tries to subscribe to the PubSub topic for the room name, returning
 // a ChatRoom on success.
-func JoinChatRoom(ctx context.Context, gs *p2p.GossipSub, selfID peer.ID, ch chan *ChatMessage, nickname string, roomName string) (*ChatRoom, error) {
+func JoinChatRoom(ctx context.Context, gs *p2p.GossipSub, h *p2p.Peer, ch chan *ChatMessage, nickname string, roomName string) (*ChatRoom, error) {
 	cr := &ChatRoom{
 		ctx:      ctx,
 		gs:       gs,
-		self:     selfID,
+		host:     h,
+		self:     h.GetHost().ID(),
 		nick:     nickname,
 		roomName: roomName,
 		Messages: ch,
@@ -60,12 +62,14 @@ func (cr *ChatRoom) Publish(message string) error {
 	if err != nil {
 		return err
 	}
-	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msgBytes)
+	msg := new(p2p.Message)
+	msg.Data = msgBytes
+	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msg)
 }
 
 // ListPeers returns an array of ID.
 func (cr *ChatRoom) ListPeers() []peer.ID {
-	return cr.gs.ListPeers(topicName(cr.roomName))
+	return cr.host.ConnectedPeers()
 }
 
 // Read messages from the subscription and push them onto the Messages channel.
