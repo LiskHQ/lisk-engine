@@ -72,7 +72,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	p2p := NewP2P(config)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.config.Version)
-	assert.Equal([]string{testIPv4TCP, testIPv4UDP}, p2p.config.Addresses)
+	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.config.Addresses)
 	assert.Equal(false, p2p.config.AllowIncomingConnections)
 	assert.Equal(false, p2p.config.EnableNATService)
 	assert.Equal(false, p2p.config.EnableUsingRelayService)
@@ -81,9 +81,8 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal([]string{}, p2p.config.SeedPeers)
 	assert.Equal([]string{}, p2p.config.FixedPeers)
 	assert.Equal([]string{}, p2p.config.BlacklistedIPs)
-	assert.Equal([]AddressInfo2{}, p2p.config.KnownPeers)
-	assert.Equal(100, p2p.config.MaxInboundConnections)
-	assert.Equal(20, p2p.config.MaxOutboundConnections)
+	assert.Equal(20, p2p.config.MinNumOfConnections)
+	assert.Equal(100, p2p.config.MaxNumOfConnections)
 	assert.Equal(false, p2p.config.IsSeedNode)
 	assert.Equal("lisk-test", p2p.config.NetworkName)
 	assert.NotNil(p2p.GossipSub)
@@ -103,6 +102,7 @@ func TestP2P_Start(t *testing.T) {
 	assert.NotNil(p2p.host)
 	assert.NotNil(p2p.MessageProtocol)
 	assert.NotNil(p2p.Peer.peerbook)
+	assert.NotNil(p2p.bootCloser)
 }
 
 func TestP2P_AddPenalty(t *testing.T) {

@@ -1,7 +1,6 @@
 package pubsub
 
 import (
-	"context"
 	"fmt"
 
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
@@ -23,7 +22,7 @@ func HashMsgID(m *pubsub_pb.Message) string {
 }
 
 // ParseAddresses returns an array of AddrInfo based on the array of the string.
-func ParseAddresses(ctx context.Context, addrs []string) ([]peer.AddrInfo, error) {
+func ParseAddresses(addrs []string) ([]peer.AddrInfo, error) {
 	var maddrs []ma.Multiaddr
 	for _, addr := range addrs {
 		maddr, err := ma.NewMultiaddr(addr)

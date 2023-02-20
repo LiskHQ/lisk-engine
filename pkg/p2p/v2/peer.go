@@ -11,6 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
@@ -22,9 +23,12 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
+type PeerIDs = peer.IDSlice
+
 const (
 	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
 	pingTimeout              = time.Second * 5  // Ping service timeout in seconds.
+	connectionTimeout        = time.Second * 30 // Connection timeout in seconds.
 	expireTimeOfConnGater    = time.Hour * 24   // Peers will be disconnected after this time
 	intervalCheckOfConnGater = time.Second * 10 // Check the blocked list based on this period
 )
@@ -101,6 +105,12 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 	}
 	opts = append(opts, connGaterOpt)
 
+	// Configure TTLs for libp2p's peerstore.
+	peerstore.AddressTTL = time.Hour                      // AddressTTL is the expiration time of addresses.
+	peerstore.TempAddrTTL = time.Minute * 2               // TempAddrTTL is the ttl used for a short lived address.
+	peerstore.RecentlyConnectedAddrTTL = time.Minute * 30 // RecentlyConnectedAddrTTL is used when we recently connected to a peer.
+	peerstore.OwnObservedAddrTTL = time.Minute * 30       // OwnObservedAddrTTL is used for our own external addresses observed by peers.
+
 	// Configure connection security.
 	security := strings.ToLower(config.ConnectionSecurity)
 	switch security {
@@ -150,7 +160,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 		return nil, err
 	}
 
-	peerbook, err := NewPeerbook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs, config.KnownPeers)
+	peerbook, err := NewPeerbook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -173,18 +183,14 @@ func (p *Peer) Close() error {
 
 // Connect to a peer.
 func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
-	for _, addr := range peer.Addrs {
-		ip := lps.ExtractIP(addr)
-		if p.peerbook.isIPBlacklisted(ip) {
-			p.logger.Warningf("IP %s is blacklisted. Will not connect to a peer %s", ip, peer.ID)
-			return nil
-		}
-		if p.peerbook.isIPBanned(ip) {
-			p.logger.Warningf("IP %s is banned. Will not connect to a peer %s", ip, peer.ID)
-			return nil
-		}
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, connectionTimeout)
+	err := p.host.Connect(ctxWithTimeout, peer)
+	cancel()
+	if err != nil {
+		return err
 	}
-	return p.host.Connect(ctx, peer)
+	p.host.Peerstore().AddAddrs(peer.ID, peer.Addrs, peerstore.PermanentAddrTTL)
+	return nil
 }
 
 // Disconnect from a peer.
@@ -206,14 +212,58 @@ func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
 	return peer.AddrInfoToP2pAddrs(&peerInfo)
 }
 
-// ConnectedPeers returns a list of all connected peers.
-func (p *Peer) ConnectedPeers() []peer.ID {
+// ConnectedPeers returns a list of all connected peers IDs.
+func (p *Peer) ConnectedPeers() PeerIDs {
 	return p.host.Network().Peers()
 }
 
-// KnownPeers returns a list of all known peers.
-func (p *Peer) KnownPeers() peer.IDSlice {
-	return p.host.Peerstore().Peers()
+// BlacklistedPeers returns a list of blacklisted peers and their addresses.
+func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
+	blacklistedPeers := make([]peer.AddrInfo, 0)
+
+	for _, knownPeer := range p.knownPeers() {
+		// Check if the peer ID is blacklisted in connectionGater.
+		peerFound := false
+		for _, id := range p.connGater.listBlockedPeers() {
+			if knownPeer.ID == id {
+				blacklistedPeers = append(blacklistedPeers, knownPeer)
+				peerFound = true
+				break
+			}
+		}
+		if peerFound {
+			continue
+		}
+
+		// Check if the peer IP address is blacklisted in connectionGater.
+		for _, ip := range p.connGater.listBlockedAddrs() {
+			peerFound := false
+			for _, addr := range knownPeer.Addrs {
+				ipKnownPeer := lps.ExtractIP(addr)
+				if ipKnownPeer == ip.String() {
+					blacklistedPeers = append(blacklistedPeers, knownPeer)
+					peerFound = true
+					break
+				}
+			}
+			if peerFound {
+				break
+			}
+		}
+	}
+
+	return blacklistedPeers
+}
+
+// knownPeers returns a list of all known peers with their addresses.
+func (p *Peer) knownPeers() []peer.AddrInfo {
+	peers := make([]peer.AddrInfo, 0)
+
+	for _, peerID := range p.host.Peerstore().Peers() {
+		peers = append(peers, p.host.Peerstore().PeerInfo(peerID))
+	}
+
+	return peers
 }
 
 // GetHost returns a libp2p host.
@@ -271,7 +321,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	go func() {
 		defer close(peerChan)
 
-		knownPeers := p.peerbook.KnownPeers()
+		knownPeers := p.knownPeers()
 
 		// Shuffle known peers to avoid always returning the same peers.
 		for i := range knownPeers {
@@ -290,7 +340,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 
 		for {
 			select {
-			case peerChan <- *knownPeers[numPeers-1]:
+			case peerChan <- knownPeers[numPeers-1]:
 				numPeers--
 				if numPeers == 0 {
 					return

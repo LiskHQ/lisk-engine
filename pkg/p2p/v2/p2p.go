@@ -4,37 +4,35 @@ package p2p
 import (
 	"context"
 	"errors"
+	"io"
 	"sync"
 	"time"
 
+	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
-	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
-
-type AddressInfo2 peer.AddrInfo // TODO - Rename this type to AddressInfo. (GH issue #19)
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
 // TODO - Move this struct into pkg/engine/config/config.go. Optionally, it could be renamed to NetworkConfig. (GH issue #19)
 // Config type - a p2p configuration.
 type Config struct {
-	Version                  string         `json:"version"`
-	Addresses                []string       `json:"addresses"`
-	ConnectionSecurity       string         `json:"connectionSecurity"`
-	AllowIncomingConnections bool           `json:"allowIncomingConnections"`
-	EnableNATService         bool           `json:"enableNATService,omitempty"`
-	EnableUsingRelayService  bool           `json:"enableUsingRelayService"`
-	EnableRelayService       bool           `json:"enableRelayService,omitempty"`
-	EnableHolePunching       bool           `json:"enableHolePunching,omitempty"`
-	SeedPeers                []string       `json:"seedPeers"`
-	FixedPeers               []string       `json:"fixedPeers,omitempty"`
-	BlacklistedIPs           []string       `json:"blackListedIPs,omitempty"`
-	KnownPeers               []AddressInfo2 `json:"-"`
-	MaxInboundConnections    int            `json:"maxInboundConnections"`
-	MaxOutboundConnections   int            `json:"maxOutboundConnections"`
+	Version                  string   `json:"version"`
+	Addresses                []string `json:"addresses"`
+	ConnectionSecurity       string   `json:"connectionSecurity"`
+	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
+	EnableNATService         bool     `json:"enableNATService,omitempty"`
+	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
+	EnableRelayService       bool     `json:"enableRelayService,omitempty"`
+	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
+	SeedPeers                []string `json:"seedPeers"`
+	FixedPeers               []string `json:"fixedPeers,omitempty"`
+	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
+	MinNumOfConnections      int      `json:"minNumOfConnections"`
+	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
 	// GossipSub configuration
 	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
 	NetworkName string `json:"networkName"`
@@ -45,7 +43,7 @@ func (c *Config) InsertDefault() error {
 		c.Version = "1.0"
 	}
 	if c.Addresses == nil {
-		c.Addresses = []string{"/ip4/127.0.0.1/tcp/0", "/ip4/127.0.0.1/udp/0/quic"}
+		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
 	}
 	if c.ConnectionSecurity == "" {
 		c.ConnectionSecurity = "tls"
@@ -59,14 +57,11 @@ func (c *Config) InsertDefault() error {
 	if c.BlacklistedIPs == nil {
 		c.BlacklistedIPs = []string{}
 	}
-	if c.KnownPeers == nil {
-		c.KnownPeers = []AddressInfo2{}
+	if c.MinNumOfConnections == 0 {
+		c.MinNumOfConnections = 20
 	}
-	if c.MaxInboundConnections == 0 {
-		c.MaxInboundConnections = 100
-	}
-	if c.MaxOutboundConnections == 0 {
-		c.MaxOutboundConnections = 20
+	if c.MaxNumOfConnections == 0 {
+		c.MaxNumOfConnections = 100
 	}
 	if c.NetworkName == "" {
 		c.NetworkName = "lisk-test"
@@ -76,10 +71,11 @@ func (c *Config) InsertDefault() error {
 
 // P2P type - a p2p service.
 type P2P struct {
-	logger log.Logger
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
-	config Config
+	logger     log.Logger
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	config     Config
+	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
 	*GossipSub
@@ -104,8 +100,22 @@ func (p2p *P2P) Start(logger log.Logger) error {
 
 	p2p.MessageProtocol.Start(ctx, logger, peer)
 
-	sk := pubsub.NewScoreKeeper()
+	sk := lps.NewScoreKeeper()
 	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
+	if err != nil {
+		cancel()
+		return err
+	}
+
+	// Start peer discovery bootstrap process.
+	seedPeers, err := lps.ParseAddresses(p2p.config.SeedPeers)
+	if err != nil {
+		cancel()
+		return err
+	}
+	cfgBootStrap := bootstrap.BootstrapConfigWithPeers(seedPeers)
+	cfgBootStrap.MinPeerThreshold = p2p.config.MinNumOfConnections
+	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, cfgBootStrap)
 	if err != nil {
 		cancel()
 		return err
@@ -114,6 +124,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.logger = logger
 	p2p.cancel = cancel
 	p2p.Peer = peer
+	p2p.bootCloser = bootCloser
 
 	p2p.wg.Add(1)
 	go natTraversalService(ctx, &p2p.wg, p2p.config, p2p.MessageProtocol)
@@ -124,9 +135,6 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.wg.Add(1)
 	go gossipSubEventHandler(ctx, &p2p.wg, peer, p2p.GossipSub)
 
-	p2p.wg.Add(1)
-	go p2p.peerbook.peerBookService(ctx, &p2p.wg, peer)
-
 	logger.Infof("P2P module successfully started")
 	return nil
 }
@@ -134,6 +142,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 // Stop function stops a P2P.
 func (p2p *P2P) Stop() error {
 	p2p.cancel()
+	p2p.bootCloser.Close()
 
 	waitCh := make(chan struct{})
 	go func() {

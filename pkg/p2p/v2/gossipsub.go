@@ -51,7 +51,11 @@ func (gs *GossipSub) Start(ctx context.Context,
 	sk *lps.ScoreKeeper,
 	cfg Config,
 ) error {
-	seedNodes, err := lps.ParseAddresses(ctx, cfg.SeedPeers)
+	seedNodes, err := lps.ParseAddresses(cfg.SeedPeers)
+	if err != nil {
+		return err
+	}
+	fixedNodes, err := lps.ParseAddresses(cfg.FixedPeers)
 	if err != nil {
 		return err
 	}
@@ -123,7 +127,6 @@ func (gs *GossipSub) Start(ctx context.Context,
 		pubsub.GossipSubDlazy = 64
 		pubsub.GossipSubGossipFactor = 0.25
 		pubsub.GossipSubPruneBackoff = 5 * time.Minute
-		options = append(options, pubsub.WithPeerExchange(true))
 	}
 
 	pgTopicWeights := map[string]float64{}
@@ -145,7 +148,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	options = append(options, pubsub.WithPeerGater(pgParams))
 
 	options = append(options,
-		pubsub.WithDirectPeers(seedNodes),
+		pubsub.WithDirectPeers(fixedNodes),
 		pubsub.WithSubscriptionFilter(
 			pubsub.WrapLimitSubscriptionFilter(
 				pubsub.NewAllowlistSubscriptionFilter(topics...),
@@ -153,6 +156,9 @@ func (gs *GossipSub) Start(ctx context.Context,
 
 	// We want to hide the author of the message from the topic subscribers.
 	options = append(options, pubsub.WithNoAuthor())
+
+	// We want to enable peer exchange for all peers and not only for seed peers.
+	options = append(options, pubsub.WithPeerExchange(true))
 
 	gossipSub, err := pubsub.NewGossipSub(ctx, p.GetHost(), options...)
 	if err != nil {
@@ -302,6 +308,11 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
 			counter++
+
+			p.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
+			p.logger.Debugf("List of known peers: %v", p.knownPeers())
+			p.logger.Debugf("List of blacklisted peers: %v", gs.peer.BlacklistedPeers())
+
 			t.Reset(10 * time.Second)
 		case <-ctx.Done():
 			gs.logger.Infof("GossipSub event handler stopped")
