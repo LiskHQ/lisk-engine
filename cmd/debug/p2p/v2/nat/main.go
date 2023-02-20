@@ -83,7 +83,7 @@ func main() {
 		panic(err)
 	}
 
-	err = p2p.RegisterRPCHandler("knownPeers", func(w p2pLib.ResponseWriter, req *p2pLib.RequestMsg) {
+	err = p2p.RegisterRPCHandler("connectedPeers", func(w p2pLib.ResponseWriter, req *p2pLib.RequestMsg) {
 		peers := p2p.ConnectedPeers()
 		w.Write([]byte(fmt.Sprintf("All connected peers: %v", peers)))
 	})
