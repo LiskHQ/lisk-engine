@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"net"
 	"strings"
 	"sync"
 	"testing"
@@ -236,33 +237,45 @@ func TestGossipSub_BlacklistedPeers(t *testing.T) {
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 
-	// create peer2, will be used for blacklisting via IP address
+	// create peer2, will be used for blacklisting via connection gater (peer ID)
 	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
+	// create peer3, will be used for blacklisting via connection gater (IP address)
+	p3, _ := NewPeer(ctx, wg, logger, config)
+	p3Addrs, _ := p3.P2PAddrs()
+	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+
 	config2 := Config{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
-	p3, _ := NewPeer(ctx, wg, logger, config2)
+	p, _ := NewPeer(ctx, wg, logger, config2)
 
 	gs := NewGossipSub()
 	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 
 	sk := ps.NewScoreKeeper()
-	err := gs.Start(ctx, wg, logger, p3, sk, config2)
+	err := gs.Start(ctx, wg, logger, p, sk, config2)
 	assert.Nil(err)
 
-	_ = p3.host.Connect(ctx, *p1AddrInfo) // Connect directly using host to avoid check regarding blacklisted IP address
-	_ = p3.host.Connect(ctx, *p2AddrInfo)
+	_ = p.host.Connect(ctx, *p1AddrInfo) // Connect directly using host to avoid check regarding blacklisted IP address
+	_ = p.host.Connect(ctx, *p2AddrInfo)
+	_ = p.host.Connect(ctx, *p3AddrInfo)
 
-	gs.ps.BlacklistPeer(p1.ID()) // blacklisting peer1
+	gs.ps.BlacklistPeer(p1.ID())                             // blacklisting peer1
+	_, err = gs.peer.connGater.addPenalty(p2.ID(), maxScore) // blacklisting peer2
+	assert.Nil(err)
+	gs.peer.connGater.blockAddr(net.ParseIP(p3Addrs[0].String())) // blacklisting peer3
 
 	peers := gs.BlacklistedPeers()
-	assert.Equal(2, len(peers))
+	assert.Equal(4, len(peers))
 
 	idx := slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p1.ID().String()) })
 	assert.NotEqual(-1, idx)
 
 	idx = slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p2.ID().String()) })
+	assert.NotEqual(-1, idx)
+
+	idx = slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p3.ID().String()) })
 	assert.NotEqual(-1, idx)
 }
 

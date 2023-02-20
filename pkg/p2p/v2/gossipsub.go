@@ -297,12 +297,22 @@ func (gs *GossipSub) BlacklistedPeers() []PeerAddrInfo {
 			continue
 		}
 
-		// Check if the peer is blacklisted in the config (peerbook)
-		for _, addr := range p.Addrs {
-			ip := lps.ExtractIP(addr)
-			if gs.peer.peerbook.isIPPermanentlyBlacklisted(ip) {
+		// Check if the peer ID is blacklisted in connectionGater.
+		for _, id := range gs.peer.connGater.listBlockedPeers() {
+			if p.ID == id {
 				blacklistedPeers = append(blacklistedPeers, p)
 				break
+			}
+		}
+
+		// Check if the peer IP address is blacklisted in connectionGater.
+		for _, ip := range gs.peer.connGater.listBlockedAddrs() {
+			for _, addr := range p.Addrs {
+				ipKnownPeer := lps.ExtractIP(addr)
+				if ipKnownPeer == ip.String() {
+					blacklistedPeers = append(blacklistedPeers, p)
+					break
+				}
 			}
 		}
 	}
