@@ -28,11 +28,10 @@ type PeerIDs = peer.IDSlice
 const (
 	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
 	pingTimeout              = time.Second * 5  // Ping service timeout in seconds.
-    const connectionTimeout = time.Second * 30 // Connection timeout in seconds.
+	connectionTimeout        = time.Second * 30 // Connection timeout in seconds.
 	expireTimeOfConnGater    = time.Hour * 24   // Peers will be disconnected after this time
 	intervalCheckOfConnGater = time.Second * 10 // Check the blocked list based on this period
 )
-
 
 // Connection security option type.
 const (

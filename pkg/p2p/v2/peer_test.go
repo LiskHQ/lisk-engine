@@ -203,27 +203,28 @@ func TestPeer_PeerSource(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
+	wg := &sync.WaitGroup{}
 
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	// Peer 1
-	p1, _ := NewPeer(ctx, logger, config)
+	p1, _ := NewPeer(ctx, wg, logger, config)
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 
 	// Peer 2
-	p2, _ := NewPeer(ctx, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	// Peer 3
-	p3, _ := NewPeer(ctx, logger, config)
+	p3, _ := NewPeer(ctx, wg, logger, config)
 	p3Addrs, _ := p3.P2PAddrs()
 	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
 
 	// Peer which will be connected to other peers
-	p, _ := NewPeer(ctx, logger, config)
+	p, _ := NewPeer(ctx, wg, logger, config)
 	err := p.Connect(ctx, *p1AddrInfo)
 	assert.Nil(err)
 	err = p.Connect(ctx, *p2AddrInfo)

@@ -226,27 +226,27 @@ func TestGossipSub_BlacklistedPeers(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
+	wg := &sync.WaitGroup{}
 
 	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	// create peer1, will be used for blacklisting via gossipsub
-	p1, _ := NewPeer(ctx, logger, config)
+	p1, _ := NewPeer(ctx, wg, logger, config)
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 
 	// create peer2, will be used for blacklisting via IP address
-	p2, _ := NewPeer(ctx, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	config2 := Config{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
-	p3, _ := NewPeer(ctx, logger, config2)
+	p3, _ := NewPeer(ctx, wg, logger, config2)
 
 	gs := NewGossipSub()
 	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 
-	wg := &sync.WaitGroup{}
 	sk := ps.NewScoreKeeper()
 	err := gs.Start(ctx, wg, logger, p3, sk, config2)
 	assert.Nil(err)
@@ -254,7 +254,7 @@ func TestGossipSub_BlacklistedPeers(t *testing.T) {
 	_ = p3.host.Connect(ctx, *p1AddrInfo) // Connect directly using host to avoid check regarding blacklisted IP address
 	_ = p3.host.Connect(ctx, *p2AddrInfo)
 
-	gs.BlacklistPeer(p1.ID()) // blacklisting peer1
+	gs.ps.BlacklistPeer(p1.ID()) // blacklisting peer1
 
 	peers := gs.BlacklistedPeers()
 	assert.Equal(2, len(peers))
