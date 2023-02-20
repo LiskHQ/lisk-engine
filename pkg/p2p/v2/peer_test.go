@@ -3,13 +3,18 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slices"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
+	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
 
 func TestPeer_New(t *testing.T) {
@@ -55,31 +60,6 @@ func TestPeer_Connect(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 	assert.Equal(p2.ID(), p1.ConnectedPeers()[0])
-}
-
-func TestPeer_ConnectIPIsBlacklisted(t *testing.T) {
-	assert := assert.New(t)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	logger, _ := log.NewDefaultProductionLogger()
-	config1 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = config1.InsertDefault()
-	config2 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = config2.InsertDefault()
-	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, config1)
-	p2, _ := NewPeer(ctx, wg, logger, config2)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
-
-	// p2 is blacklisted
-	p1.peerbook.permanentlyBlacklistedIPs = []string{"127.0.0.1"}
-
-	err := p1.Connect(ctx, *p2AddrInfo)
-	assert.Nil(err)
-	assert.Equal(0, len(p1.ConnectedPeers()))
 }
 
 func TestPeer_Disconnect(t *testing.T) {
@@ -138,7 +118,7 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	assert.Nil(err)
 }
 
-func TestP2PAddrs(t *testing.T) {
+func TestPeer_TestP2PAddrs(t *testing.T) {
 	assert := assert.New(t)
 
 	logger, _ := log.NewDefaultProductionLogger()
@@ -153,6 +133,65 @@ func TestP2PAddrs(t *testing.T) {
 	addrs, err := p.P2PAddrs()
 	assert.Nil(err)
 	assert.Equal(len(addrs), 2)
+}
+
+func TestPeer_BlacklistedPeers(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger, _ := log.NewDefaultProductionLogger()
+	wg := &sync.WaitGroup{}
+
+	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = config.InsertDefault()
+
+	// create peer1, will be used for blacklisting via gossipsub
+	p1, _ := NewPeer(ctx, wg, logger, config)
+	p1Addrs, _ := p1.P2PAddrs()
+	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
+
+	// create peer2, will be used for blacklisting via connection gater (peer ID)
+	p2, _ := NewPeer(ctx, wg, logger, config)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+
+	// create peer3, will be used for blacklisting via connection gater (IP address)
+	p3, _ := NewPeer(ctx, wg, logger, config)
+	p3Addrs, _ := p3.P2PAddrs()
+	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+
+	config2 := Config{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
+	p, _ := NewPeer(ctx, wg, logger, config2)
+
+	gs := NewGossipSub()
+	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {})
+
+	sk := ps.NewScoreKeeper()
+	err := gs.Start(ctx, wg, logger, p, sk, config2)
+	assert.Nil(err)
+
+	_ = p.host.Connect(ctx, *p1AddrInfo) // Connect directly using host to avoid check regarding blacklisted IP address
+	_ = p.host.Connect(ctx, *p2AddrInfo)
+	_ = p.host.Connect(ctx, *p3AddrInfo)
+
+	gs.ps.BlacklistPeer(p1.ID())                             // blacklisting peer1
+	_, err = gs.peer.connGater.addPenalty(p2.ID(), maxScore) // blacklisting peer2
+	assert.Nil(err)
+	gs.peer.connGater.blockAddr(net.ParseIP(p3Addrs[0].String())) // blacklisting peer3
+
+	peers := p.BlacklistedPeers()
+	assert.Equal(3, len(peers))
+
+	idx := slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p1.ID().String()) })
+	assert.NotEqual(-1, idx)
+
+	idx = slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p2.ID().String()) })
+	assert.NotEqual(-1, idx)
+
+	idx = slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p3.ID().String()) })
+	assert.NotEqual(-1, idx)
 }
 
 func TestPeer_PingMultiTimes(t *testing.T) {

@@ -282,44 +282,6 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, msg *Message
 	return topic.Publish(ctx, data)
 }
 
-// BlacklistedPeers returns a list of blacklisted peers and their addresses.
-func (gs *GossipSub) BlacklistedPeers() []PeerAddrInfo {
-	blacklistedPeers := make([]peer.AddrInfo, 0)
-
-	if gs.peer == nil {
-		return blacklistedPeers
-	}
-
-	for _, p := range gs.peer.knownPeers() {
-		// Check if the peer is blacklisted in gossipsub.
-		if gs.blacklist.Contains(p.ID) {
-			blacklistedPeers = append(blacklistedPeers, p)
-			continue
-		}
-
-		// Check if the peer ID is blacklisted in connectionGater.
-		for _, id := range gs.peer.connGater.listBlockedPeers() {
-			if p.ID == id {
-				blacklistedPeers = append(blacklistedPeers, p)
-				break
-			}
-		}
-
-		// Check if the peer IP address is blacklisted in connectionGater.
-		for _, ip := range gs.peer.connGater.listBlockedAddrs() {
-			for _, addr := range p.Addrs {
-				ipKnownPeer := lps.ExtractIP(addr)
-				if ipKnownPeer == ip.String() {
-					blacklistedPeers = append(blacklistedPeers, p)
-					break
-				}
-			}
-		}
-	}
-
-	return blacklistedPeers
-}
-
 // Start starts the GossipSub event handler.
 func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs *GossipSub) {
 	defer wg.Done()
@@ -355,7 +317,7 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 
 			p.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
 			p.logger.Debugf("List of known peers: %v", p.knownPeers())
-			p.logger.Debugf("List of blacklisted peers: %v", gs.BlacklistedPeers())
+			p.logger.Debugf("List of blacklisted peers: %v", gs.peer.BlacklistedPeers())
 
 			t.Reset(10 * time.Second)
 		case <-ctx.Done():

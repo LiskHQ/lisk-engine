@@ -183,13 +183,6 @@ func (p *Peer) Close() error {
 
 // Connect to a peer.
 func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
-	for _, addr := range peer.Addrs {
-		ip := lps.ExtractIP(addr)
-		if p.peerbook.isIPPermanentlyBlacklisted(ip) {
-			p.logger.Warningf("IP %s is blacklisted. Will not connect to a peer %s", ip, peer.ID)
-			return nil
-		}
-	}
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, connectionTimeout)
 	err := p.host.Connect(ctxWithTimeout, peer)
 	cancel()
@@ -222,6 +215,44 @@ func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
 // ConnectedPeers returns a list of all connected peers IDs.
 func (p *Peer) ConnectedPeers() PeerIDs {
 	return p.host.Network().Peers()
+}
+
+// BlacklistedPeers returns a list of blacklisted peers and their addresses.
+func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
+	blacklistedPeers := make([]peer.AddrInfo, 0)
+
+	for _, knownPeer := range p.knownPeers() {
+		// Check if the peer ID is blacklisted in connectionGater.
+		peerFound := false
+		for _, id := range p.connGater.listBlockedPeers() {
+			if knownPeer.ID == id {
+				blacklistedPeers = append(blacklistedPeers, knownPeer)
+				peerFound = true
+				break
+			}
+		}
+		if peerFound {
+			continue
+		}
+
+		// Check if the peer IP address is blacklisted in connectionGater.
+		for _, ip := range p.connGater.listBlockedAddrs() {
+			peerFound := false
+			for _, addr := range knownPeer.Addrs {
+				ipKnownPeer := lps.ExtractIP(addr)
+				if ipKnownPeer == ip.String() {
+					blacklistedPeers = append(blacklistedPeers, knownPeer)
+					peerFound = true
+					break
+				}
+			}
+			if peerFound {
+				break
+			}
+		}
+	}
+
+	return blacklistedPeers
 }
 
 // knownPeers returns a list of all known peers with their addresses.
