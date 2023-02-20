@@ -101,7 +101,7 @@ func TestConnGater_ExpireTime(t *testing.T) {
 	time.Sleep(time.Second * 2)
 	assert.Equal(1, len(cg.listBlockedPeers()))
 	assert.Equal(pidD, cg.listBlockedPeers()[0])
-	time.Sleep(time.Second*1 + time.Millisecond*100)
+	time.Sleep(time.Second)
 	assert.Equal(0, len(cg.listBlockedPeers()))
 }
 
