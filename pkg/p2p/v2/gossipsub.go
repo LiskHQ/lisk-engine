@@ -32,7 +32,6 @@ type GossipSub struct {
 	topics        map[string]*pubsub.Topic
 	subscriptions map[string]*pubsub.Subscription
 	eventHandlers map[string]EventHandler
-	blacklist     pubsub.Blacklist
 }
 
 // NewGossipSub makes a new GossipSub struct.
@@ -158,10 +157,6 @@ func (gs *GossipSub) Start(ctx context.Context,
 	// We want to hide the author of the message from the topic subscribers.
 	options = append(options, pubsub.WithNoAuthor())
 
-	// We want to provide our own blacklist map to be able to check if a peer is blacklisted.
-	blacklist := pubsub.NewMapBlacklist()
-	options = append(options, pubsub.WithBlacklist(blacklist))
-
 	// We want to enable peer exchange for all peers and not only for seed peers.
 	options = append(options, pubsub.WithPeerExchange(true))
 
@@ -173,7 +168,6 @@ func (gs *GossipSub) Start(ctx context.Context,
 	gs.logger = logger
 	gs.peer = p
 	gs.ps = gossipSub
-	gs.blacklist = blacklist
 
 	err = gs.createSubscriptionHandlers(ctx, wg)
 	if err != nil {
