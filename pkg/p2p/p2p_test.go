@@ -70,7 +70,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	config := cfg.NetworkConfig{}
 	err := config.InsertDefault()
 	assert.Nil(err)
-	p2p := NewP2P(config)
+	p2p := NewP2P(&config)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.config.Version)
 	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.config.Addresses)
@@ -94,7 +94,7 @@ func TestP2P_Start(t *testing.T) {
 
 	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
-	p2p := NewP2P(config)
+	p2p := NewP2P(&config)
 	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger)
 	assert.Nil(err)
@@ -148,7 +148,7 @@ func TestP2P_Stop(t *testing.T) {
 
 	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
-	p2p := NewP2P(config)
+	p2p := NewP2P(&config)
 	logger, _ := logger.NewDefaultProductionLogger()
 	_ = p2p.Start(logger)
 

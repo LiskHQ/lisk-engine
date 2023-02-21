@@ -23,7 +23,7 @@ type P2P struct {
 	logger     log.Logger
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
-	config     config.NetworkConfig
+	config     *config.NetworkConfig
 	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
@@ -31,7 +31,7 @@ type P2P struct {
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P(config config.NetworkConfig) *P2P {
+func NewP2P(config *config.NetworkConfig) *P2P {
 	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
 }
 
@@ -40,7 +40,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, &p2p.wg, logger, p2p.config)
+	peer, err := NewPeer(ctx, &p2p.wg, logger, *p2p.config)
 	if err != nil {
 		cancel()
 		return err
@@ -50,7 +50,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.MessageProtocol.Start(ctx, logger, peer)
 
 	sk := lps.NewScoreKeeper()
-	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, p2p.config)
+	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, *p2p.config)
 	if err != nil {
 		cancel()
 		return err
@@ -76,7 +76,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.bootCloser = bootCloser
 
 	p2p.wg.Add(1)
-	go natTraversalService(ctx, &p2p.wg, p2p.config, p2p.MessageProtocol)
+	go natTraversalService(ctx, &p2p.wg, *p2p.config, p2p.MessageProtocol)
 
 	p2p.wg.Add(1)
 	go p2pEventHandler(ctx, &p2p.wg, peer)

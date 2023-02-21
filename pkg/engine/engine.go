@@ -35,7 +35,7 @@ type Engine struct {
 	router          *router.Router
 	blockchainDB    *db.DB
 	generatorDB     *db.DB
-	conn            *p2p.Connection
+	conn            *p2p.P2P
 	chain           *blockchain.Chain
 	consensusExec   *consensus.Executer
 	transactionPool *txpool.TransactionPool
@@ -237,14 +237,7 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) init() error {
-	e.conn = p2p.NewConnection(&p2p.ConnectionConfig{
-		SeedAddresses:         NetworkPeers(e.config.Network.SeedPeers).GetP2PAddress(),
-		BannedIPs:             e.config.Network.BlackListedIPs,
-		WhitelistedAddresses:  NetworkPeers(e.config.Network.WhiteListedPeers).GetP2PAddress(),
-		FixedAddresses:        NetworkPeers(e.config.Network.FixedPeers).GetP2PAddress(),
-		MaxInboundConnection:  e.config.Network.MaxInboundConnections,
-		MaxOutboundConnection: e.config.Network.MaxOutboundConnections,
-	})
+	e.conn = p2p.NewP2P(e.config.Network)
 	e.chain = blockchain.NewChain(&blockchain.ChainConfig{
 		MaxBlockCache:         e.config.System.GetMaxBlokckCache(),
 		ChainID:               e.config.Genesis.ChainID,
