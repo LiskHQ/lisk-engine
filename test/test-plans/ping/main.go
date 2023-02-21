@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
-	"github.com/testground/sdk-go/sync"
+	tgSync "github.com/testground/sdk-go/sync"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -24,19 +26,6 @@ func main() {
 	run.InvokeMap(testcases)
 }
 
-func getSecurityByName(secureChannel string) p2p.PeerSecurityOption {
-	switch secureChannel {
-	case "noise":
-		return p2p.PeerSecurityNoise
-	case "tls":
-		return p2p.PeerSecurityTLS
-	case "none":
-		return p2p.PeerSecurityNone
-	}
-
-	panic(fmt.Sprintf("unknown secure channel: %s", secureChannel))
-}
-
 func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	var (
 		secureChannel = runenv.StringParam("secure_channel")
@@ -44,13 +33,22 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		iterations    = runenv.IntParam("iterations")
 	)
 
-	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
-
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 
 	initCtx.MustWaitAllInstancesInitialized(ctx)
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
+
+	config := p2p.Config{
+		AllowIncomingConnections: true,
+		ConnectionSecurity:       secureChannel,
+		Addresses:                []string{fmt.Sprintf("/ip4/%s/tcp/0", ip)},
+	}
+	err := config.InsertDefault()
+	if err != nil {
+		panic(err)
+	}
+	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
 
 	// init a logger to use it for NewPeer
 	logger, err := log.NewDefaultProductionLogger()
@@ -58,20 +56,32 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		panic(err)
 	}
 
-	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
-	host, err := p2p.NewPeer(ctx, logger, []string{listenAddr}, getSecurityByName(secureChannel))
-
+	wg := &sync.WaitGroup{}
+	host, err := p2p.NewPeer(ctx, wg, logger, config)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
 	}
 	defer host.Close()
 
-	runenv.RecordMessage("my listen addrs: %v", host.Addrs())
+	addrs := func() []ma.Multiaddr {
+		hostAddrs, err := host.P2PAddrs()
+		if err != nil {
+			panic(err)
+		}
+
+		ai, err := p2p.PeerInfoFromMultiAddr(hostAddrs[0].String())
+		if err != nil {
+			panic(err)
+		}
+		runenv.RecordMessage("my listen addrs: %s", ai.Addrs[0].String())
+
+		return ai.Addrs
+	}
 
 	var (
 		hostId     = host.ID()
-		ai         = &p2p.PeerAddrInfo{ID: hostId, Addrs: host.Addrs()}
-		peersTopic = sync.NewTopic("peers", new(p2p.PeerAddrInfo))
+		ai         = &p2p.PeerAddrInfo{ID: hostId, Addrs: addrs()}
+		peersTopic = tgSync.NewTopic("peers", new(p2p.PeerAddrInfo))
 		peers      = make([]*p2p.PeerAddrInfo, 0, runenv.TestInstanceCount)
 	)
 
@@ -109,7 +119,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				}
 				runenv.RecordMessage("ping result (%s) from peer %s: %s", tag, id, rtt)
 				point := fmt.Sprintf("ping-result,round=%s,peer=%s", tag, id)
-				runenv.R().RecordPoint(point, float64(rtt.Milliseconds()))
+				runenv.R().RecordPoint(point, float64(rtt.Nanoseconds()))
 				return nil
 			})
 		}
@@ -143,7 +153,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			Network:        "default",
 			Enable:         true,
 			Default:        network.LinkShape{Latency: latency},
-			CallbackState:  sync.State(fmt.Sprintf("network-configured-%d", i)),
+			CallbackState:  tgSync.State(fmt.Sprintf("network-configured-%d", i)),
 			CallbackTarget: runenv.TestInstanceCount,
 		})
 
@@ -151,7 +161,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			return err
 		}
 
-		doneState := sync.State(fmt.Sprintf("done-%d", i))
+		doneState := tgSync.State(fmt.Sprintf("done-%d", i))
 		initCtx.SyncClient.MustSignalAndWait(ctx, doneState, runenv.TestInstanceCount)
 	}
 

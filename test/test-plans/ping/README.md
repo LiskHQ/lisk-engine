@@ -41,7 +41,7 @@ Please follow the below steps to prepare your machine to run the `testcase`:
 6. Now you can run the following commands to fetch the private repository of the `lisk-engine`:
 	```bash
 	export GOPRIVATE=*
-	go get -v github.com/LiskHQ/lisk-engine/pkg/p2p/v2@c1dfe1a32115d24cbf94bd5b5522aaa06cd17fcd
+	go get -v github.com/LiskHQ/lisk-engine/pkg/p2p/v2@a5015d941e3ea9d376ed8fcd6bad7f55fcfe95f9
 	```
 7. After fetching the `pkg` you should turn `git config` to use `https`, for this you can remove the `~/.gitconfig` or comment the lines that you recently added it, put `;` at the beginning of the each lines.
 
@@ -65,7 +65,7 @@ testground run single --plan=ping --testcase=ping --runner=local:exec --builder=
 
 When your configuration is finished, run the following command to run the `testplan`:
 ```bash
-testground run single --plan=ping --testcase=ping --runner=docker:docker --builder=docker:go --instances=10
+testground run single --plan=ping --testcase=ping --runner=local:docker --builder=docker:go --instances=10
 ```
 
 ## Test parameters
