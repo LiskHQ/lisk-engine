@@ -82,7 +82,7 @@ func TestPeer_Disconnect(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(p2.ID(), p1.ConnectedPeers()[0])
 
-	err = p1.Disconnect(ctx, p2.ID())
+	err = p1.Disconnect(p2.ID())
 	assert.Nil(err)
 	assert.Equal(0, len(p1.ConnectedPeers()))
 }
@@ -115,7 +115,7 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	err = p2.Connect(ctx, *p1AddrInfo)
 	assert.Nil(err)
 	assert.Equal(p1.ID(), p2.ConnectedPeers()[0])
-	err = p2.Disconnect(ctx, p1.ID())
+	err = p2.Disconnect(p1.ID())
 	assert.Nil(err)
 }
 

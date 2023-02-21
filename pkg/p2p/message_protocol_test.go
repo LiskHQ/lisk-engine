@@ -140,7 +140,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
 	data, _ := reqMsg.Encode()
 	stream.data = data
-	mp.onResponse(ctx, stream)
+	mp.onResponse(stream)
 
 	select {
 	case response := <-ch:
@@ -176,7 +176,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), nil)
 	data, _ := reqMsg.Encode()
 	stream.data = data
-	mp.onResponse(ctx, stream)
+	mp.onResponse(stream)
 
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received for unknown request ID") })
 	assert.NotEqual(-1, idx)

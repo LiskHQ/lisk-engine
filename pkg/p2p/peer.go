@@ -195,7 +195,7 @@ func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
 }
 
 // Disconnect from a peer.
-func (p *Peer) Disconnect(ctx context.Context, peer peer.ID) error {
+func (p *Peer) Disconnect(peer peer.ID) error {
 	return p.host.Network().ClosePeer(peer)
 }
 
@@ -357,23 +357,23 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 
 // addPenalty will update the score of the given peer ID in connGater.
 // The peer will block if the socre exceeded in maxScore and then disconnected the peer immediately.
-func (p *Peer) addPenalty(ctx context.Context, pid peer.ID, score int) error {
+func (p *Peer) addPenalty(pid peer.ID, score int) error {
 	newScore, err := p.connGater.addPenalty(pid, score)
 	if err != nil {
 		return err
 	}
 	if newScore >= maxScore {
-		return p.Disconnect(ctx, pid)
+		return p.Disconnect(pid)
 	}
 
 	return nil
 }
 
 // BlockPeer blocks the given peer ID and immediately try to close the connection.
-func (p *Peer) BlockPeer(ctx context.Context, pid peer.ID) error {
+func (p *Peer) BlockPeer(pid peer.ID) error {
 	_, err := p.connGater.addPenalty(pid, maxScore)
 	if err != nil {
 		return err
 	}
-	return p.Disconnect(ctx, pid)
+	return p.Disconnect(pid)
 }

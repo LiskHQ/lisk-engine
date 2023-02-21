@@ -34,7 +34,7 @@ type p2pConnection interface {
 	Broadcast(ctx context.Context, event string, data []byte)
 	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error
 	RegisterEventHandler(name string, handler p2p.EventHandler) error
-	ApplyPenalty(ctx context.Context, pai p2p.PeerAddrInfo, score int) error
+	ApplyPenalty(pai p2p.PeerAddrInfo, score int) error
 	RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response
 }
 type ABI interface {

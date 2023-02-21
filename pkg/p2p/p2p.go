@@ -150,14 +150,12 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
-func (p2p *P2P) ApplyPenalty(ctx context.Context, pai PeerAddrInfo, score int) error {
-	return p2p.addPenalty(ctx, pai.ID, score)
+func (p2p *P2P) ApplyPenalty(pai PeerAddrInfo, score int) error {
+	return p2p.addPenalty(pai.ID, score)
 }
 
-// Missing implementation of functions from the interface.
-func (p2p *P2P) Broadcast(ctx context.Context, event string, data []byte)     {}
-func (p2p *P2P) RegisterRPCHandler(endpoint string, handler RPCHandler) error { return nil }
-func (p2p *P2P) RegisterEventHandler(name string, handler EventHandler) error { return nil }
+// Missing implementation of functions from the engine's P2P interface.
+func (p2p *P2P) Broadcast(ctx context.Context, event string, data []byte) {}
 func (p2p *P2P) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
 	return Response{}
 }
