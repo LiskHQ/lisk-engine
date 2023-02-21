@@ -59,8 +59,8 @@ func newResponseMessage(reqMsgID string, data []byte, err error) *ResponseMsg {
 	}
 }
 
-// newMessage creates a new message.
-func newMessage(data []byte) *Message {
+// NewMessage creates a new message.
+func NewMessage(data []byte) *Message {
 	return &Message{
 		Timestamp: time.Now().Unix(),
 		Data:      data,

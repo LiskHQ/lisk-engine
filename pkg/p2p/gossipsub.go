@@ -219,7 +219,7 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 				}
 				gs.logger.Debugf("Received message: %s", msg.Data)
 
-				m := newMessage(nil)
+				m := NewMessage(nil)
 				err = m.Decode(msg.Data)
 				if err != nil {
 					gs.logger.Errorf("Error while decoding message: %s", err)
@@ -293,17 +293,17 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 			topicTransactions := "transactions" // Test topic which will be removed after testing
 			topicBlocks := "blocks"             // Test topic which will be removed after testing
 			topicEvents := "events"             // Test topic which will be removed after testing
-			txMsg := newMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter)))
+			txMsg := NewMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter)))
 			err := gs.Publish(ctx, topicTransactions, txMsg)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
-			blkMsg := newMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter)))
+			blkMsg := NewMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter)))
 			err = gs.Publish(ctx, topicBlocks, blkMsg)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
-			entMsg := newMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter)))
+			entMsg := NewMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter)))
 			err = gs.Publish(ctx, topicEvents, entMsg)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)

@@ -14,6 +14,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/certificate"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/liskbft"
 	"github.com/LiskHQ/lisk-engine/pkg/db/diffdb"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
 
@@ -220,7 +221,8 @@ func (c *Executer) broadcastCertificate() error {
 	if err != nil {
 		return err
 	}
-	c.conn.Send(c.ctx, P2PEventPostSingleCommits, data)
+	msg := p2p.NewMessage(data)
+	c.conn.Publish(c.ctx, P2PEventPostSingleCommits, msg)
 	c.certificatePool.Upgrade(selectedCommites)
 	return nil
 }

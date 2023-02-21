@@ -33,7 +33,7 @@ func TestMessage_NewResponseMessage(t *testing.T) {
 func TestMessage_NewMessage(t *testing.T) {
 	assert := assert.New(t)
 
-	msg := newMessage([]byte(testData))
+	msg := NewMessage([]byte(testData))
 	assert.NotNil(msg)
 	assert.NotEmpty(msg.Timestamp)
 	assert.Equal([]byte(testData), msg.Data)

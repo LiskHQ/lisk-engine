@@ -37,8 +37,8 @@ const (
 )
 
 var (
-	msg        = newMessage([]byte("testMessageData"))
-	invalidMsg = newMessage([]byte("testMessageInvalid"))
+	msg        = NewMessage([]byte("testMessageData"))
+	invalidMsg = NewMessage([]byte("testMessageInvalid"))
 	testMV     = func(ctx context.Context, msg *Message) ValidationResult {
 		if bytes.Contains(msg.Data, []byte("Invalid")) {
 			return ValidationReject
