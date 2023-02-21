@@ -13,9 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
+	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 func TestPeer_New(t *testing.T) {
@@ -144,25 +145,25 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = config.InsertDefault()
+	config1 := config.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = config1.InsertDefault()
 
 	// create peer1, will be used for blacklisting via gossipsub
-	p1, _ := NewPeer(ctx, wg, logger, config)
+	p1, _ := NewPeer(ctx, wg, logger, config1)
 	p1Addrs, _ := p1.P2PAddrs()
 	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
 
 	// create peer2, will be used for blacklisting via connection gater (peer ID)
-	p2, _ := NewPeer(ctx, wg, logger, config)
+	p2, _ := NewPeer(ctx, wg, logger, config1)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	// create peer3, will be used for blacklisting via connection gater (IP address)
-	p3, _ := NewPeer(ctx, wg, logger, config)
+	p3, _ := NewPeer(ctx, wg, logger, config1)
 	p3Addrs, _ := p3.P2PAddrs()
 	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
 
-	config2 := Config{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
+	config2 := config.NetworkConfig{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
 	p, _ := NewPeer(ctx, wg, logger, config2)
 
 	gs := NewGossipSub()
