@@ -135,9 +135,9 @@ func TestP2P_AddPenalty(t *testing.T) {
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
-	assert.Nil(node1.ApplyPenalty(*p2AddrInfo, 10))
+	assert.Nil(node1.ApplyPenalty(string(p2AddrInfo.ID), 10))
 	assert.Equal(node2.ID(), node1.ConnectedPeers()[0])
-	assert.Nil(node1.ApplyPenalty(*p2AddrInfo, 100))
+	assert.Nil(node1.ApplyPenalty(string(p2AddrInfo.ID), 100))
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)

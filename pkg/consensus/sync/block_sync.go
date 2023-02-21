@@ -22,7 +22,7 @@ type blockSyncer struct {
 
 // Sync with network.
 func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
-	peers := s.conn.ConnectedPeers(true)
+	peers := s.conn.ConnectedPeers()
 	nodeInfo, err := getBestNodeInfo(peers)
 	if err != nil {
 		return false, err

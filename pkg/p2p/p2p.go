@@ -10,6 +10,7 @@ import (
 
 	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
@@ -150,8 +151,8 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
-func (p2p *P2P) ApplyPenalty(pai PeerAddrInfo, score int) error {
-	return p2p.addPenalty(pai.ID, score)
+func (p2p *P2P) ApplyPenalty(pid string, score int) error {
+	return p2p.addPenalty(peer.ID(pid), score)
 }
 
 // Missing implementation of functions from the engine's P2P interface.
