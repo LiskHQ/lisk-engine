@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
@@ -30,7 +31,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := p2pLib.Config{
+	config := config.NetworkConfig{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
@@ -42,7 +43,7 @@ func main() {
 		panic(err)
 	}
 
-	p2p := p2pLib.NewP2P(config)
+	p2p := p2pLib.NewP2P(&config)
 
 	for _, topic := range Topics {
 		err = p2p.RegisterEventHandler(topic, func(event *p2pLib.Event) {

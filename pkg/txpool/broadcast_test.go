@@ -41,31 +41,17 @@ type connMock struct {
 	mock.Mock
 	txs map[string]*blockchain.Transaction
 }
-type respMock struct {
-	mock.Mock
-	data []byte
-	err  error
-}
-
-func (r *respMock) Err() error {
-	return r.err
-}
-func (r *respMock) Data() []byte {
-	return r.data
-}
 
 func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) {
 }
 func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error { return nil }
 func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler) error { return nil }
-func (c *connMock) ApplyPenalty(peerID string, score int)                            {}
+func (c *connMock) ApplyPenalty(peerID string, score int) error                      { return nil }
 func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response {
 	if procedure == RPCEndpointGetTransactions {
 		req := &GetTransactionsRequest{}
 		if err := req.Decode(data); err != nil {
-			return &respMock{
-				err: err,
-			}
+			return *p2p.NewResponse(0, "", []byte{}, err)
 		}
 		txs := []*blockchain.Transaction{}
 		for _, id := range req.TransactionIDs {
@@ -76,13 +62,9 @@ func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure str
 		resp := &GetTransactionsResponse{
 			Transactions: txs,
 		}
-		return &respMock{
-			data: resp.MustEncode(),
-		}
+		return *p2p.NewResponse(0, "", resp.MustEncode(), nil)
 	}
-	return &respMock{
-		err: errors.New("invalid req"),
-	}
+	return *p2p.NewResponse(0, "", []byte{}, errors.New("invalid req"))
 }
 
 func TestBroadcaster(t *testing.T) {

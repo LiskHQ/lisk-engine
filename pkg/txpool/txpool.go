@@ -409,7 +409,7 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 		return
 	}
 	resp := t.conn.RequestFrom(t.ctx, peerID, RPCEndpointGetTransactions, encodedReq)
-	if err := resp.Err(); err != nil {
+	if err := resp.Error(); err != nil {
 		t.logger.Errorf("Received error from getTransactions endpoint %v", err)
 		return
 	}
@@ -469,7 +469,7 @@ type GetTransactionsResponse struct {
 	Transactions []*blockchain.Transaction `json:"transactions" fieldNumber:"1"`
 }
 
-func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, r *p2p.Request) {
+func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 	// Case without request body
 	if len(r.Data) == 0 {
 		processables := t.GetProcessable()

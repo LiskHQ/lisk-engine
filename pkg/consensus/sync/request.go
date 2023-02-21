@@ -33,8 +33,8 @@ func requestLastBlockHeader(ctx context.Context, conn *p2p.P2P, peerID string) (
 	}()
 	select {
 	case result := <-respChan:
-		if result.Err() != nil {
-			return nil, result.Err()
+		if result.Error() != nil {
+			return nil, result.Error()
 		}
 		block, err := blockchain.NewBlock(result.Data())
 		if err != nil {
@@ -70,8 +70,8 @@ func requestHighestCommonBlock(ctx context.Context, conn *p2p.P2P, peerID string
 	}()
 	select {
 	case result := <-respChan:
-		if result.Err() != nil {
-			return nil, result.Err()
+		if result.Error() != nil {
+			return nil, result.Error()
 		}
 		commonBlockResp := &getHighestCommonBlockResponse{}
 		if err := commonBlockResp.Decode(result.Data()); err != nil {
@@ -110,8 +110,8 @@ func requestBlocksFromID(ctx context.Context, conn *p2p.P2P, peerID string, id [
 	}()
 	select {
 	case result := <-respChan:
-		if result.Err() != nil {
-			return nil, result.Err()
+		if result.Error() != nil {
+			return nil, result.Error()
 		}
 		if result.Data() == nil {
 			return nil, errors.New("peer did not return common block")

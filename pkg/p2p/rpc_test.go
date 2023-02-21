@@ -10,7 +10,7 @@ import (
 func TestRPC_NewResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	e := newResponse(testTimestamp, testPeerID, []byte(testData), errors.New(testError))
+	e := NewResponse(testTimestamp, testPeerID, []byte(testData), errors.New(testError))
 	assert.Equal(testTimestamp, e.timestamp)
 	assert.Equal(testPeerID, e.peerID)
 	assert.Equal([]byte(testData), e.data)
@@ -20,7 +20,7 @@ func TestRPC_NewResponse(t *testing.T) {
 func TestRPC_Getters(t *testing.T) {
 	assert := assert.New(t)
 
-	e := newResponse(testTimestamp, testPeerID, []byte(testData), errors.New(testError))
+	e := NewResponse(testTimestamp, testPeerID, []byte(testData), errors.New(testError))
 	assert.Equal(testTimestamp, e.Timestamp())
 	assert.Equal(testPeerID, e.PeerID())
 	assert.Equal([]byte(testData), e.Data())

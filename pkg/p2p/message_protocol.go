@@ -120,7 +120,7 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 		if newMsg.Error != "" {
 			resError = errors.New(newMsg.Error)
 		}
-		ch <- newResponse(
+		ch <- NewResponse(
 			newMsg.Timestamp,
 			s.Conn().RemotePeer().String(),
 			newMsg.Data,

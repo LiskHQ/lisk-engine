@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
@@ -52,7 +53,7 @@ func main() {
 	ip6tcp := fmt.Sprintf("/ip6/::/tcp/%d", *port)
 	ip4tcp := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port)
 
-	cfg := p2p.Config{
+	cfg := config.NetworkConfig{
 		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
 		AllowIncomingConnections: true,
 		NetworkName:              "lisk-test",

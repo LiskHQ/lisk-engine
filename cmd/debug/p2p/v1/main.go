@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p/v1"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p/v1/addressbook"
 )
 

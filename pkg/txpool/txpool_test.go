@@ -380,7 +380,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	pool.reorg()
 
 	// empty req
-	req := &p2p.Request{
+	req := &p2p.RequestMsg{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data:      []byte{},
@@ -391,7 +391,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	assert.Nil(t, resp.err)
 
 	// random request
-	req = &p2p.Request{
+	req = &p2p.RequestMsg{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data:      []byte{3, 2, 1},
@@ -408,7 +408,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	for i := range ids {
 		ids[i] = crypto.RandomBytes(32)
 	}
-	req = &p2p.Request{
+	req = &p2p.RequestMsg{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data: (&GetTransactionsRequest{
@@ -423,7 +423,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
 
 	// invalid id
-	req = &p2p.Request{
+	req = &p2p.RequestMsg{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data: (&GetTransactionsRequest{
@@ -442,7 +442,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	for i := range ids {
 		ids[i] = txs[i].ID
 	}
-	req = &p2p.Request{
+	req = &p2p.RequestMsg{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data: (&GetTransactionsRequest{

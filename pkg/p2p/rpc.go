@@ -30,8 +30,8 @@ type Response struct {
 	err       error  // Error message in case of an error.
 }
 
-// newResponse creates a new Response struct.
-func newResponse(timestamp int64, peerID string, data []byte, err error) *Response {
+// NewResponse creates a new Response struct.
+func NewResponse(timestamp int64, peerID string, data []byte, err error) *Response {
 	return &Response{
 		timestamp: timestamp,
 		peerID:    peerID,
