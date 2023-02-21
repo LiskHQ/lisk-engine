@@ -11,70 +11,19 @@ import (
 	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
-// TODO - Move this struct into pkg/engine/config/config.go. Optionally, it could be renamed to NetworkConfig. (GH issue #19)
-// Config type - a p2p configuration.
-type Config struct {
-	Version                  string   `json:"version"`
-	Addresses                []string `json:"addresses"`
-	ConnectionSecurity       string   `json:"connectionSecurity"`
-	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
-	EnableNATService         bool     `json:"enableNATService,omitempty"`
-	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
-	EnableRelayService       bool     `json:"enableRelayService,omitempty"`
-	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
-	SeedPeers                []string `json:"seedPeers"`
-	FixedPeers               []string `json:"fixedPeers,omitempty"`
-	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
-	MinNumOfConnections      int      `json:"minNumOfConnections"`
-	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
-	// GossipSub configuration
-	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
-	NetworkName string `json:"networkName"`
-}
-
-func (c *Config) InsertDefault() error {
-	if c.Version == "" {
-		c.Version = "1.0"
-	}
-	if c.Addresses == nil {
-		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
-	}
-	if c.ConnectionSecurity == "" {
-		c.ConnectionSecurity = "tls"
-	}
-	if c.SeedPeers == nil {
-		c.SeedPeers = []string{}
-	}
-	if c.FixedPeers == nil {
-		c.FixedPeers = []string{}
-	}
-	if c.BlacklistedIPs == nil {
-		c.BlacklistedIPs = []string{}
-	}
-	if c.MinNumOfConnections == 0 {
-		c.MinNumOfConnections = 20
-	}
-	if c.MaxNumOfConnections == 0 {
-		c.MaxNumOfConnections = 100
-	}
-	if c.NetworkName == "" {
-		c.NetworkName = "lisk-test"
-	}
-	return nil
-}
-
 // P2P type - a p2p service.
 type P2P struct {
 	logger     log.Logger
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
-	config     Config
+	config     config.NetworkConfig
 	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
@@ -82,7 +31,7 @@ type P2P struct {
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P(config Config) *P2P {
+func NewP2P(config config.NetworkConfig) *P2P {
 	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
 }
 

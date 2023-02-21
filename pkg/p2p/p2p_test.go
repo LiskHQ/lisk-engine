@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	logger "github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -66,7 +67,7 @@ func (l *testLogger) Errorf(msg string, others ...interface{}) {
 func TestP2P_NewP2P(t *testing.T) {
 	assert := assert.New(t)
 
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	err := config.InsertDefault()
 	assert.Nil(err)
 	p2p := NewP2P(config)
@@ -91,7 +92,7 @@ func TestP2P_NewP2P(t *testing.T) {
 func TestP2P_Start(t *testing.T) {
 	assert := assert.New(t)
 
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	p2p := NewP2P(config)
 	logger, _ := logger.NewDefaultProductionLogger()
@@ -145,7 +146,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 func TestP2P_Stop(t *testing.T) {
 	assert := assert.New(t)
 
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	p2p := NewP2P(config)
 	logger, _ := logger.NewDefaultProductionLogger()

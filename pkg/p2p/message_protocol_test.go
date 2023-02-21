@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
+	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -62,7 +63,7 @@ func TestMessageProtocol_Start(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, logger, config)
@@ -93,7 +94,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logger, _ := log.NewDefaultProductionLogger()
 			loggerTest := testLogger{Logger: logger}
-			config := Config{}
+			config := cfg.NetworkConfig{}
 			_ = config.InsertDefault()
 			p, _ := NewPeer(ctx, wg, &loggerTest, config)
 			mp := NewMessageProtocol()
@@ -126,7 +127,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, &loggerTest, config)
@@ -163,7 +164,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, &loggerTest, config)
@@ -209,7 +210,7 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, logger, config)
@@ -250,7 +251,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -282,7 +283,7 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -315,7 +316,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -346,7 +347,7 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -396,7 +397,7 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 

@@ -9,6 +9,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/p2p/host/autonat"
+
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 )
 
 // newAutoNAT creates a new AutoNAT service.
@@ -31,7 +33,7 @@ func newAutoNAT(p *Peer) (autonat.AutoNAT, error) {
 }
 
 // natTraversalService handles all NAT traversal related events.
-func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config Config, mp *MessageProtocol) {
+func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config config.NetworkConfig, mp *MessageProtocol) {
 	defer wg.Done()
 	mp.peer.logger.Infof("NAT traversal service started")
 

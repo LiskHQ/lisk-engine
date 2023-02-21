@@ -9,7 +9,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/collection/strings"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
 )
 
 var (
@@ -249,57 +248,53 @@ func (c *GenesisConfig) InsertDefault() error {
 	return nil
 }
 
+// Config type - a p2p configuration.
 type NetworkConfig struct {
-	Version                string     `json:"version"`
-	Port                   int        `json:"port"`
-	AdvertiseAddress       bool       `json:"advertiseAddress"`
-	SeedPeers              NetworkIPs `json:"seedPeers"`
-	WhiteListedPeers       NetworkIPs `json:"whitelistedPeers"`
-	FixedPeers             NetworkIPs `json:"fixedPeers"`
-	BlackListedIPs         []string   `json:"blackListedIPs"`
-	MaxInboundConnections  int        `json:"maxInboundConnections"`
-	MaxOutboundConnections int        `json:"maxOutboundConnections"`
+	Version                  string   `json:"version"`
+	Addresses                []string `json:"addresses"`
+	ConnectionSecurity       string   `json:"connectionSecurity"`
+	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
+	EnableNATService         bool     `json:"enableNATService,omitempty"`
+	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
+	EnableRelayService       bool     `json:"enableRelayService,omitempty"`
+	EnableHolePunching       bool     `json:"enableHolePunching,omitempty"`
+	SeedPeers                []string `json:"seedPeers"`
+	FixedPeers               []string `json:"fixedPeers,omitempty"`
+	BlacklistedIPs           []string `json:"blackListedIPs,omitempty"`
+	MinNumOfConnections      int      `json:"minNumOfConnections"`
+	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
+	// GossipSub configuration
+	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
+	NetworkName string `json:"networkName"`
 }
 
 func (c *NetworkConfig) InsertDefault() error {
 	if c.Version == "" {
 		c.Version = "1.0"
 	}
-	if c.Port == 0 {
-		c.Port = 4000
+	if c.Addresses == nil {
+		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
 	}
-	if c.MaxInboundConnections == 0 {
-		c.MaxInboundConnections = 100
-	}
-	if c.MaxOutboundConnections == 0 {
-		c.MaxOutboundConnections = 20
+	if c.ConnectionSecurity == "" {
+		c.ConnectionSecurity = "tls"
 	}
 	if c.SeedPeers == nil {
-		c.SeedPeers = NetworkIPs{}
-	}
-	if c.WhiteListedPeers == nil {
-		c.WhiteListedPeers = NetworkIPs{}
+		c.SeedPeers = []string{}
 	}
 	if c.FixedPeers == nil {
-		c.FixedPeers = NetworkIPs{}
+		c.FixedPeers = []string{}
 	}
-	if c.BlackListedIPs == nil {
-		c.BlackListedIPs = []string{}
+	if c.BlacklistedIPs == nil {
+		c.BlacklistedIPs = []string{}
+	}
+	if c.MinNumOfConnections == 0 {
+		c.MinNumOfConnections = 20
+	}
+	if c.MaxNumOfConnections == 0 {
+		c.MaxNumOfConnections = 100
+	}
+	if c.NetworkName == "" {
+		c.NetworkName = "lisk-test"
 	}
 	return nil
-}
-
-type NetworkIPs []NetworkIP
-
-func (n NetworkIPs) GetP2PAddress() []*addressbook.Address {
-	addresses := make([]*addressbook.Address, len(n))
-	for i, addr := range n {
-		addresses[i] = addressbook.NewAddress(addr.IP, addr.Port)
-	}
-	return addresses
-}
-
-type NetworkIP struct {
-	IP   string `json:"ip"`
-	Port int    `json:"port"`
 }

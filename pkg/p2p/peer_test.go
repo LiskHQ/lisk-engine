@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
+	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/v2/pubsub"
 )
@@ -21,7 +22,7 @@ func TestPeer_New(t *testing.T) {
 	assert := assert.New(t)
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, err := NewPeer(context.Background(), wg, logger, config)
@@ -34,7 +35,7 @@ func TestPeer_Close(t *testing.T) {
 	assert := assert.New(t)
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(context.Background(), wg, logger, config)
@@ -49,7 +50,7 @@ func TestPeer_Connect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, config)
@@ -61,7 +62,6 @@ func TestPeer_Connect(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(p2.ID(), p1.ConnectedPeers()[0])
 }
-
 func TestPeer_Disconnect(t *testing.T) {
 	assert := assert.New(t)
 
@@ -69,7 +69,7 @@ func TestPeer_Disconnect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, config)
@@ -93,9 +93,9 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config1 := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config1 := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config1.InsertDefault()
-	config2 := Config{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config2 := cfg.NetworkConfig{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config2.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, config1)
@@ -124,7 +124,7 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	ip4quic := fmt.Sprintf("/ip4/127.0.0.1/udp/%d/quic", 12345)
 	ip4tcp := fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", 12345)
-	config := Config{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
+	config := cfg.NetworkConfig{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, err := NewPeer(context.Background(), wg, logger, config)
@@ -201,7 +201,7 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, config)
@@ -222,7 +222,7 @@ func TestPeer_Ping(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, config)
@@ -244,7 +244,7 @@ func TestPeer_PeerSource(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	config := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	config := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = config.InsertDefault()
 
 	// Peer 1

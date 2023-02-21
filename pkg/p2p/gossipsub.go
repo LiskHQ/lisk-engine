@@ -11,6 +11,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
@@ -49,7 +50,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	logger log.Logger,
 	p *Peer,
 	sk *lps.ScoreKeeper,
-	cfg Config,
+	cfg config.NetworkConfig,
 ) error {
 	seedNodes, err := lps.ParseAddresses(cfg.SeedPeers)
 	if err != nil {

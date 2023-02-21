@@ -18,7 +18,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
 	"github.com/LiskHQ/lisk-engine/pkg/router"
 	"github.com/LiskHQ/lisk-engine/pkg/rpc"
 	"github.com/LiskHQ/lisk-engine/pkg/txpool"
@@ -398,16 +397,6 @@ func (e *Engine) handleEvents() {
 			e.server.Publish(RPCEventTxpoolNewTransaction, publishData)
 		}
 	}
-}
-
-type NetworkPeers config.NetworkIPs
-
-func (n NetworkPeers) GetP2PAddress() []*addressbook.Address {
-	addresses := make([]*addressbook.Address, len(n))
-	for i, addr := range n {
-		addresses[i] = addressbook.NewAddress(addr.IP, addr.Port)
-	}
-	return addresses
 }
 
 func resolvedDataPath(dataPath string) (string, error) {

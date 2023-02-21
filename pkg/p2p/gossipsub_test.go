@@ -10,6 +10,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/stretchr/testify/assert"
 
+	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
@@ -32,7 +33,7 @@ func TestGossipSub_Start(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(ctx, wg, logger, config)
 	sk := ps.NewScoreKeeper()
@@ -132,7 +133,7 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(ctx, wg, logger, config)
 	sk := ps.NewScoreKeeper()
@@ -182,7 +183,7 @@ func TestGossipSub_Publish(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	config := Config{}
+	config := cfg.NetworkConfig{}
 	_ = config.InsertDefault()
 	p, _ := NewPeer(ctx, wg, logger, config)
 	sk := ps.NewScoreKeeper()
