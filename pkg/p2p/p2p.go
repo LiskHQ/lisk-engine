@@ -153,3 +153,11 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 func (p2p *P2P) ApplyPenalty(ctx context.Context, pai PeerAddrInfo, score int) error {
 	return p2p.addPenalty(ctx, pai.ID, score)
 }
+
+// Missing implementation of functions from the interface.
+func (p2p *P2P) Broadcast(ctx context.Context, event string, data []byte)     {}
+func (p2p *P2P) RegisterRPCHandler(endpoint string, handler RPCHandler) error { return nil }
+func (p2p *P2P) RegisterEventHandler(name string, handler EventHandler) error { return nil }
+func (p2p *P2P) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
+	return Response{}
+}

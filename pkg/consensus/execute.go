@@ -33,7 +33,7 @@ type ExecuterConfig struct {
 	CTX       context.Context
 	ABI       labi.ABI
 	Chain     *blockchain.Chain
-	Conn      *p2p.Connection
+	Conn      *p2p.P2P
 	BlockTime uint32
 	BatchSize int
 }
@@ -44,7 +44,7 @@ type Executer struct {
 	batchSize       int
 	abi             labi.ABI
 	chain           *blockchain.Chain
-	conn            *p2p.Connection
+	conn            *p2p.P2P
 	certificatePool *certificate.Pool
 	liskBFT         *liskbft.Module
 	// Dynamic values

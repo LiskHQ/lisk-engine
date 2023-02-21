@@ -26,7 +26,7 @@ type revertFn = func(ctx context.Context, deletingBlock *blockchain.Block, saveT
 type Syncer struct {
 	chain       *blockchain.Chain
 	blockslot   *validator.BlockSlot
-	conn        *p2p.Connection
+	conn        *p2p.P2P
 	logger      log.Logger
 	blockSyncer *blockSyncer
 	fastSyncer  *fastSyncer
@@ -35,7 +35,7 @@ type Syncer struct {
 func NewSyncer(
 	chain *blockchain.Chain,
 	blockslot *validator.BlockSlot,
-	conn *p2p.Connection,
+	conn *p2p.P2P,
 	logger log.Logger,
 	processor processFn,
 	reverter revertFn,
@@ -127,7 +127,7 @@ func (s *Syncer) shouldSync(ctx *SyncContext) bool {
 }
 
 func (s *Syncer) HandleRPCEndpointGetLastBlock() p2p.RPCHandler {
-	return func(w p2p.ResponseWriter, r *p2p.Request) {
+	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		lastBlock := s.chain.LastBlock()
 		encoded, err := lastBlock.Encode()
 		if err != nil {
@@ -147,7 +147,7 @@ type GetHighestCommonBlockResponse struct {
 }
 
 func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
-	return func(w p2p.ResponseWriter, r *p2p.Request) {
+	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		if r.Data == nil {
 			s.conn.ApplyPenalty(r.PeerID, 100)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
@@ -219,7 +219,7 @@ type GetBlocksFromIDResponse struct {
 }
 
 func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
-	return func(w p2p.ResponseWriter, r *p2p.Request) {
+	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		if r.Data == nil {
 			s.conn.ApplyPenalty(r.PeerID, 100)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)

@@ -35,7 +35,7 @@ type Engine struct {
 	router          *router.Router
 	blockchainDB    *db.DB
 	generatorDB     *db.DB
-	conn            *p2p.P2P
+	p2pConn         *p2p.P2P
 	chain           *blockchain.Chain
 	consensusExec   *consensus.Executer
 	transactionPool *txpool.TransactionPool
@@ -95,19 +95,19 @@ func (e *Engine) Start() error {
 		return err
 	}
 
-	chainEndpoint := endpoint.NewChainEndpoint(e.chain, e.consensusExec, e.conn, e.transactionPool, e.abi)
+	chainEndpoint := endpoint.NewChainEndpoint(e.chain, e.consensusExec, e.p2pConn, e.transactionPool, e.abi)
 	for method, handler := range chainEndpoint.Endpoint() {
 		if err := e.router.RegisterEndpoint("chain", method, handler); err != nil {
 			return err
 		}
 	}
-	systemEndpoint := endpoint.NewSystemEndpoint(e.config, e.chain, e.consensusExec, e.conn, e.transactionPool, e.abi)
+	systemEndpoint := endpoint.NewSystemEndpoint(e.config, e.chain, e.consensusExec, e.p2pConn, e.transactionPool, e.abi)
 	for method, handler := range systemEndpoint.Endpoint() {
 		if err := e.router.RegisterEndpoint("system", method, handler); err != nil {
 			return err
 		}
 	}
-	networkEndpoint := endpoint.NewNetworkEndpoint(e.config, e.chain, e.consensusExec, e.conn, e.transactionPool, e.abi)
+	networkEndpoint := endpoint.NewNetworkEndpoint(e.config, e.chain, e.consensusExec, e.p2pConn, e.transactionPool, e.abi)
 	for method, handler := range networkEndpoint.Endpoint() {
 		if err := e.router.RegisterEndpoint("network", method, handler); err != nil {
 			return err
@@ -152,7 +152,7 @@ func (e *Engine) Start() error {
 		e.logger.With("module", "TransactionPool"),
 		blockchainDB,
 		e.chain,
-		e.conn,
+		e.p2pConn,
 		e.abi,
 	); err != nil {
 		return err
@@ -178,7 +178,7 @@ func (e *Engine) Start() error {
 	}
 	// start P2P
 	go func() {
-		if err := e.conn.Start(e.logger, nodeInfo); err != nil {
+		if err := e.p2pConn.Start(e.logger, nodeInfo); err != nil {
 			e.logger.Error("Fail to start connection. stopping")
 			e.Stop()
 		}
@@ -221,7 +221,7 @@ func (e *Engine) Start() error {
 		if e.server != nil {
 			e.server.Close()
 		}
-		if err := e.conn.Stop(); err != nil {
+		if err := e.p2pConn.Stop(); err != nil {
 			e.logger.Error("Fail to stop connection with %w", err)
 		}
 		if err := e.consensusExec.Stop(); err != nil {
@@ -237,7 +237,7 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) init() error {
-	e.conn = p2p.NewP2P(e.config.Network)
+	e.p2pConn = p2p.NewP2P(e.config.Network)
 	e.chain = blockchain.NewChain(&blockchain.ChainConfig{
 		MaxBlockCache:         e.config.System.GetMaxBlokckCache(),
 		ChainID:               e.config.Genesis.ChainID,
@@ -247,7 +247,7 @@ func (e *Engine) init() error {
 		CTX:       e.ctx,
 		Chain:     e.chain,
 		ABI:       e.abi,
-		Conn:      e.conn,
+		Conn:      e.p2pConn,
 		BlockTime: e.config.Genesis.BlockTime,
 		BatchSize: int(e.config.Genesis.BFTBatchSize),
 	})

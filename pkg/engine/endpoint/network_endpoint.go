@@ -15,7 +15,7 @@ type networkEndpoint struct {
 	config        *config.Config
 	chain         *blockchain.Chain
 	consensusExec *consensus.Executer
-	p2pConn       *p2p.Connection
+	p2pConn       *p2p.P2P
 	txPool        *txpool.TransactionPool
 	abi           labi.ABI
 }
@@ -24,7 +24,7 @@ func NewNetworkEndpoint(
 	config *config.Config,
 	chain *blockchain.Chain,
 	consensusExec *consensus.Executer,
-	p2pConn *p2p.Connection,
+	p2pConn *p2p.P2P,
 	txPool *txpool.TransactionPool,
 	abi labi.ABI,
 ) *networkEndpoint {
@@ -56,7 +56,7 @@ type GetConnectedPeersResponse struct {
 }
 
 func (a *networkEndpoint) HandleGetConnectedPeers(w router.EndpointResponseWriter, r *router.EndpointRequest) {
-	peers := a.p2pConn.ConnectedPeers(false)
+	peers := a.p2pConn.ConnectedPeers()
 	resultPeers := make([]*GetConnectedPeersResponsePeer, len(peers))
 	for i, peer := range peers {
 		resultPeers[i] = &GetConnectedPeersResponsePeer{
