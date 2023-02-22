@@ -169,16 +169,16 @@ func (e *Engine) Start() error {
 	e.initialized = true
 
 	e.logger.Info("Starting application...")
-	nodeInfo := &p2p.NodeInfo{
+	// TODO - Use this in GH issue #67
+	/*handshakeInfo := &p2p.HandshakeInfo{
 		ChainID:          e.config.Genesis.ChainID.String(),
-		NetworkVersion:   e.config.Network.Version,
-		AdvertiseAddress: e.config.Network.AdvertiseAddress,
-		Port:             e.config.Network.Port,
-		Options:          []byte{},
-	}
+		NetworkVersion:   e.config.Network.NetworkVersion,
+		AdvertiseAddress: e.config.Network.AdvertiseAddresses,
+	}*/
 	// start P2P
 	go func() {
-		if err := e.p2pConn.Start(e.logger, nodeInfo); err != nil {
+		// TODO - Uncomment this in GH issue #67
+		if err := e.p2pConn.Start(e.logger /*, handshakeInfo*/); err != nil {
 			e.logger.Error("Fail to start connection. stopping")
 			e.Stop()
 		}

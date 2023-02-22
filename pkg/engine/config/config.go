@@ -252,6 +252,7 @@ func (c *GenesisConfig) InsertDefault() error {
 type NetworkConfig struct {
 	Version                  string   `json:"version"`
 	Addresses                []string `json:"addresses"`
+	AdvertiseAddresses       bool     `json:"advertiseAddresses"`
 	ConnectionSecurity       string   `json:"connectionSecurity"`
 	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
 	EnableNATService         bool     `json:"enableNATService,omitempty"`
@@ -274,6 +275,9 @@ func (c *NetworkConfig) InsertDefault() error {
 	}
 	if c.Addresses == nil {
 		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
+	}
+	if !c.AdvertiseAddresses {
+		c.AdvertiseAddresses = true
 	}
 	if c.ConnectionSecurity == "" {
 		c.ConnectionSecurity = "tls"
