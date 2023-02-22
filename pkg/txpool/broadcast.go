@@ -130,5 +130,8 @@ func (b *Broadcaster) broadacast() {
 		b.logger.Error("Fail to encode PostTransactionAnnouncementEvent")
 		return
 	}
-	b.conn.Broadcast(b.ctx, RPCEventPostTransactionAnnouncement, encoded)
+	err = b.conn.Broadcast(b.ctx, RPCEventPostTransactionAnnouncement, encoded)
+	if err != nil {
+		b.logger.Error("Fail to broadcast PostTransactionAnnouncementEvent")
+	}
 }

@@ -15,6 +15,11 @@ import (
 	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
+var (
+	testMessageData    = []byte("testMessageData")
+	testMessageInvalid = []byte("testMessageInvalid")
+)
+
 func TestGossipSub_NewGossipSub(t *testing.T) {
 	assert := assert.New(t)
 
@@ -197,13 +202,13 @@ func TestGossipSub_Publish(t *testing.T) {
 	gs.Start(ctx, wg, logger, p, sk, config)
 	assert.Nil(gs.RegisterTopicValidator(testTopic1, testMV))
 
-	err = gs.Publish(ctx, testTopic1, msg)
+	err = gs.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
 
-	err = gs.Publish(ctx, testTopic1, invalidMsg)
+	err = gs.Publish(ctx, testTopic1, testMessageInvalid)
 	assert.EqualError(err, pubsub.RejectValidationFailed)
 	// check the validation nofify once
-	err = gs.Publish(ctx, testTopic1, invalidMsg)
+	err = gs.Publish(ctx, testTopic1, testMessageInvalid)
 	assert.Nil(err)
 }
 
@@ -212,6 +217,6 @@ func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 
 	gs := NewGossipSub()
 
-	err := gs.Publish(context.Background(), testTopic1, msg)
+	err := gs.Publish(context.Background(), testTopic1, testMessageData)
 	assert.Equal(err, ErrTopicNotFound)
 }

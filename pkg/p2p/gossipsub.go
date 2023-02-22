@@ -265,7 +265,9 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) err
 }
 
 // Publish publishes a message to a topic.
-func (gs *GossipSub) Publish(ctx context.Context, topicName string, msg *Message) error {
+func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte) error {
+	msg := NewMessage(data)
+
 	data, err := msg.Encode()
 	if err != nil {
 		return err
@@ -293,18 +295,18 @@ func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs 
 			topicTransactions := "transactions" // Test topic which will be removed after testing
 			topicBlocks := "blocks"             // Test topic which will be removed after testing
 			topicEvents := "events"             // Test topic which will be removed after testing
-			txMsg := NewMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter)))
-			err := gs.Publish(ctx, topicTransactions, txMsg)
+			data := []byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter))
+			err := gs.Publish(ctx, topicTransactions, data)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
-			blkMsg := NewMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter)))
-			err = gs.Publish(ctx, topicBlocks, blkMsg)
+			data = []byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter))
+			err = gs.Publish(ctx, topicBlocks, data)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}
-			entMsg := NewMessage([]byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter)))
-			err = gs.Publish(ctx, topicEvents, entMsg)
+			data = []byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter))
+			err = gs.Publish(ctx, topicEvents, data)
 			if err != nil {
 				gs.logger.Errorf("Error while publishing message: %s", err)
 			}

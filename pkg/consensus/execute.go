@@ -375,7 +375,10 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 		if c.syncying {
 			return
 		}
-		c.conn.Broadcast(ctx, P2PEventPostBlock, eventMsg.MustEncode())
+		err = c.conn.Broadcast(ctx, P2PEventPostBlock, eventMsg.MustEncode())
+		if err != nil {
+			c.logger.Errorf("Fail to broadcast postBlock with %v", err)
+		}
 	}()
 
 	nextValidatorParams, err := abi.Execute(consensusStore, block)

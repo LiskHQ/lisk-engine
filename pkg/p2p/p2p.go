@@ -154,9 +154,3 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 func (p2p *P2P) ApplyPenalty(pid string, score int) error {
 	return p2p.addPenalty(peer.ID(pid), score)
 }
-
-// Missing implementation of functions from the engine's P2P interface.
-func (p2p *P2P) Broadcast(ctx context.Context, event string, data []byte) {}
-func (p2p *P2P) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
-	return Response{}
-}

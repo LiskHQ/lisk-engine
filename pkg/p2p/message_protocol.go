@@ -178,6 +178,26 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 	}
 }
 
+// RequestFrom sends a request message to a peer using a message protocol.
+func (mp *MessageProtocol) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
+	response, err := mp.SendRequestMessage(ctx, peer.ID(peerID), procedure, data)
+	if err != nil {
+		return Response{err: err}
+	}
+	return *response
+}
+
+// Broadcast sends a request message to all connected peers using a message protocol.
+func (mp *MessageProtocol) Broadcast(ctx context.Context, procedure string, data []byte) error {
+	peers := mp.peer.ConnectedPeers()
+	for _, peerID := range peers {
+		if _, err := mp.SendRequestMessage(ctx, peerID, procedure, data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // SendResponseMessage sends a response message to a peer using a message protocol.
 func (mp *MessageProtocol) SendResponseMessage(ctx context.Context, id peer.ID, reqMsgID string, data []byte, err error) error {
 	resMsg := newResponseMessage(reqMsgID, data, err)

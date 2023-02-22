@@ -37,9 +37,7 @@ const (
 )
 
 var (
-	msg        = NewMessage([]byte("testMessageData"))
-	invalidMsg = NewMessage([]byte("testMessageInvalid"))
-	testMV     = func(ctx context.Context, msg *Message) ValidationResult {
+	testMV = func(ctx context.Context, msg *Message) ValidationResult {
 		if bytes.Contains(msg.Data, []byte("Invalid")) {
 			return ValidationReject
 		} else {
@@ -126,7 +124,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 	err = node2.Start(logger)
 	assert.Nil(err)
 
-	err = node2.Publish(ctx, testTopic1, msg)
+	err = node2.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
 	p2Addrs, err := node2.P2PAddrs()
 	assert.Nil(err)

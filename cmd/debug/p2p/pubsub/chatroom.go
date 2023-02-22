@@ -62,9 +62,7 @@ func (cr *ChatRoom) Publish(message string) error {
 	if err != nil {
 		return err
 	}
-	msg := new(p2p.Message)
-	msg.Data = msgBytes
-	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msg)
+	return cr.gs.Publish(context.Background(), topicName(cr.roomName), msgBytes)
 }
 
 // ListPeers returns an array of ID.

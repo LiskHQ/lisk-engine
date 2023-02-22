@@ -31,7 +31,7 @@ const (
 )
 
 type p2pConnection interface {
-	Broadcast(ctx context.Context, event string, data []byte)
+	Broadcast(ctx context.Context, event string, data []byte) error
 	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error
 	RegisterEventHandler(name string, handler p2p.EventHandler) error
 	ApplyPenalty(pid string, score int) error

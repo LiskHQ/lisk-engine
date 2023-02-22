@@ -7,6 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	msg        = NewMessage([]byte("testMessageData"))
+	invalidMsg = NewMessage([]byte("testMessageInvalid"))
+)
+
 func TestValidator(t *testing.T) {
 	assert := assert.New(t)
 
