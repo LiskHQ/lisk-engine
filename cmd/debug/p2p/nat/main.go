@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -84,9 +85,9 @@ func main() {
 		panic(err)
 	}
 
-	err = p2p.RegisterRPCHandler("connectedPeers", func(w p2pLib.ResponseWriter, req *p2pLib.RequestMsg) {
+	err = p2p.RegisterRPCHandler("knownPeers", func(w p2pLib.ResponseWriter, req *p2pLib.RequestMsg) {
 		peers := p2p.ConnectedPeers()
-		w.Write([]byte(fmt.Sprintf("All connected peers: %v", peers)))
+		w.Write([]byte(fmt.Sprintf("All known peers: %v", peers)))
 	})
 	if err != nil {
 		panic(err)
@@ -121,6 +122,11 @@ func main() {
 		logger.Infof("%s", string(response.Data()))
 	}
 
+	// Start demo routine
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go demoRoutine(ctx, logger, wg, p2p)
+
 	// wait for a SIGINT or SIGTERM signal
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
@@ -130,5 +136,59 @@ func main() {
 	err = p2p.Stop()
 	if err != nil {
 		panic(err)
+	}
+}
+
+// Start starts the GossipSub event handler.
+func demoRoutine(ctx context.Context, logger log.Logger, wg *sync.WaitGroup, p2p *p2pLib.P2P) {
+	defer wg.Done()
+	logger.Infof("Demo routine started")
+
+	t := time.NewTicker(10 * time.Second)
+	var counter = 0
+
+	for {
+		select {
+		case <-t.C:
+			topicTransactions := "transactions" // Test topic which will be removed after testing
+			topicBlocks := "blocks"             // Test topic which will be removed after testing
+			topicEvents := "events"             // Test topic which will be removed after testing
+			data := []byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p2p.Peer.ID().String(), counter))
+			err := p2p.Publish(ctx, topicTransactions, data)
+			if err != nil {
+				logger.Errorf("Error while publishing message: %s", err)
+			}
+			data = []byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p2p.Peer.ID().String(), counter))
+			err = p2p.Publish(ctx, topicBlocks, data)
+			if err != nil {
+				logger.Errorf("Error while publishing message: %s", err)
+			}
+			data = []byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p2p.Peer.ID().String(), counter))
+			err = p2p.Publish(ctx, topicEvents, data)
+			if err != nil {
+				logger.Errorf("Error while publishing message: %s", err)
+			}
+			counter++
+
+			logger.Debugf("List of connected peers: %v", p2p.ConnectedPeers())
+			logger.Debugf("List of known peers: %v", p2p.KnownPeers())
+			logger.Debugf("List of blacklisted peers: %v", p2p.BlacklistedPeers())
+
+			addrs, _ := p2p.P2PAddrs()
+			logger.Debugf("My listen addresses: %v", addrs)
+			for _, connectedPeer := range p2p.ConnectedPeers() {
+				response, err := p2p.SendRequestMessage(ctx, connectedPeer, "knownPeers", nil)
+				if err != nil {
+					logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, err)
+				} else {
+					logger.Debugf("Received response from peer %v: %v", connectedPeer, string(response.Data()))
+				}
+			}
+
+			t.Reset(10 * time.Second)
+		case <-ctx.Done():
+			logger.Infof("Demo routine stopped")
+			return
+		}
 	}
 }

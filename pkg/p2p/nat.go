@@ -55,20 +55,9 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, config config.
 
 	for {
 		select {
-		// TODO - remove this timer event after testing (GH issue #19)
 		case <-t.C:
 			if config.EnableNATService {
 				mp.peer.logger.Debugf("NAT status: %v", nat.Status())
-			}
-			addrs, _ := mp.peer.P2PAddrs()
-			mp.peer.logger.Debugf("My listen addresses: %v", addrs)
-			for _, connectedPeer := range mp.peer.ConnectedPeers() {
-				response, err := mp.SendRequestMessage(ctx, connectedPeer, "knownPeers", nil)
-				if err != nil {
-					mp.peer.logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, err)
-				} else {
-					mp.peer.logger.Debugf("Received response from peer %v: %v", connectedPeer, string(response.Data()))
-				}
 			}
 			t.Reset(10 * time.Second)
 		case e := <-sub.Out():

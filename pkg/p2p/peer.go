@@ -222,7 +222,7 @@ func (p *Peer) ConnectedPeers() PeerIDs {
 func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
 	blacklistedPeers := make([]peer.AddrInfo, 0)
 
-	for _, knownPeer := range p.knownPeers() {
+	for _, knownPeer := range p.KnownPeers() {
 		// Check if the peer ID is blacklisted in connectionGater.
 		peerFound := false
 		for _, id := range p.connGater.listBlockedPeers() {
@@ -256,8 +256,8 @@ func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
 	return blacklistedPeers
 }
 
-// knownPeers returns a list of all known peers with their addresses.
-func (p *Peer) knownPeers() []peer.AddrInfo {
+// KnownPeers returns a list of all known peers with their addresses.
+func (p *Peer) KnownPeers() []peer.AddrInfo {
 	peers := make([]peer.AddrInfo, 0)
 
 	for _, peerID := range p.host.Peerstore().Peers() {
@@ -322,7 +322,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	go func() {
 		defer close(peerChan)
 
-		knownPeers := p.knownPeers()
+		knownPeers := p.KnownPeers()
 
 		// Shuffle known peers to avoid always returning the same peers.
 		for i := range knownPeers {

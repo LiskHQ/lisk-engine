@@ -3,7 +3,6 @@ package p2p
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -277,49 +276,4 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte)
 		return ErrTopicNotFound
 	}
 	return topic.Publish(ctx, data)
-}
-
-// Start starts the GossipSub event handler.
-func gossipSubEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer, gs *GossipSub) {
-	defer wg.Done()
-	gs.logger.Infof("GossipSub event handler started")
-
-	t := time.NewTicker(10 * time.Second)
-	var counter = 0
-
-	for {
-		select {
-		// TODO - remove this timer event after testing (GH issue #19)
-		case <-t.C:
-			gs.logger.Debugf("GossipSub event handler is alive")
-			topicTransactions := "transactions" // Test topic which will be removed after testing
-			topicBlocks := "blocks"             // Test topic which will be removed after testing
-			topicEvents := "events"             // Test topic which will be removed after testing
-			data := []byte(fmt.Sprintf("Timer for %s is running and this is a test transaction message: %v", p.ID().String(), counter))
-			err := gs.Publish(ctx, topicTransactions, data)
-			if err != nil {
-				gs.logger.Errorf("Error while publishing message: %s", err)
-			}
-			data = []byte(fmt.Sprintf("Timer for %s is running and this is a test block message: %v", p.ID().String(), counter))
-			err = gs.Publish(ctx, topicBlocks, data)
-			if err != nil {
-				gs.logger.Errorf("Error while publishing message: %s", err)
-			}
-			data = []byte(fmt.Sprintf("Timer for %s is running and this is a test event message: %v", p.ID().String(), counter))
-			err = gs.Publish(ctx, topicEvents, data)
-			if err != nil {
-				gs.logger.Errorf("Error while publishing message: %s", err)
-			}
-			counter++
-
-			p.logger.Debugf("List of connected peers: %v", p.ConnectedPeers())
-			p.logger.Debugf("List of known peers: %v", p.knownPeers())
-			p.logger.Debugf("List of blacklisted peers: %v", gs.peer.BlacklistedPeers())
-
-			t.Reset(10 * time.Second)
-		case <-ctx.Done():
-			gs.logger.Infof("GossipSub event handler stopped")
-			return
-		}
-	}
 }
