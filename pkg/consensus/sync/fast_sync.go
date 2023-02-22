@@ -25,7 +25,10 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 		return false, err
 	}
 	if commonBlockHeader.Height < ctx.FinalizedBlockHeader.Height {
-		s.conn.ApplyPenalty(ctx.PeerID, 100)
+		err = s.conn.ApplyPenalty(ctx.PeerID, 100)
+		if err != nil {
+			s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, err)
+		}
 		return false, errors.New("received common block has hight lower than finalized block")
 	}
 	twoRounds := uint32(len(ctx.CurrentValidators)) * 2
@@ -56,10 +59,13 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 	// apply downloaded block
 	for _, block := range downloadedBlocks {
 		if err := s.processor(ctx.Ctx, block, false); err != nil {
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
 			// recover temp block, if failed cannot continue
 			if err := s.restoreBlocks(ctx, commonBlockHeader); err != nil {
 				return true, err
+			}
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			if errPenalty != nil {
+				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
 			}
 			return true, err
 		}
@@ -80,7 +86,10 @@ func (s *fastSyncer) downloadAndValidate(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			if errPenalty != nil {
+				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
+			}
 			return downloadedBlocks, err
 		}
 		downloadedBlocks = append(downloadedBlocks, downloaded.block)
@@ -101,7 +110,10 @@ func (s *fastSyncer) getCommonBlock(ctx *SyncContext, lastBlockHeader *blockchai
 	blockID, err := requestHighestCommonBlock(ctx.Ctx, s.conn, ctx.PeerID, ids)
 	if err != nil {
 		if errors.Is(err, errCommonBlockNotFound) {
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			if errPenalty != nil {
+				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
+			}
 			return nil, err
 		}
 		return nil, err

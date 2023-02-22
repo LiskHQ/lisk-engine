@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	logger "github.com/LiskHQ/lisk-engine/pkg/log"
 )
@@ -111,7 +110,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := config.NetworkConfig{
+	config := cfg.NetworkConfig{
 		AllowIncomingConnections: true,
 	}
 	_ = config.InsertDefault()

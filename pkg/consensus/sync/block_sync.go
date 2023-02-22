@@ -89,7 +89,10 @@ func (s *blockSyncer) downloadAndProcess(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			if errPenalty != nil {
+				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
+			}
 			return err
 		}
 		if err := s.processor(ctx.Ctx, downloaded.block, false); err != nil {
@@ -107,15 +110,21 @@ func (s *blockSyncer) getAndValidateNetworkLastBlock(ctx *SyncContext, nodeInfo 
 		return nil, err
 	}
 	if err := networkLastBlockHeader.Validate(); err != nil {
-		s.conn.ApplyPenalty(nodeInfo.PeerID, 100)
-		s.logger.Infof("Applied penalty to %s because it provided invalid last block", nodeInfo.PeerID)
+		s.logger.Infof("Applying penalty to %s because it provided invalid last block", nodeInfo.PeerID)
+		errPenalty := s.conn.ApplyPenalty(nodeInfo.PeerID, 100)
+		if errPenalty != nil {
+			s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
+		}
 		return nil, fmt.Errorf("invalid block received from %s", nodeInfo.PeerID)
 	}
 	lastBlockHeader := s.chain.LastBlock().Header
 	if lastBlockHeader.Version == 2 {
 		if !forkchoice.IsDifferentChain(lastBlockHeader.MaxHeightPrevoted, networkLastBlockHeader.MaxHeightPrevoted, lastBlockHeader.Height, networkLastBlockHeader.Height) {
-			s.conn.ApplyPenalty(nodeInfo.PeerID, 100)
-			s.logger.Infof("Applied penalty to %s because it provided last block which does not have priority", nodeInfo.PeerID)
+			s.logger.Infof("Applying penalty to %s because it provided last block which does not have priority", nodeInfo.PeerID)
+			errPenalty := s.conn.ApplyPenalty(nodeInfo.PeerID, 100)
+			if errPenalty != nil {
+				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
+			}
 			return nil, fmt.Errorf("last block received from %s does not have priority", nodeInfo.PeerID)
 		}
 	}
