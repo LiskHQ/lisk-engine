@@ -2,7 +2,6 @@ package endpoint
 
 import (
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
-	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
@@ -45,10 +44,7 @@ func (a *networkEndpoint) Endpoint() router.EndpointHandlers {
 }
 
 type GetConnectedPeersResponsePeer struct {
-	ID      string    `json:"id" fieldNumber:"1"`
-	IP      string    `json:"ip" fieldNumber:"2"`
-	Port    uint32    `json:"port" fieldNumber:"3"`
-	Options codec.Hex `json:"options" fieldNumber:"4"`
+	ID string `json:"id" fieldNumber:"1"`
 }
 
 type GetConnectedPeersResponse struct {
@@ -60,10 +56,7 @@ func (a *networkEndpoint) HandleGetConnectedPeers(w router.EndpointResponseWrite
 	resultPeers := make([]*GetConnectedPeersResponsePeer, len(peers))
 	for i, peer := range peers {
 		resultPeers[i] = &GetConnectedPeersResponsePeer{
-			ID:      peer.ID(),
-			IP:      peer.IP(),
-			Port:    uint32(peer.Port()),
-			Options: peer.Options(),
+			ID: peer.String(),
 		}
 	}
 	resp := &GetConnectedPeersResponse{
