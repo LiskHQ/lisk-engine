@@ -23,7 +23,20 @@ type blockSyncer struct {
 // Sync with network.
 func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
 	peers := s.conn.ConnectedPeers()
-	nodeInfo, err := getBestNodeInfo(peers)
+
+	// Get last block header from all peers and create node info for each peer.
+	nodeInfos := make([]*NodeInfo, len(peers))
+	for _, p := range peers {
+		blockHeader, err := requestLastBlockHeader(ctx.Ctx, s.conn, p.String())
+		if err != nil {
+			return false, err
+		}
+		nodeInfo := NewNodeInfo(blockHeader.Height, blockHeader.MaxHeightPrevoted, blockHeader.Version, blockHeader.ID)
+		nodeInfo.PeerID = p.String()
+		nodeInfos = append(nodeInfos, nodeInfo)
+	}
+
+	nodeInfo, err := getBestNodeInfo(nodeInfos)
 	if err != nil {
 		return false, err
 	}

@@ -4,23 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"math/rand"
-
-	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
-func getBestNodeInfo(peers []p2p.PeerInfo) (*NodeInfo, error) {
-	if len(peers) == 0 {
+func getBestNodeInfo(nodeInfos []*NodeInfo) (*NodeInfo, error) {
+	if len(nodeInfos) == 0 {
 		return nil, errors.New("peer does not exist to select")
 	}
-	info := make([]*NodeInfo, len(peers))
-	for i, peer := range peers {
-		nodeInfo := &NodeInfo{PeerID: peer.ID()}
-		if err := nodeInfo.Decode(peer.Options()); err != nil {
-			return nil, err
-		}
-		info[i] = nodeInfo
-	}
-	highestMaxPrevotedGroup := getLargestMaxHeightPrevotedNodeInfo(info)
+
+	highestMaxPrevotedGroup := getLargestMaxHeightPrevotedNodeInfo(nodeInfos)
 	highestHeightGroup := getLargestHeightNodeInfo(highestMaxPrevotedGroup)
 	selectedInfo := getMostFrequesntBlockIDNodeInfo(highestHeightGroup)
 	index := rand.Intn(len(selectedInfo))

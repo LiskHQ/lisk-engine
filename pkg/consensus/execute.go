@@ -401,7 +401,7 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	if err != nil {
 		return err
 	}
-	maxHeightPrevoted, maxHeightPrecommited, _, err := c.liskBFT.API().GetBFTHeights(consensusStore)
+	_, maxHeightPrecommited, _, err := c.liskBFT.API().GetBFTHeights(consensusStore)
 	if err != nil {
 		return err
 	}
@@ -461,23 +461,6 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 			CertificateThreshold: nextValidatorParams.CertificateThreshold,
 		})
 	}
-	go func() {
-		if c.syncying {
-			return
-		}
-		nodeInfo := sync.NewNodeInfo(
-			block.Header.Height,
-			maxHeightPrevoted,
-			block.Header.Version,
-			block.Header.ID,
-		)
-		nodeInfoBytes, err := nodeInfo.Encode()
-		if err != nil {
-			c.logger.Error("Fail to encode node info")
-			return
-		}
-		c.conn.PostNodeInfo(ctx, nodeInfoBytes)
-	}()
 	return nil
 }
 
