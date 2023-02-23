@@ -229,7 +229,7 @@ func (c *Executer) broadcastCertificate() error {
 	if err != nil {
 		return err
 	}
-	err = c.conn.Broadcast(c.ctx, P2PEventPostSingleCommits, data)
+	err = c.conn.Publish(c.ctx, P2PEventPostSingleCommits, data)
 	if err != nil {
 		return err
 	}

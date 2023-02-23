@@ -65,6 +65,7 @@ func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure str
 	}
 	return *p2p.NewResponse(0, "", []byte{}, errors.New("invalid req"))
 }
+func (c *connMock) Publish(ctx context.Context, topicName string, data []byte) error { return nil }
 
 func TestBroadcaster(t *testing.T) {
 	cMock := &connMock{}

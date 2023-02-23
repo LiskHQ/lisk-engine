@@ -36,6 +36,7 @@ type p2pConnection interface {
 	RegisterEventHandler(name string, handler p2p.EventHandler) error
 	ApplyPenalty(pid string, score int) error
 	RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response
+	Publish(ctx context.Context, topicName string, data []byte) error
 }
 type ABI interface {
 	VerifyTransaction(req *labi.VerifyTransactionRequest) (*labi.VerifyTransactionResponse, error)

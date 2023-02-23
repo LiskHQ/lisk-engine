@@ -372,8 +372,8 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	if err := abi.Verify(block); err != nil {
 		return err
 	}
-	// broadcast block
 
+	// publish block to a topic
 	go func() {
 		eventMsg := &EventPostBlock{
 			Block: block.MustEncode(),
@@ -381,9 +381,9 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 		if c.syncying {
 			return
 		}
-		err = c.conn.Broadcast(ctx, P2PEventPostBlock, eventMsg.MustEncode())
+		err = c.conn.Publish(ctx, P2PEventPostBlock, eventMsg.MustEncode())
 		if err != nil {
-			c.logger.Errorf("Fail to broadcast postBlock with %v", err)
+			c.logger.Errorf("Fail to publish postBlock with %v", err)
 		}
 	}()
 
