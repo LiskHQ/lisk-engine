@@ -427,7 +427,7 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 	}
 }
 
-// TODO - implement this function
+// TODO - implement this function (GH issue #70)
 func (t *TransactionPool) transactionValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 	return p2p.ValidationAccept
 }

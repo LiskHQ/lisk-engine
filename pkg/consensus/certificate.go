@@ -101,7 +101,7 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 	}
 }
 
-// TODO - implement this function
+// TODO - implement this function (GH issue #70)
 func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 	return p2p.ValidationAccept
 }
