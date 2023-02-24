@@ -88,7 +88,7 @@ func (a *ABIHandler) Init(req *labi.InitRequest) (*labi.InitResponse, error) {
 		return nil, fmt.Errorf("invalid application state. current height is %d but engine state is %d ", currentHeight, req.LastBlockHeight)
 	}
 	for currentHeight > req.LastBlockHeight {
-		a.logger.Debug("Reverting application state from %d to %d", currentHeight, req.LastBlockHeight)
+		a.logger.Debugf("Reverting application state from %d to %d", currentHeight, req.LastBlockHeight)
 		nextRoot, err := a.revert(currentHeight, currentRoot, nil)
 		if err != nil {
 			return nil, err

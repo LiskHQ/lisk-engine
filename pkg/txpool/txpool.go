@@ -445,7 +445,7 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 			t.events.Publish(EventTransactionNew, &EventNewTransactionMessage{
 				Transaction: tx,
 			})
-			t.logger.Info("Added transaction %s received from %s", tx.ID.String(), peerID)
+			t.logger.Infof("Added transaction %s received from %s", tx.ID.String(), peerID)
 		}
 	}
 }

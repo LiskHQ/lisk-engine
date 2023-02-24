@@ -222,10 +222,10 @@ func (e *Engine) Start() error {
 			e.server.Close()
 		}
 		if err := e.p2pConn.Stop(); err != nil {
-			e.logger.Error("Fail to stop connection with %w", err)
+			e.logger.Errorf("Fail to stop connection with %w", err)
 		}
 		if err := e.consensusExec.Stop(); err != nil {
-			e.logger.Error("Fail to stop consensus with %w", err)
+			e.logger.Errorf("Fail to stop consensus with %w", err)
 		}
 	}
 	return nil
