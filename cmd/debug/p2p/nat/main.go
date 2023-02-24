@@ -30,7 +30,6 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	cfgNet := config.NetworkConfig{
 		AllowIncomingConnections: true,
@@ -133,6 +132,11 @@ func main() {
 	<-ch
 	logger.Infof("Received signal, shutting down a node...")
 
+	// Stop demo routine
+	cancel()
+	wg.Wait()
+
+	// Stop P2P
 	err = p2p.Stop()
 	if err != nil {
 		panic(err)
