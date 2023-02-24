@@ -188,19 +188,13 @@ func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
 	postBlockEvent := &EventPostBlock{}
 	err := postBlockEvent.DecodeStrict(msgData)
 	if err != nil {
-		errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		if errPenalty != nil {
-			c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-		}
+		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
 		return
 	}
 	block, err := blockchain.NewBlock(postBlockEvent.Block)
 	if err != nil {
-		errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		if errPenalty != nil {
-			c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-		}
+		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
 		return
 	}

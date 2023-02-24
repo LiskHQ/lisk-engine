@@ -45,7 +45,7 @@ type connMock struct {
 func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) error   { return nil }
 func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error { return nil }
 func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler) error { return nil }
-func (c *connMock) ApplyPenalty(peerID string, score int) error                      { return nil }
+func (c *connMock) ApplyPenalty(peerID string, score int)                            {}
 func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response {
 	if procedure == RPCEndpointGetTransactions {
 		req := &GetTransactionsRequest{}

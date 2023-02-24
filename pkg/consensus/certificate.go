@@ -21,10 +21,7 @@ import (
 func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 	postCommits := &EventPostSingleCommits{}
 	if err := postCommits.DecodeStrict(msgData); err != nil {
-		errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		if errPenalty != nil {
-			c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-		}
+		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		c.logger.Errorf("Received invalid single commit from %s", peerID)
 		return
 	}
@@ -77,10 +74,7 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 		}
 		_, active := liskbft.BFTValidators(params.Validators()).Find(singleCommit.ValidatorAddress())
 		if !active {
-			errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-			if errPenalty != nil {
-				c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-			}
+			c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			c.logger.Errorf("Address %s was not active at height %d. Applying penalty to %s.", blockHeader.GeneratorAddress, singleCommit.Height(), peerID)
 			return
 		}
@@ -97,10 +91,7 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 			return
 		}
 		if !validCert {
-			errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-			if errPenalty != nil {
-				c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-			}
+			c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			c.logger.Errorf("Invalid commit received. Applying penalty to %s.", peerID)
 			return
 		}

@@ -148,6 +148,8 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
-func (p2p *P2P) ApplyPenalty(pid string, score int) error {
-	return p2p.addPenalty(peer.ID(pid), score)
+func (p2p *P2P) ApplyPenalty(pid string, score int) {
+	if err := p2p.addPenalty(peer.ID(pid), score); err != nil {
+		p2p.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+	}
 }

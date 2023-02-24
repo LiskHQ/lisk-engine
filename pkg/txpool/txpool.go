@@ -34,7 +34,7 @@ type p2pConnection interface {
 	Broadcast(ctx context.Context, event string, data []byte) error
 	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error
 	RegisterEventHandler(name string, handler p2p.EventHandler) error
-	ApplyPenalty(pid string, score int) error
+	ApplyPenalty(pid string, score int)
 	RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response
 	Publish(ctx context.Context, topicName string, data []byte) error
 }
@@ -379,19 +379,13 @@ func (t *TransactionPool) reorg() {
 func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 	if len(data) == 0 {
 		t.logger.Warningf("Banning peer %s for sending invalid post transaction announcement", peerID)
-		err := t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		if err != nil {
-			t.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, err)
-		}
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		return
 	}
 	event := &PostTransactionAnnouncementEvent{}
 	if err := event.Decode(data); err != nil {
 		t.logger.Warningf("Banning peer %s for sending invalid post transaction announcement", peerID)
-		errPenalty := t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		if errPenalty != nil {
-			t.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-		}
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		return
 	}
 	unknownIDs, err := t.getUnknownTransactionIDs(event.TransactionIDs)
@@ -423,20 +417,14 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 	respData := &GetTransactionsResponse{}
 	if err := respData.Decode(resp.Data()); err != nil {
 		t.logger.Warningf("Banning peer %s for sending invalid getTransactions response", peerID)
-		errPenalty := t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		if errPenalty != nil {
-			t.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-		}
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		return
 	}
 
 	for _, tx := range respData.Transactions {
 		if err := tx.Init(); err != nil {
 			t.logger.Warningf("Banning peer %s for sending invalid getTransactions response with %w", peerID, err)
-			errPenalty := t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-			if errPenalty != nil {
-				t.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
-			}
+			t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			return
 		}
 
@@ -450,10 +438,7 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 
 		if resp.Result == labi.TxVeirfyResultInvalid {
 			t.logger.Warningf("Banning peer %s for sending invalid getTransactions response", peerID)
-			err := t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-			if err != nil {
-				t.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, err)
-			}
+			t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			return
 		}
 		if t.Add(tx) {
@@ -507,19 +492,13 @@ func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, 
 	if err := req.Decode(r.Data); err != nil {
 		t.logger.Warningf("Banning peer %s for sending invalid get transaction request", r.PeerID)
 		w.Error(err)
-		errPenalty := t.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
-		if errPenalty != nil {
-			t.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, errPenalty)
-		}
+		t.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 		return
 	}
 	if err := req.Validate(); err != nil {
 		t.logger.Warningf("Banning peer %s for sending invalid get transaction request", r.PeerID)
 		w.Error(err)
-		errPenalty := t.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
-		if errPenalty != nil {
-			t.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, errPenalty)
-		}
+		t.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 		return
 	}
 	responseList := []*blockchain.Transaction{}
