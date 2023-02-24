@@ -50,20 +50,7 @@ func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler) e
 func (c *connMock) ApplyPenalty(peerID string, score int)                            {}
 func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response {
 	if procedure == RPCEndpointGetTransactions {
-		req := &GetTransactionsRequest{}
-		if err := req.Decode(data); err != nil {
-			return *p2p.NewResponse(0, "", []byte{}, err)
-		}
-		txs := []*blockchain.Transaction{}
-		for _, id := range req.TransactionIDs {
-			if tx, exist := c.txs[string(id)]; exist {
-				txs = append(txs, tx)
-			}
-		}
-		resp := &GetTransactionsResponse{
-			Transactions: txs,
-		}
-		return *p2p.NewResponse(0, "", resp.MustEncode(), nil)
+		return *p2p.NewResponse(0, "", nil, nil)
 	}
 	return *p2p.NewResponse(0, "", []byte{}, errors.New("invalid req"))
 }
@@ -427,23 +414,13 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	}
 	resp := &responseWriterMock{}
 	pool.HandleRPCEndpointGetTransaction(resp, req)
-	assert.NotEmpty(t, resp.data)
 	assert.Nil(t, resp.err)
+	body := &GetTransactionsResponse{}
+	err := body.Decode(resp.data)
+	assert.NoError(t, err)
+	assert.Len(t, body.Transactions, 100)
 
-	// random request
-	req = &p2p.RequestMsg{
-		PeerID:    "127.0.0.1:4949",
-		Procedure: RPCEndpointGetTransactions,
-		Data:      []byte{3, 2, 1},
-	}
-	resp = &responseWriterMock{}
-	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	pool.HandleRPCEndpointGetTransaction(resp, req)
-	assert.Empty(t, resp.data)
-	assert.NotEmpty(t, resp.err)
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
-
-	// More ID than allowed
+	// not empty req
 	ids := make([]codec.Hex, 101)
 	for i := range ids {
 		ids[i] = crypto.RandomBytes(32)
@@ -451,49 +428,11 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	req = &p2p.RequestMsg{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
-		Data: (&GetTransactionsRequest{
-			TransactionIDs: ids,
-		}).MustEncode(),
+		Data:      crypto.RandomBytes(10),
 	}
 	resp = &responseWriterMock{}
 	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
 	pool.HandleRPCEndpointGetTransaction(resp, req)
 	assert.Nil(t, resp.data)
-	assert.NotEmpty(t, resp.err)
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
-
-	// invalid id
-	req = &p2p.RequestMsg{
-		PeerID:    "127.0.0.1:4949",
-		Procedure: RPCEndpointGetTransactions,
-		Data: (&GetTransactionsRequest{
-			TransactionIDs: []codec.Hex{crypto.RandomBytes(10)},
-		}).MustEncode(),
-	}
-	resp = &responseWriterMock{}
-	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	pool.HandleRPCEndpointGetTransaction(resp, req)
-	assert.Nil(t, resp.data)
-	assert.NotEmpty(t, resp.err)
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
-
-	// valid ids
-	ids = make([]codec.Hex, 100)
-	for i := range ids {
-		ids[i] = txs[i].ID
-	}
-	req = &p2p.RequestMsg{
-		PeerID:    "127.0.0.1:4949",
-		Procedure: RPCEndpointGetTransactions,
-		Data: (&GetTransactionsRequest{
-			TransactionIDs: ids,
-		}).MustEncode(),
-	}
-	resp = &responseWriterMock{}
-	pool.HandleRPCEndpointGetTransaction(resp, req)
 	assert.Nil(t, resp.err)
-	body := &GetTransactionsResponse{}
-	err := body.Decode(resp.data)
-	assert.NoError(t, err)
-	assert.Len(t, body.Transactions, 100)
 }

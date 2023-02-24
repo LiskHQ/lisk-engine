@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"container/heap"
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -391,8 +390,8 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 		return
 	}
 
-	tx := &blockchain.Transaction{}
-	if err := tx.Decode(data); err != nil {
+	tx, err := blockchain.NewTransaction(data)
+	if err != nil {
 		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement: %w", peerID, err)
 		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		return
@@ -424,22 +423,6 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 	}
 }
 
-type GetTransactionsRequest struct {
-	TransactionIDs []codec.Hex `json:"transactionIDs" fieldNumber:"1"`
-}
-
-func (e *GetTransactionsRequest) Validate() error {
-	if len(e.TransactionIDs) > releaseLimit {
-		return fmt.Errorf("broadcast release cannot be greater than %d, but received %d", releaseLimit, len(e.TransactionIDs))
-	}
-	for _, id := range e.TransactionIDs {
-		if len(id) != 32 {
-			return fmt.Errorf("transaction ID must be 32 bytes long")
-		}
-	}
-	return nil
-}
-
 type GetTransactionsResponse struct {
 	Transactions []*blockchain.Transaction `json:"transactions" fieldNumber:"1"`
 }
@@ -462,46 +445,6 @@ func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, 
 		w.Write(encoded)
 		return
 	}
-	req := &GetTransactionsRequest{}
-	if err := req.Decode(r.Data); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid get transaction request", r.PeerID)
-		w.Error(err)
-		t.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
-		return
-	}
-	if err := req.Validate(); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid get transaction request", r.PeerID)
-		w.Error(err)
-		t.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
-		return
-	}
-	responseList := []*blockchain.Transaction{}
-	idNotInPool := [][]byte{}
-	for _, id := range req.TransactionIDs {
-		tx, exist := t.Get(id)
-		if !exist {
-			idNotInPool = append(idNotInPool, id)
-			continue
-		}
-		responseList = append(responseList, tx)
-	}
-	if len(idNotInPool) > 0 {
-		transactions, err := t.chain.DataAccess().GetTransactions(idNotInPool)
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		responseList = append(responseList, transactions...)
-	}
-	resp := &GetTransactionsResponse{
-		Transactions: responseList,
-	}
-	encoded, err := resp.Encode()
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	w.Write(encoded)
 }
 
 func (t *TransactionPool) verifyTransactions(txs []*blockchain.Transaction) (int32, codec.Hex) {
