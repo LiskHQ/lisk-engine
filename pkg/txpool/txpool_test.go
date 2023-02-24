@@ -201,19 +201,19 @@ func TestTxPoolOnAnnouncement(t *testing.T) {
 
 	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
 	pool.onTransactionAnnoucement(crypto.RandomBytes(200), "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
 	pool.onTransactionAnnoucement((&PostTransactionAnnouncementEvent{
 		TransactionIDs: []codec.Hex{crypto.RandomBytes(100)},
 	}).MustEncode(), "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
 	pool.onTransactionAnnoucement((&PostTransactionAnnouncementEvent{
 		TransactionIDs: []codec.Hex{},
 	}).MustEncode(), "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 }
 
 func TestTxPoolReorg(t *testing.T) {
@@ -401,7 +401,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	pool.HandleRPCEndpointGetTransaction(resp, req)
 	assert.Empty(t, resp.data)
 	assert.NotEmpty(t, resp.err)
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	// More ID than allowed
 	ids := make([]codec.Hex, 101)
@@ -420,7 +420,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	pool.HandleRPCEndpointGetTransaction(resp, req)
 	assert.Nil(t, resp.data)
 	assert.NotEmpty(t, resp.err)
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	// invalid id
 	req = &p2p.RequestMsg{
@@ -435,7 +435,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	pool.HandleRPCEndpointGetTransaction(resp, req)
 	assert.Nil(t, resp.data)
 	assert.NotEmpty(t, resp.err)
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", 100)
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	// valid ids
 	ids = make([]codec.Hex, 100)

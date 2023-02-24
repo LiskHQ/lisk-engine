@@ -149,7 +149,7 @@ type GetHighestCommonBlockResponse struct {
 func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
 	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		if r.Data == nil {
-			err := s.conn.ApplyPenalty(r.PeerID, 100)
+			err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			if err != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 			}
@@ -158,7 +158,7 @@ func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
 		}
 		req := &GetHighestCommonBlockRequest{}
 		if err := req.Decode(r.Data); err != nil {
-			err := s.conn.ApplyPenalty(r.PeerID, 100)
+			err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			if err != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 			}
@@ -166,7 +166,7 @@ func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
 			return
 		}
 		if len(req.IDs) == 0 {
-			err := s.conn.ApplyPenalty(r.PeerID, 100)
+			err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			if err != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 			}
@@ -175,7 +175,7 @@ func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
 		}
 		for _, id := range req.IDs {
 			if len(id) != 32 {
-				err := s.conn.ApplyPenalty(r.PeerID, 100)
+				err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 				if err != nil {
 					s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 				}
@@ -233,7 +233,7 @@ type GetBlocksFromIDResponse struct {
 func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
 	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		if r.Data == nil {
-			err := s.conn.ApplyPenalty(r.PeerID, 100)
+			err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			if err != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 			}
@@ -242,7 +242,7 @@ func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
 		}
 		req := &GetBlocksFromIDRequest{}
 		if err := req.Decode(r.Data); err != nil {
-			err := s.conn.ApplyPenalty(r.PeerID, 100)
+			err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			if err != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 			}
@@ -250,7 +250,7 @@ func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
 			return
 		}
 		if len(req.ID) != 32 {
-			err := s.conn.ApplyPenalty(r.PeerID, 100)
+			err := s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			if err != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", r.PeerID, err)
 			}

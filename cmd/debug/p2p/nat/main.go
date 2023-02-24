@@ -32,19 +32,19 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := config.NetworkConfig{
+	cfgNet := config.NetworkConfig{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
 		EnableRelayService:       true,
 		EnableHolePunching:       true,
 	}
-	err = config.InsertDefault()
+	err = cfgNet.InsertDefault()
 	if err != nil {
 		panic(err)
 	}
 
-	p2p := p2pLib.NewP2P(&config)
+	p2p := p2pLib.NewP2P(&cfgNet)
 
 	for _, topic := range Topics {
 		err = p2p.RegisterEventHandler(topic, func(event *p2pLib.Event) {
@@ -139,7 +139,7 @@ func main() {
 	}
 }
 
-// Start starts the GossipSub event handler.
+// demoRoutine starts the demo routine which will publish messages to the network.
 func demoRoutine(ctx context.Context, logger log.Logger, wg *sync.WaitGroup, p2p *p2pLib.P2P) {
 	defer wg.Done()
 	logger.Infof("Demo routine started")

@@ -74,7 +74,7 @@ var relayServiceOptions = []relay.Option{
 }
 
 // NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config config.NetworkConfig) (*Peer, error) {
+func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, cfgNet config.NetworkConfig) (*Peer, error) {
 	// Create a Peer variable in advance to be able to use it in the libp2p options.
 	var p *Peer
 
@@ -83,12 +83,12 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 		libp2p.DefaultTransports,
 	}
 
-	switch config.AllowIncomingConnections {
+	switch cfgNet.AllowIncomingConnections {
 	case true:
-		if len(config.Addresses) == 0 {
+		if len(cfgNet.Addresses) == 0 {
 			opts = append(opts, libp2p.NoListenAddrs)
 		} else {
-			opts = append(opts, libp2p.ListenAddrStrings(config.Addresses...))
+			opts = append(opts, libp2p.ListenAddrStrings(cfgNet.Addresses...))
 		}
 	case false:
 		opts = append(opts, libp2p.NoListenAddrs)
@@ -100,7 +100,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 	}
 
 	// Load Blacklist
-	connGaterOpt, err := connGater.optionWithBlacklist(config.BlacklistedIPs)
+	connGaterOpt, err := connGater.optionWithBlacklist(cfgNet.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 	peerstore.OwnObservedAddrTTL = time.Minute * 30       // OwnObservedAddrTTL is used for our own external addresses observed by peers.
 
 	// Configure connection security.
-	security := strings.ToLower(config.ConnectionSecurity)
+	security := strings.ToLower(cfgNet.ConnectionSecurity)
 	switch security {
 	case ConnectionSecurityNone:
 		opts = append(opts, libp2p.NoSecurity)
@@ -126,7 +126,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 	}
 
 	// Configure peer to provide a service for other peers for determining their reachability status.
-	if config.EnableNATService {
+	if cfgNet.EnableNATService {
 		opts = append(opts, libp2p.EnableNATService())
 		opts = append(opts, libp2p.AutoNATServiceRateLimit(60, 10, time.Minute))
 	}
@@ -134,7 +134,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 
 	// Enable using relay service from other peers. In case a peer is not reachable from the network,
 	// it will try to connect to a relay service from other peers.
-	if config.EnableUsingRelayService {
+	if cfgNet.EnableUsingRelayService {
 		opts = append(opts, libp2p.EnableRelay())
 
 		autoRelayOptions = append(autoRelayOptions, autorelay.WithPeerSource(func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
@@ -147,12 +147,12 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 	}
 
 	// Enable circuit relay service.
-	if config.EnableRelayService {
+	if cfgNet.EnableRelayService {
 		opts = append(opts, libp2p.EnableRelayService(relayServiceOptions...))
 	}
 
 	// Enable hole punching service.
-	if config.EnableHolePunching {
+	if cfgNet.EnableHolePunching {
 		opts = append(opts, libp2p.EnableHolePunching())
 	}
 
@@ -161,7 +161,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, config 
 		return nil, err
 	}
 
-	peerbook, err := NewPeerbook(config.SeedPeers, config.FixedPeers, config.BlacklistedIPs)
+	peerbook, err := NewPeerbook(cfgNet.SeedPeers, cfgNet.FixedPeers, cfgNet.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +362,7 @@ func (p *Peer) addPenalty(pid peer.ID, score int) error {
 	if err != nil {
 		return err
 	}
-	if newScore >= maxScore {
+	if newScore >= MaxScore {
 		return p.Disconnect(pid)
 	}
 
@@ -371,7 +371,7 @@ func (p *Peer) addPenalty(pid peer.ID, score int) error {
 
 // BlockPeer blocks the given peer ID and immediately try to close the connection.
 func (p *Peer) BlockPeer(pid peer.ID) error {
-	_, err := p.connGater.addPenalty(pid, maxScore)
+	_, err := p.connGater.addPenalty(pid, MaxScore)
 	if err != nil {
 		return err
 	}

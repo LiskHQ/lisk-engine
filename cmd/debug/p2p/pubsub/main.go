@@ -53,18 +53,18 @@ func main() {
 	ip6tcp := fmt.Sprintf("/ip6/::/tcp/%d", *port)
 	ip4tcp := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port)
 
-	cfg := config.NetworkConfig{
+	cfgNet := config.NetworkConfig{
 		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
 		AllowIncomingConnections: true,
 		NetworkName:              "lisk-test",
 		SeedPeers:                []string{},
 	}
-	err = cfg.InsertDefault()
+	err = cfgNet.InsertDefault()
 	if err != nil {
 		panic(err)
 	}
 
-	p, err := p2p.NewPeer(ctx, wg, logger, cfg)
+	p, err := p2p.NewPeer(ctx, wg, logger, cfgNet)
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +80,7 @@ func main() {
 	}
 
 	sk := pubsub.NewScoreKeeper()
-	err = gs.Start(ctx, wg, logger, p, sk, cfg)
+	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
 	if err != nil {
 		panic(err)
 	}

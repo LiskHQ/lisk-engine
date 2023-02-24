@@ -33,8 +33,9 @@ func requestLastBlockHeader(ctx context.Context, conn *p2p.P2P, peerID string) (
 	}()
 	select {
 	case result := <-respChan:
-		if result.Error() != nil {
-			return nil, result.Error()
+		err := result.Error()
+		if err != nil {
+			return nil, err
 		}
 		block, err := blockchain.NewBlock(result.Data())
 		if err != nil {

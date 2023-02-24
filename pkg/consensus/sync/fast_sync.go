@@ -25,7 +25,7 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 		return false, err
 	}
 	if commonBlockHeader.Height < ctx.FinalizedBlockHeader.Height {
-		err = s.conn.ApplyPenalty(ctx.PeerID, 100)
+		err = s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 		if err != nil {
 			s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, err)
 		}
@@ -63,7 +63,7 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 			if err := s.restoreBlocks(ctx, commonBlockHeader); err != nil {
 				return true, err
 			}
-			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			if errPenalty != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
 			}
@@ -86,7 +86,7 @@ func (s *fastSyncer) downloadAndValidate(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			if errPenalty != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
 			}
@@ -110,7 +110,7 @@ func (s *fastSyncer) getCommonBlock(ctx *SyncContext, lastBlockHeader *blockchai
 	blockID, err := requestHighestCommonBlock(ctx.Ctx, s.conn, ctx.PeerID, ids)
 	if err != nil {
 		if errors.Is(err, errCommonBlockNotFound) {
-			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, 100)
+			errPenalty := s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			if errPenalty != nil {
 				s.logger.Error("Fail to apply penalty to a peer %v with %v", ctx.PeerID, errPenalty)
 			}

@@ -24,20 +24,20 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := config.NetworkConfig{
+	cfgNet := config.NetworkConfig{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
 		EnableRelayService:       true,
 		EnableHolePunching:       true,
 	}
-	err = config.InsertDefault()
+	err = cfgNet.InsertDefault()
 	if err != nil {
 		panic(err)
 	}
 
 	wg := &sync.WaitGroup{}
-	node, err := p2p.NewPeer(ctx, wg, logger, config)
+	node, err := p2p.NewPeer(ctx, wg, logger, cfgNet)
 	if err != nil {
 		panic(err)
 	}

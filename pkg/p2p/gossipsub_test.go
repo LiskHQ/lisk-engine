@@ -38,16 +38,16 @@ func TestGossipSub_Start(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	config := cfg.NetworkConfig{}
-	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, config)
+	cfgNet := cfg.NetworkConfig{}
+	_ = cfgNet.InsertDefault()
+	p, _ := NewPeer(ctx, wg, logger, cfgNet)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
 	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {})
 	assert.Nil(err)
 
-	err = gs.Start(ctx, wg, logger, p, sk, config)
+	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
@@ -138,13 +138,13 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	config := cfg.NetworkConfig{}
-	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, config)
+	cfgNet := cfg.NetworkConfig{}
+	_ = cfgNet.InsertDefault()
+	p, _ := NewPeer(ctx, wg, logger, cfgNet)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	gs.Start(ctx, wg, logger, p, sk, config)
+	gs.Start(ctx, wg, logger, p, sk, cfgNet)
 
 	err := gs.RegisterEventHandler(testEvent, testHandler)
 	assert.NotNil(err)
@@ -188,9 +188,9 @@ func TestGossipSub_Publish(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	config := cfg.NetworkConfig{}
-	_ = config.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, config)
+	cfgNet := cfg.NetworkConfig{}
+	_ = cfgNet.InsertDefault()
+	p, _ := NewPeer(ctx, wg, logger, cfgNet)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -199,7 +199,7 @@ func TestGossipSub_Publish(t *testing.T) {
 	err := gs.RegisterTopicValidator(testTopic1, testMV)
 	assert.Equal(err, ErrGossipSubIsNotRunnig)
 
-	gs.Start(ctx, wg, logger, p, sk, config)
+	gs.Start(ctx, wg, logger, p, sk, cfgNet)
 	assert.Nil(gs.RegisterTopicValidator(testTopic1, testMV))
 
 	err = gs.Publish(ctx, testTopic1, testMessageData)

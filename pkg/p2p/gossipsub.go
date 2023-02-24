@@ -49,13 +49,13 @@ func (gs *GossipSub) Start(ctx context.Context,
 	logger log.Logger,
 	p *Peer,
 	sk *lps.ScoreKeeper,
-	cfg config.NetworkConfig,
+	cfgNet config.NetworkConfig,
 ) error {
-	seedNodes, err := lps.ParseAddresses(cfg.SeedPeers)
+	seedNodes, err := lps.ParseAddresses(cfgNet.SeedPeers)
 	if err != nil {
 		return err
 	}
-	fixedNodes, err := lps.ParseAddresses(cfg.FixedPeers)
+	fixedNodes, err := lps.ParseAddresses(cfgNet.FixedPeers)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 			&pubsub.PeerScoreParams{
 				AppSpecificScore: func(p peer.ID) float64 {
 					_, ok := bootstrappers[p]
-					if ok && !cfg.IsSeedNode {
+					if ok && !cfgNet.IsSeedNode {
 						return 2500
 					}
 					return 0
@@ -118,7 +118,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 		pubsub.WithPeerScoreInspect(sk.Update, 10*time.Second),
 	}
 
-	if cfg.IsSeedNode {
+	if cfgNet.IsSeedNode {
 		pubsub.GossipSubD = 0
 		pubsub.GossipSubDscore = 0
 		pubsub.GossipSubDlo = 0
@@ -132,7 +132,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	pgTopicWeights := map[string]float64{}
 
 	var pgParams *pubsub.PeerGaterParams
-	if cfg.IsSeedNode {
+	if cfgNet.IsSeedNode {
 		pgParams = pubsub.NewPeerGaterParams(
 			0.33,
 			pubsub.ScoreParameterDecay(2*time.Minute),

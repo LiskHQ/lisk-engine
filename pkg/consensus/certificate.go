@@ -14,13 +14,14 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/certificate"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/liskbft"
 	"github.com/LiskHQ/lisk-engine/pkg/db/diffdb"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
 
 func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 	postCommits := &EventPostSingleCommits{}
 	if err := postCommits.DecodeStrict(msgData); err != nil {
-		errPenalty := c.conn.ApplyPenalty(peerID, 100)
+		errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		if errPenalty != nil {
 			c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
 		}
@@ -76,7 +77,7 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 		}
 		_, active := liskbft.BFTValidators(params.Validators()).Find(singleCommit.ValidatorAddress())
 		if !active {
-			errPenalty := c.conn.ApplyPenalty(peerID, 100)
+			errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			if errPenalty != nil {
 				c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
 			}
@@ -96,7 +97,7 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 			return
 		}
 		if !validCert {
-			errPenalty := c.conn.ApplyPenalty(peerID, 100)
+			errPenalty := c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			if errPenalty != nil {
 				c.logger.Error("Fail to apply penalty to a peer %v with %v", peerID, errPenalty)
 			}

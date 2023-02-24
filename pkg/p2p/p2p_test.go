@@ -65,35 +65,35 @@ func (l *testLogger) Errorf(msg string, others ...interface{}) {
 func TestP2P_NewP2P(t *testing.T) {
 	assert := assert.New(t)
 
-	config := cfg.NetworkConfig{}
-	err := config.InsertDefault()
+	cfgNet := cfg.NetworkConfig{}
+	err := cfgNet.InsertDefault()
 	assert.Nil(err)
-	p2p := NewP2P(&config)
+	p2p := NewP2P(&cfgNet)
 	assert.NotNil(p2p)
-	assert.Equal("1.0", p2p.config.Version)
-	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.config.Addresses)
-	assert.True(p2p.config.AdvertiseAddresses)
-	assert.Equal(false, p2p.config.AllowIncomingConnections)
-	assert.Equal(false, p2p.config.EnableNATService)
-	assert.Equal(false, p2p.config.EnableUsingRelayService)
-	assert.Equal(false, p2p.config.EnableRelayService)
-	assert.Equal(false, p2p.config.EnableHolePunching)
-	assert.Equal([]string{}, p2p.config.SeedPeers)
-	assert.Equal([]string{}, p2p.config.FixedPeers)
-	assert.Equal([]string{}, p2p.config.BlacklistedIPs)
-	assert.Equal(20, p2p.config.MinNumOfConnections)
-	assert.Equal(100, p2p.config.MaxNumOfConnections)
-	assert.Equal(false, p2p.config.IsSeedNode)
-	assert.Equal("lisk-test", p2p.config.NetworkName)
+	assert.Equal("1.0", p2p.cfgNet.Version)
+	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.cfgNet.Addresses)
+	assert.True(p2p.cfgNet.AdvertiseAddresses)
+	assert.Equal(false, p2p.cfgNet.AllowIncomingConnections)
+	assert.Equal(false, p2p.cfgNet.EnableNATService)
+	assert.Equal(false, p2p.cfgNet.EnableUsingRelayService)
+	assert.Equal(false, p2p.cfgNet.EnableRelayService)
+	assert.Equal(false, p2p.cfgNet.EnableHolePunching)
+	assert.Equal([]string{}, p2p.cfgNet.SeedPeers)
+	assert.Equal([]string{}, p2p.cfgNet.FixedPeers)
+	assert.Equal([]string{}, p2p.cfgNet.BlacklistedIPs)
+	assert.Equal(20, p2p.cfgNet.MinNumOfConnections)
+	assert.Equal(100, p2p.cfgNet.MaxNumOfConnections)
+	assert.Equal(false, p2p.cfgNet.IsSeedNode)
+	assert.Equal("lisk-test", p2p.cfgNet.NetworkName)
 	assert.NotNil(p2p.GossipSub)
 }
 
 func TestP2P_Start(t *testing.T) {
 	assert := assert.New(t)
 
-	config := cfg.NetworkConfig{}
-	_ = config.InsertDefault()
-	p2p := NewP2P(&config)
+	cfgNet := cfg.NetworkConfig{}
+	_ = cfgNet.InsertDefault()
+	p2p := NewP2P(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger)
 	assert.Nil(err)
@@ -110,12 +110,12 @@ func TestP2P_AddPenalty(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := cfg.NetworkConfig{
+	cfgNet := cfg.NetworkConfig{
 		AllowIncomingConnections: true,
 	}
-	_ = config.InsertDefault()
-	node1 := NewP2P(&config)
-	node2 := NewP2P(&config)
+	_ = cfgNet.InsertDefault()
+	node1 := NewP2P(&cfgNet)
+	node2 := NewP2P(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	node1.RegisterEventHandler(testTopic1, func(event *Event) {})
 	node2.RegisterEventHandler(testTopic1, func(event *Event) {})
@@ -135,7 +135,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	assert.Nil(node1.ApplyPenalty(string(p2AddrInfo.ID), 10))
 	assert.Equal(node2.ID(), node1.ConnectedPeers()[0])
-	assert.Nil(node1.ApplyPenalty(string(p2AddrInfo.ID), 100))
+	assert.Nil(node1.ApplyPenalty(string(p2AddrInfo.ID), MaxScore))
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)
@@ -145,9 +145,9 @@ func TestP2P_AddPenalty(t *testing.T) {
 func TestP2P_Stop(t *testing.T) {
 	assert := assert.New(t)
 
-	config := cfg.NetworkConfig{}
-	_ = config.InsertDefault()
-	p2p := NewP2P(&config)
+	cfgNet := cfg.NetworkConfig{}
+	_ = cfgNet.InsertDefault()
+	p2p := NewP2P(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	_ = p2p.Start(logger)
 

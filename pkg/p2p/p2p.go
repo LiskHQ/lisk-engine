@@ -24,7 +24,7 @@ type P2P struct {
 	logger     log.Logger
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
-	config     *config.NetworkConfig
+	cfgNet     *config.NetworkConfig
 	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
@@ -32,8 +32,8 @@ type P2P struct {
 }
 
 // NewP2P creates a new P2P instance.
-func NewP2P(config *config.NetworkConfig) *P2P {
-	return &P2P{config: config, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
+func NewP2P(cfgNet *config.NetworkConfig) *P2P {
+	return &P2P{cfgNet: cfgNet, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
 }
 
 // Start function starts a P2P and all other related services and handlers.
@@ -41,7 +41,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, &p2p.wg, logger, *p2p.config)
+	peer, err := NewPeer(ctx, &p2p.wg, logger, *p2p.cfgNet)
 	if err != nil {
 		cancel()
 		return err
@@ -51,20 +51,20 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.MessageProtocol.Start(ctx, logger, peer)
 
 	sk := lps.NewScoreKeeper()
-	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, *p2p.config)
+	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, *p2p.cfgNet)
 	if err != nil {
 		cancel()
 		return err
 	}
 
 	// Start peer discovery bootstrap process.
-	seedPeers, err := lps.ParseAddresses(p2p.config.SeedPeers)
+	seedPeers, err := lps.ParseAddresses(p2p.cfgNet.SeedPeers)
 	if err != nil {
 		cancel()
 		return err
 	}
 	cfgBootStrap := bootstrap.BootstrapConfigWithPeers(seedPeers)
-	cfgBootStrap.MinPeerThreshold = p2p.config.MinNumOfConnections
+	cfgBootStrap.MinPeerThreshold = p2p.cfgNet.MinNumOfConnections
 	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, cfgBootStrap)
 	if err != nil {
 		cancel()
@@ -77,7 +77,7 @@ func (p2p *P2P) Start(logger log.Logger) error {
 	p2p.bootCloser = bootCloser
 
 	p2p.wg.Add(1)
-	go natTraversalService(ctx, &p2p.wg, *p2p.config, p2p.MessageProtocol)
+	go natTraversalService(ctx, &p2p.wg, *p2p.cfgNet, p2p.MessageProtocol)
 
 	p2p.wg.Add(1)
 	go p2pEventHandler(ctx, &p2p.wg, peer)

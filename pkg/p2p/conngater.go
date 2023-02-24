@@ -22,7 +22,7 @@ import (
 var (
 	errInvalidDuration       = errors.New("invalid duration")
 	errConnGaterIsNotrunning = errors.New("failed to add new peer, start needs to be called first")
-	maxScore                 = 100 // When a peer exceeded the maxScore, it should be blocked
+	MaxScore                 = 100 // When a peer exceeded the maxScore, it should be blocked
 )
 
 // peerInfo keeps information of each peer ID in the peerScore of the connectionGater.
@@ -87,7 +87,7 @@ func (cg *connectionGater) addPenalty(pid peer.ID, score int) (int, error) {
 		cg.peerScore[pid] = newPeerInfo(0, newScore)
 	}
 
-	if newScore >= maxScore {
+	if newScore >= MaxScore {
 		exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
 		if info, ok := cg.peerScore[pid]; ok {
 			info.expiration = exTime
