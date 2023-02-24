@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -98,6 +99,11 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 		// 7. add certificate
 		c.certificatePool.Add(singleCommit)
 	}
+}
+
+// TODO - implement this function
+func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	return p2p.ValidationAccept
 }
 
 func (c *Executer) Certify(from, to uint32, address codec.Lisk32, blsPrivateKey []byte) error {

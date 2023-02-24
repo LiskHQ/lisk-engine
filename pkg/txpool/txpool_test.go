@@ -55,6 +55,7 @@ func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure str
 	return *p2p.NewResponse(0, "", []byte{}, errors.New("invalid req"))
 }
 func (c *connMock) Publish(ctx context.Context, topicName string, data []byte) error { return nil }
+func (c *connMock) RegisterTopicValidator(topic string, v p2p.Validator) error       { return nil }
 
 func TestTxPoolAdd(t *testing.T) {
 	cfg := &TransactionPoolConfig{}

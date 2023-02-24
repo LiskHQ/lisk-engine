@@ -133,9 +133,15 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 	}); err != nil {
 		return err
 	}
+	if err := c.conn.RegisterTopicValidator(P2PEventPostBlock, c.blockValidator); err != nil {
+		return err
+	}
 	if err := c.conn.RegisterEventHandler(P2PEventPostSingleCommits, func(event *p2p.Event) {
 		c.OnSingleCommitsReceived(event.Data(), event.PeerID())
 	}); err != nil {
+		return err
+	}
+	if err := c.conn.RegisterTopicValidator(P2PEventPostSingleCommits, c.singleCommitValidator); err != nil {
 		return err
 	}
 	// check for temp blocks
@@ -212,6 +218,11 @@ func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
 	default:
 		c.logger.Info("Process queue is full")
 	}
+}
+
+// TODO - implement this function
+func (c *Executer) blockValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	return p2p.ValidationAccept
 }
 
 func (c *Executer) AddInternal(block *blockchain.Block) {

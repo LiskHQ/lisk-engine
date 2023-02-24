@@ -37,6 +37,7 @@ type p2pConnection interface {
 	ApplyPenalty(pid string, score int)
 	RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response
 	Publish(ctx context.Context, topicName string, data []byte) error
+	RegisterTopicValidator(topic string, v p2p.Validator) error
 }
 type ABI interface {
 	VerifyTransaction(req *labi.VerifyTransactionRequest) (*labi.VerifyTransactionResponse, error)
@@ -124,6 +125,9 @@ func (t *TransactionPool) Init(
 	if err := t.conn.RegisterEventHandler(RPCEventPostTransactionAnnouncement, func(event *p2p.Event) {
 		t.onTransactionAnnoucement(event.Data(), event.PeerID())
 	}); err != nil {
+		return err
+	}
+	if err := t.conn.RegisterTopicValidator(RPCEventPostTransactionAnnouncement, t.transactionValidator); err != nil {
 		return err
 	}
 	return nil
@@ -421,6 +425,11 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 		})
 		t.logger.Infof("Added transaction %s received from %s", tx.ID.String(), peerID)
 	}
+}
+
+// TODO - implement this function
+func (t *TransactionPool) transactionValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	return p2p.ValidationAccept
 }
 
 type GetTransactionsResponse struct {
