@@ -104,7 +104,7 @@ func (a *txpoolEndpoint) HandlePostTransaction(w router.EndpointResponseWriter, 
 		w.Error(fmt.Errorf("transaction %s was not added to the pool with err %w", req.Transaction.ID.String(), err))
 		return
 	}
-	if result.Result == labi.TxVeirfyResultInvalid {
+	if result.Result == labi.TxVerifyResultInvalid {
 		w.Error(fmt.Errorf("transaction %s was not added to the pool", req.Transaction.ID.String()))
 		return
 	}

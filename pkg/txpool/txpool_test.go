@@ -2,6 +2,7 @@ package txpool
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 
@@ -13,10 +14,60 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/db"
+	"github.com/LiskHQ/lisk-engine/pkg/labi"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
+
+type abiMock struct {
+	mock.Mock
+	allowModule string
+}
+
+func (m *abiMock) setAllowModule(mod string) {
+	m.allowModule = mod
+}
+
+func (m *abiMock) VerifyTransaction(req *labi.VerifyTransactionRequest) (*labi.VerifyTransactionResponse, error) {
+	result := labi.TxVerifyResultOk
+	if req.Transaction.Module != m.allowModule {
+		result = labi.TxVerifyResultInvalid
+	}
+	return &labi.VerifyTransactionResponse{
+		Result: result,
+	}, nil
+}
+
+type connMock struct {
+	mock.Mock
+	txs map[string]*blockchain.Transaction
+}
+
+func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) error   { return nil }
+func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error { return nil }
+func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler) error { return nil }
+func (c *connMock) ApplyPenalty(peerID string, score int)                            {}
+func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response {
+	if procedure == RPCEndpointGetTransactions {
+		req := &GetTransactionsRequest{}
+		if err := req.Decode(data); err != nil {
+			return *p2p.NewResponse(0, "", []byte{}, err)
+		}
+		txs := []*blockchain.Transaction{}
+		for _, id := range req.TransactionIDs {
+			if tx, exist := c.txs[string(id)]; exist {
+				txs = append(txs, tx)
+			}
+		}
+		resp := &GetTransactionsResponse{
+			Transactions: txs,
+		}
+		return *p2p.NewResponse(0, "", resp.MustEncode(), nil)
+	}
+	return *p2p.NewResponse(0, "", []byte{}, errors.New("invalid req"))
+}
+func (c *connMock) Publish(ctx context.Context, topicName string, data []byte) error { return nil }
 
 func TestTxPoolAdd(t *testing.T) {
 	cfg := &TransactionPoolConfig{}
@@ -163,22 +214,17 @@ func TestTxPoolOnAnnouncement(t *testing.T) {
 	stateMachine.AddModule(&sampleMod{})
 
 	txsMap := map[string]*blockchain.Transaction{}
-	ids := make([]codec.Hex, 1024)
-	pk := crypto.RandomBytes(32)
-	for i := 0; i < 1024; i++ {
-		tx := &blockchain.Transaction{
-			SenderPublicKey: pk,
-			Module:          "token",
-			Command:         "transfer",
-			Params:          crypto.RandomBytes(20),
-			Nonce:           uint64(i) % 64,
-			Fee:             10000000000000,
-			Signatures:      []codec.Hex{crypto.RandomBytes(64)},
-		}
-		tx.Init()
-		ids[i] = tx.ID
-		txsMap[string(tx.ID)] = tx
+	tx := &blockchain.Transaction{
+		SenderPublicKey: crypto.RandomBytes(32),
+		Module:          "token",
+		Command:         "transfer",
+		Params:          crypto.RandomBytes(20),
+		Nonce:           uint64(0) % 64,
+		Fee:             10000000000000,
+		Signatures:      []codec.Hex{crypto.RandomBytes(64)},
 	}
+	tx.Init()
+	txsMap[string(tx.ID)] = tx
 
 	p2pMock := &connMock{
 		txs: txsMap,
@@ -193,26 +239,20 @@ func TestTxPoolOnAnnouncement(t *testing.T) {
 		labiMock,
 	)
 
-	event := &PostTransactionAnnouncementEvent{
-		TransactionIDs: ids[:100],
-	}
-	pool.onTransactionAnnoucement(event.MustEncode(), "127.0.0.1:4949")
+	pool.onTransactionAnnoucement(tx.MustEncode(), "127.0.0.1:4949")
 	p2pMock.AssertNotCalled(t, "ApplyPenalty")
+
+	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
+	pool.onTransactionAnnoucement([]byte{}, "127.0.0.1:4949")
+	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
 	pool.onTransactionAnnoucement(crypto.RandomBytes(200), "127.0.0.1:4949")
 	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 
 	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	pool.onTransactionAnnoucement((&PostTransactionAnnouncementEvent{
-		TransactionIDs: []codec.Hex{crypto.RandomBytes(100)},
-	}).MustEncode(), "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
-
-	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	pool.onTransactionAnnoucement((&PostTransactionAnnouncementEvent{
-		TransactionIDs: []codec.Hex{},
-	}).MustEncode(), "127.0.0.1:4949")
+	tx.Signatures = nil // invalid signature to make transaction invalid
+	pool.onTransactionAnnoucement(tx.MustEncode(), "127.0.0.1:4949")
 	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
 }
 
