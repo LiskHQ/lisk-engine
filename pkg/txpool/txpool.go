@@ -28,7 +28,7 @@ const (
 	RPCEndpointGetTransactions          = "getTransactions"
 )
 
-var releaseLimit = 100
+const maxTransactionResponse = 100
 
 type p2pConnection interface {
 	Broadcast(ctx context.Context, event string, data []byte) error
@@ -431,8 +431,8 @@ func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, 
 	// Case without request body
 	if len(r.Data) == 0 {
 		processables := t.GetProcessable()
-		if len(processables) > releaseLimit {
-			processables = processables[:releaseLimit]
+		if len(processables) > maxTransactionResponse {
+			processables = processables[:maxTransactionResponse]
 		}
 		resp := &GetTransactionsResponse{
 			Transactions: processables,
