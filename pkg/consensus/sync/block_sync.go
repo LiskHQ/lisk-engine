@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/forkchoice"
@@ -24,17 +25,25 @@ type blockSyncer struct {
 func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
 	peers := s.conn.ConnectedPeers()
 
-	// Get last block header from all peers and create node info for each peer.
 	nodeInfos := make([]*NodeInfo, len(peers))
+	wg := sync.WaitGroup{}
+
+	// Get last block header from all peers and create node info for each peer.
 	for _, p := range peers {
-		blockHeader, err := requestLastBlockHeader(ctx.Ctx, s.conn, p.String())
-		if err != nil {
-			return false, err
-		}
-		nodeInfo := NewNodeInfo(blockHeader.Height, blockHeader.MaxHeightPrevoted, blockHeader.Version, blockHeader.ID)
-		nodeInfo.PeerID = p.String()
-		nodeInfos = append(nodeInfos, nodeInfo)
+		wg.Add(1)
+		go func(peer p2p.PeerID) {
+			defer wg.Done()
+			blockHeader, err := requestLastBlockHeader(ctx.Ctx, s.conn, peer.String())
+			if err != nil {
+				s.logger.Errorf("Fail to get last block header from %s with %v", peer.String(), err)
+				return
+			}
+			nodeInfo := NewNodeInfo(blockHeader.Height, blockHeader.MaxHeightPrevoted, blockHeader.Version, blockHeader.ID)
+			nodeInfo.PeerID = peer.String()
+			nodeInfos = append(nodeInfos, nodeInfo)
+		}(p)
 	}
+	wg.Wait()
 
 	nodeInfo, err := getBestNodeInfo(nodeInfos)
 	if err != nil {

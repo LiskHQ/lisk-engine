@@ -24,6 +24,7 @@ import (
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
+type PeerID = peer.ID
 type PeerIDs = peer.IDSlice
 
 const (
