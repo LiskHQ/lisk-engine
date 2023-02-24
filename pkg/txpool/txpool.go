@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"container/heap"
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -503,29 +502,6 @@ func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, 
 		return
 	}
 	w.Write(encoded)
-}
-
-func (t *TransactionPool) getUnknownTransactionIDs(ids []codec.Hex) ([]codec.Hex, error) {
-	notInPool := []codec.Hex{}
-	for _, id := range ids {
-		_, exist := t.Get(id)
-		if !exist {
-			notInPool = append(notInPool, id)
-		}
-	}
-	// TODO: make it parallel
-	unknown := []codec.Hex{}
-	for _, id := range notInPool {
-		_, err := t.chain.DataAccess().GetTransaction(id)
-		if err != nil {
-			if errors.Is(err, db.ErrDataNotFound) {
-				unknown = append(unknown, id)
-				continue
-			}
-			return nil, err
-		}
-	}
-	return unknown, nil
 }
 
 func (t *TransactionPool) verifyTransactions(txs []*blockchain.Transaction) (int32, codec.Hex) {
