@@ -72,21 +72,9 @@ func main() {
 	gs := p2p.NewGossipSub()
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
-	err = gs.RegisterEventHandler(topicName(roomName), func(event *p2p.Event) {
-		readMessage(event, ch)
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	sk := pubsub.NewScoreKeeper()
-	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
-	if err != nil {
-		panic(err)
-	}
-
+	var validator p2p.Validator
 	if *hasValidator {
-		tv := func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+		validator = func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 			cm := new(ChatMessage)
 			err := json.Unmarshal(msg.Data, cm)
 			if err != nil {
@@ -99,10 +87,18 @@ func main() {
 				return p2p.ValidationAccept
 			}
 		}
-		err = gs.RegisterTopicValidator(topicName(roomName), tv)
-		if err != nil {
-			panic(err)
-		}
+	}
+	err = gs.RegisterEventHandler(topicName(roomName), func(event *p2p.Event) {
+		readMessage(event, ch)
+	}, validator)
+	if err != nil {
+		panic(err)
+	}
+
+	sk := pubsub.NewScoreKeeper()
+	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
+	if err != nil {
+		panic(err)
 	}
 
 	nick := *nickFlag

@@ -33,11 +33,10 @@ const maxTransactionResponse = 100
 type p2pConnection interface {
 	Broadcast(ctx context.Context, event string, data []byte) error
 	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error
-	RegisterEventHandler(name string, handler p2p.EventHandler) error
+	RegisterEventHandler(name string, handler p2p.EventHandler, validator p2p.Validator) error
 	ApplyPenalty(pid string, score int)
 	RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response
 	Publish(ctx context.Context, topicName string, data []byte) error
-	RegisterTopicValidator(topic string, v p2p.Validator) error
 }
 type ABI interface {
 	VerifyTransaction(req *labi.VerifyTransactionRequest) (*labi.VerifyTransactionResponse, error)
@@ -122,28 +121,21 @@ func (t *TransactionPool) Init(
 	if err := t.conn.RegisterRPCHandler(RPCEndpointGetTransactions, t.HandleRPCEndpointGetTransaction); err != nil {
 		return err
 	}
-	if err := t.conn.RegisterEventHandler(RPCEventPostTransactionAnnouncement, func(event *p2p.Event) {
-		t.onTransactionAnnoucement(event.Data(), event.PeerID())
-	}); err != nil {
+	if err := t.conn.RegisterEventHandler(RPCEventPostTransactionAnnouncement, t.onTransactionAnnoucement, t.transactionValidator); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *TransactionPool) Start() error {
-	// register topic validator for p2p
-	if err := t.conn.RegisterTopicValidator(RPCEventPostTransactionAnnouncement, t.transactionValidator); err != nil {
-		return err
-	}
-
+func (t *TransactionPool) Start() {
 	for {
 		select {
 		case <-t.ticker.C:
 			t.reorg()
 		case <-t.closeCh:
-			return nil
+			return
 		case <-t.ctx.Done():
-			return nil
+			return
 		}
 	}
 }
@@ -389,23 +381,25 @@ func (t *TransactionPool) reorg() {
 	wg.Wait()
 }
 
-func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
-	if len(data) == 0 {
-		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement", peerID)
-		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		return
+func (t *TransactionPool) transactionValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	if len(msg.Data) == 0 {
+		return p2p.ValidationReject
 	}
-
-	tx, err := blockchain.NewTransaction(data)
+	transaction, err := blockchain.NewTransaction(msg.Data)
 	if err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement: %w", peerID, err)
-		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		return
+		return p2p.ValidationReject
 	}
-	if err := tx.Init(); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement: %w", peerID, err)
-		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		return
+	if err := transaction.Validate(); err != nil {
+		return p2p.ValidationReject
+	}
+	return p2p.ValidationAccept
+}
+
+func (t *TransactionPool) onTransactionAnnoucement(event *p2p.Event) {
+	tx, err := blockchain.NewTransaction(event.Data())
+	// validation is executed, so it will never fail on this NewTransaction
+	if err != nil {
+		panic(err)
 	}
 
 	resp, err := t.abi.VerifyTransaction(&labi.VerifyTransactionRequest{
@@ -413,25 +407,19 @@ func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 		Transaction: tx,
 	})
 	if err != nil {
+		t.logger.Debugf("Failed to verify transaction %s from %s", tx.ID.String(), event.PeerID())
 		return
 	}
 
 	if resp.Result == labi.TxVerifyResultInvalid {
-		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement", peerID)
-		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		return
 	}
 	if t.Add(tx) {
 		t.events.Publish(EventTransactionNew, &EventNewTransactionMessage{
 			Transaction: tx,
 		})
-		t.logger.Infof("Added transaction %s received from %s", tx.ID.String(), peerID)
+		t.logger.Infof("Added transaction %s received from %s", tx.ID.String(), event.PeerID())
 	}
-}
-
-// TODO - implement this function (GH issue #70)
-func (t *TransactionPool) transactionValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
-	return p2p.ValidationAccept
 }
 
 type GetTransactionsResponse struct {

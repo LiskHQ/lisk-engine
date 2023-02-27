@@ -52,7 +52,7 @@ func main() {
 			logger.Infof("PeerID: %v", event.PeerID())
 			logger.Infof("Event: %v", event.Event())
 			logger.Infof("Data: %s", string(event.Data()))
-		})
+		}, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -63,7 +63,7 @@ func main() {
 		logger.Infof("PeerID: %v", event.PeerID())
 		logger.Infof("Event: %v", event.Event())
 		logger.Infof("Data: %s", string(event.Data()))
-	})
+	}, nil)
 	if err != nil {
 		panic(err)
 	}

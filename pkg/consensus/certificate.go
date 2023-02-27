@@ -19,12 +19,18 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
 
-func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
+func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 	postCommits := &EventPostSingleCommits{}
-	if err := postCommits.DecodeStrict(msgData); err != nil {
-		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		c.logger.Errorf("Received invalid single commit from %s", peerID)
-		return
+	if err := postCommits.DecodeStrict(msg.Data); err != nil {
+		return p2p.ValidationReject
+	}
+	return p2p.ValidationAccept
+}
+
+func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
+	postCommits := &EventPostSingleCommits{}
+	if err := postCommits.DecodeStrict(event.Data()); err != nil {
+		panic(err)
 	}
 	diffStore := diffdb.New(c.database, blockchain.DBPrefixToBytes(blockchain.DBPrefixState))
 	for _, singleCommit := range postCommits.SingleCommits {
@@ -75,8 +81,8 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 		}
 		_, active := liskbft.BFTValidators(params.Validators()).Find(singleCommit.ValidatorAddress())
 		if !active {
-			c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-			c.logger.Errorf("Address %s was not active at height %d. Applying penalty to %s.", blockHeader.GeneratorAddress, singleCommit.Height(), peerID)
+			c.conn.ApplyPenalty(event.PeerID(), p2p.MaxScore)
+			c.logger.Errorf("Address %s was not active at height %d. Applying penalty to %s.", blockHeader.GeneratorAddress, singleCommit.Height(), event.PeerID())
 			return
 		}
 		// 6. check signature of certificate obtained by the block at the height, if invalid discard and ban
@@ -92,18 +98,13 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 			return
 		}
 		if !validCert {
-			c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-			c.logger.Errorf("Invalid commit received. Applying penalty to %s.", peerID)
+			c.conn.ApplyPenalty(event.PeerID(), p2p.MaxScore)
+			c.logger.Errorf("Invalid commit received. Applying penalty to %s.", event.PeerID())
 			return
 		}
 		// 7. add certificate
 		c.certificatePool.Add(singleCommit)
 	}
-}
-
-// TODO - implement this function (GH issue #70)
-func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
-	return p2p.ValidationAccept
 }
 
 func (c *Executer) Certify(from, to uint32, address codec.Lisk32, blsPrivateKey []byte) error {

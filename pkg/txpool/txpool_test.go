@@ -46,8 +46,10 @@ type connMock struct {
 
 func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) error   { return nil }
 func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error { return nil }
-func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler) error { return nil }
-func (c *connMock) ApplyPenalty(peerID string, score int)                            {}
+func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler, validator p2p.Validator) error {
+	return nil
+}
+func (c *connMock) ApplyPenalty(peerID string, score int) {}
 func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response {
 	if procedure == RPCEndpointGetTransactions {
 		return *p2p.NewResponse(0, "", nil, nil)
@@ -55,7 +57,6 @@ func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure str
 	return *p2p.NewResponse(0, "", []byte{}, errors.New("invalid req"))
 }
 func (c *connMock) Publish(ctx context.Context, topicName string, data []byte) error { return nil }
-func (c *connMock) RegisterTopicValidator(topic string, v p2p.Validator) error       { return nil }
 
 func TestTxPoolAdd(t *testing.T) {
 	cfg := &TransactionPoolConfig{}
@@ -204,7 +205,7 @@ func TestTxPoolOnAnnouncement(t *testing.T) {
 	txsMap := map[string]*blockchain.Transaction{}
 	tx := &blockchain.Transaction{
 		SenderPublicKey: crypto.RandomBytes(32),
-		Module:          "token",
+		Module:          (&sampleMod{}).Name(),
 		Command:         "transfer",
 		Params:          crypto.RandomBytes(20),
 		Nonce:           uint64(0) % 64,
@@ -227,21 +228,21 @@ func TestTxPoolOnAnnouncement(t *testing.T) {
 		labiMock,
 	)
 
-	pool.onTransactionAnnoucement(tx.MustEncode(), "127.0.0.1:4949")
-	p2pMock.AssertNotCalled(t, "ApplyPenalty")
+	assert.Equal(t, p2p.ValidationAccept, pool.transactionValidator(context.Background(), p2p.NewMessage(tx.MustEncode())))
+	pool.onTransactionAnnoucement(p2p.NewEvent("127.0.0.1:4949", EventTransactionAnnouncement, tx.MustEncode()))
+	assert.Len(t, pool.allTransactions, 1)
 
-	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	pool.onTransactionAnnoucement([]byte{}, "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
+	unknownTx := tx.Copy()
+	unknownTx.Module = "unknown"
+	assert.Equal(t, p2p.ValidationAccept, pool.transactionValidator(context.Background(), p2p.NewMessage(unknownTx.MustEncode())))
+	pool.onTransactionAnnoucement(p2p.NewEvent("127.0.0.1:4949", EventTransactionAnnouncement, unknownTx.MustEncode()))
+	assert.Len(t, pool.allTransactions, 1)
 
-	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	pool.onTransactionAnnoucement(crypto.RandomBytes(200), "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
-
-	p2pMock.On("ApplyPenalty", mock.AnythingOfType("string"), mock.AnythingOfType("int"))
-	tx.Signatures = nil // invalid signature to make transaction invalid
-	pool.onTransactionAnnoucement(tx.MustEncode(), "127.0.0.1:4949")
-	p2pMock.MethodCalled("ApplyPenalty", "127.0.0.1:4949", p2p.MaxScore)
+	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage([]byte{})))
+	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage(crypto.RandomBytes(200))))
+	invalidTx := tx.Copy()
+	invalidTx.Signatures = nil // invalid signature to make transaction invalid
+	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage(invalidTx.MustEncode())))
 }
 
 func TestTxPoolReorg(t *testing.T) {

@@ -26,20 +26,22 @@ var (
 
 // GossipSub type.
 type GossipSub struct {
-	logger        log.Logger
-	peer          *Peer
-	ps            *pubsub.PubSub
-	topics        map[string]*pubsub.Topic
-	subscriptions map[string]*pubsub.Subscription
-	eventHandlers map[string]EventHandler
+	logger            log.Logger
+	peer              *Peer
+	ps                *pubsub.PubSub
+	topics            map[string]*pubsub.Topic
+	subscriptions     map[string]*pubsub.Subscription
+	eventHandlers     map[string]EventHandler
+	validatorHandlers map[string]Validator
 }
 
 // NewGossipSub makes a new GossipSub struct.
 func NewGossipSub() *GossipSub {
 	return &GossipSub{
-		topics:        make(map[string]*pubsub.Topic),
-		subscriptions: make(map[string]*pubsub.Subscription),
-		eventHandlers: make(map[string]EventHandler),
+		topics:            make(map[string]*pubsub.Topic),
+		subscriptions:     make(map[string]*pubsub.Subscription),
+		eventHandlers:     make(map[string]EventHandler),
+		validatorHandlers: make(map[string]Validator),
 	}
 }
 
@@ -195,6 +197,11 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 		}
 		gs.topics[t] = topic
 		gs.subscriptions[t] = sub
+
+		validator, exist := gs.validatorHandlers[t]
+		if exist && validator != nil {
+			gs.ps.RegisterTopicValidator(t, newMessageValidator(validator))
+		}
 	}
 
 	// Start a goroutine for each subscription.
@@ -230,7 +237,7 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 					gs.logger.Errorf("EventHandler for %s not found", sub.Topic())
 					continue
 				}
-				event := newEvent(msg.ReceivedFrom.String(), sub.Topic(), m.Data)
+				event := NewEvent(msg.ReceivedFrom.String(), sub.Topic(), m.Data)
 				handler(event)
 			}
 		}(sub)
@@ -239,17 +246,8 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 	return nil
 }
 
-// RegisterValidator registers a validator for given topic.
-func (gs *GossipSub) RegisterTopicValidator(topic string, v Validator) error {
-	if gs.ps == nil {
-		return ErrGossipSubIsNotRunnig
-	}
-
-	return gs.ps.RegisterTopicValidator(topic, newMessageValidator(v))
-}
-
 // RegisterEventHandler registers an event handler for an event type.
-func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) error {
+func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler, validator Validator) error {
 	if gs.ps != nil {
 		return ErrGossipSubIsRunning
 	}
@@ -260,6 +258,7 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler) err
 	gs.topics[name] = nil
 	gs.subscriptions[name] = nil
 	gs.eventHandlers[name] = handler
+	gs.validatorHandlers[name] = validator
 	return nil
 }
 

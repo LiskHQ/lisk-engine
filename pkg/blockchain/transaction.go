@@ -36,14 +36,9 @@ func NewTransaction(value []byte) (*Transaction, error) {
 	if err := tx.DecodeStrict(value); err != nil {
 		return nil, err
 	}
-	txBytes, err := tx.Encode()
-	if err != nil {
+	if err := tx.Init(); err != nil {
 		return nil, err
 	}
-	id := crypto.Hash(txBytes)
-	size := len(txBytes)
-	tx.ID = id
-	tx.size = size
 	return tx, nil
 }
 
