@@ -14,9 +14,9 @@ type VerifyStatus int32
 type ExecStatus int32
 
 const (
-	verifyStatusOK      VerifyStatus = VerifyStatus(labi.TxVeirfyResultOk)
-	verifyStatusError   VerifyStatus = VerifyStatus(labi.TxVeirfyResultInvalid)
-	verifyStatusPending VerifyStatus = VerifyStatus(labi.TxVeirfyResultPending)
+	verifyStatusOK      VerifyStatus = VerifyStatus(labi.TxVerifyResultOk)
+	verifyStatusError   VerifyStatus = VerifyStatus(labi.TxVerifyResultInvalid)
+	verifyStatusPending VerifyStatus = VerifyStatus(labi.TxVerifyResultPending)
 	execStatusInvalid   ExecStatus   = ExecStatus(labi.TxExecuteResultInvalid)
 	execStatusFail      ExecStatus   = ExecStatus(labi.TxExecuteResultFail)
 	execStatusOK        ExecStatus   = ExecStatus(labi.TxExecuteResultSuccess)

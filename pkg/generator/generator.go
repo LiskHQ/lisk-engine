@@ -423,7 +423,7 @@ func (g *Generator) onNewBlock(msg interface{}) {
 	}
 	for _, tx := range eventMsg.Block.Transactions {
 		g.pool.Remove(tx.ID)
-		g.logger.Debug("Removing transaction %s from transaction pool", tx.ID)
+		g.logger.Debugf("Removing transaction %s from transaction pool", tx.ID)
 	}
 }
 
@@ -435,9 +435,9 @@ func (g *Generator) onDeleteBlock(msg interface{}) {
 	}
 	for _, tx := range eventMsg.Block.Transactions {
 		if ok := g.pool.Add(tx); ok {
-			g.logger.Debug("Adding transaction %s back to transaction pool", tx.ID)
+			g.logger.Debugf("Adding transaction %s back to transaction pool", tx.ID)
 		} else {
-			g.logger.Debug("Fail to add transaction %s back to transaction pool", tx.ID)
+			g.logger.Debugf("Fail to add transaction %s back to transaction pool", tx.ID)
 		}
 	}
 }

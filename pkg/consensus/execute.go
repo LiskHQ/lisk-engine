@@ -33,7 +33,7 @@ type ExecuterConfig struct {
 	CTX       context.Context
 	ABI       labi.ABI
 	Chain     *blockchain.Chain
-	Conn      *p2p.Connection
+	Conn      *p2p.P2P
 	BlockTime uint32
 	BatchSize int
 }
@@ -44,7 +44,7 @@ type Executer struct {
 	batchSize       int
 	abi             labi.ABI
 	chain           *blockchain.Chain
-	conn            *p2p.Connection
+	conn            *p2p.P2P
 	certificatePool *certificate.Pool
 	liskBFT         *liskbft.Module
 	// Dynamic values
@@ -148,6 +148,14 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 
 // Start consensus process.
 func (c *Executer) Start() error {
+	// register topic validator for p2p
+	if err := c.conn.RegisterTopicValidator(P2PEventPostBlock, c.blockValidator); err != nil {
+		return err
+	}
+	if err := c.conn.RegisterTopicValidator(P2PEventPostSingleCommits, c.singleCommitValidator); err != nil {
+		return err
+	}
+
 	for {
 		select {
 		case <-c.closeCh:
@@ -188,13 +196,13 @@ func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
 	postBlockEvent := &EventPostBlock{}
 	err := postBlockEvent.DecodeStrict(msgData)
 	if err != nil {
-		c.conn.ApplyPenalty(peerID, 100)
+		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
 		return
 	}
 	block, err := blockchain.NewBlock(postBlockEvent.Block)
 	if err != nil {
-		c.conn.ApplyPenalty(peerID, 100)
+		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
 		return
 	}
@@ -212,6 +220,11 @@ func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
 	default:
 		c.logger.Info("Process queue is full")
 	}
+}
+
+// TODO - implement this function (GH issue #70)
+func (c *Executer) blockValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	return p2p.ValidationAccept
 }
 
 func (c *Executer) AddInternal(block *blockchain.Block) {
@@ -302,7 +315,8 @@ func (c *Executer) process(ctx *ProcessContext) error {
 		if err := ctx.block.Validate(); err != nil {
 			return err
 		}
-		if err := c.processValidated(ctx.ctx, ctx.block, false); err != nil {
+		publish := ctx.peerID == "" // if peerID is empty, it means it is internal block
+		if err := c.processValidated(ctx.ctx, ctx.block, publish, false); err != nil {
 			c.logger.Errorf("Fail to process valid block with %v", err)
 			return err
 		}
@@ -321,9 +335,10 @@ func (c *Executer) process(ctx *ProcessContext) error {
 		if err := c.deleteBlock(ctx.ctx, lastBlock, false); err != nil {
 			return err
 		}
-		if err := c.processValidated(ctx.ctx, ctx.block, false); err != nil {
+		publish := ctx.peerID == "" // if peerID is empty, it means it is internal block
+		if err := c.processValidated(ctx.ctx, ctx.block, publish, false); err != nil {
 			c.logger.Errorf("Fail to process tie break block. Reverting to original block.")
-			if err := c.processValidated(ctx.ctx, lastBlock, false); err != nil {
+			if err := c.processValidated(ctx.ctx, lastBlock, publish, false); err != nil {
 				c.logger.Errorf("Fail to revert the tie break block")
 			}
 		}
@@ -353,7 +368,7 @@ func (c *Executer) process(ctx *ProcessContext) error {
 	return nil
 }
 
-func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block, removeTemp bool) error {
+func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block, publish bool, removeTemp bool) error {
 	consensusStore := diffdb.New(c.database, blockchain.DBPrefixToBytes(blockchain.DBPrefixState))
 	if err := c.verifyBlock(consensusStore, block); err != nil {
 		return err
@@ -366,17 +381,22 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	if err := abi.Verify(block); err != nil {
 		return err
 	}
-	// broadcast block
 
-	go func() {
-		eventMsg := &EventPostBlock{
-			Block: block.MustEncode(),
-		}
-		if c.syncying {
-			return
-		}
-		c.conn.Broadcast(ctx, P2PEventPostBlock, eventMsg.MustEncode())
-	}()
+	// publish block to a topic only if it was internally generated
+	if publish {
+		go func() {
+			eventMsg := &EventPostBlock{
+				Block: block.MustEncode(),
+			}
+			if c.syncying {
+				return
+			}
+			err = c.conn.Publish(ctx, P2PEventPostBlock, eventMsg.MustEncode())
+			if err != nil {
+				c.logger.Errorf("Fail to publish postBlock with %v", err)
+			}
+		}()
+	}
 
 	nextValidatorParams, err := abi.Execute(consensusStore, block)
 	if err != nil {
@@ -398,7 +418,7 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	if err != nil {
 		return err
 	}
-	maxHeightPrevoted, maxHeightPrecommited, _, err := c.liskBFT.API().GetBFTHeights(consensusStore)
+	_, maxHeightPrecommited, _, err := c.liskBFT.API().GetBFTHeights(consensusStore)
 	if err != nil {
 		return err
 	}
@@ -458,23 +478,6 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 			CertificateThreshold: nextValidatorParams.CertificateThreshold,
 		})
 	}
-	go func() {
-		if c.syncying {
-			return
-		}
-		nodeInfo := sync.NewNodeInfo(
-			block.Header.Height,
-			maxHeightPrevoted,
-			block.Header.Version,
-			block.Header.ID,
-		)
-		nodeInfoBytes, err := nodeInfo.Encode()
-		if err != nil {
-			c.logger.Error("Fail to encode node info")
-			return
-		}
-		c.conn.PostNodeInfo(ctx, nodeInfoBytes)
-	}()
 	return nil
 }
 

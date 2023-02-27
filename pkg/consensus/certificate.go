@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -14,13 +15,14 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/certificate"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/liskbft"
 	"github.com/LiskHQ/lisk-engine/pkg/db/diffdb"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
 
 func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 	postCommits := &EventPostSingleCommits{}
 	if err := postCommits.DecodeStrict(msgData); err != nil {
-		c.conn.ApplyPenalty(peerID, 100)
+		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		c.logger.Errorf("Received invalid single commit from %s", peerID)
 		return
 	}
@@ -73,7 +75,7 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 		}
 		_, active := liskbft.BFTValidators(params.Validators()).Find(singleCommit.ValidatorAddress())
 		if !active {
-			c.conn.ApplyPenalty(peerID, 100)
+			c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			c.logger.Errorf("Address %s was not active at height %d. Applying penalty to %s.", blockHeader.GeneratorAddress, singleCommit.Height(), peerID)
 			return
 		}
@@ -90,13 +92,18 @@ func (c *Executer) OnSingleCommitsReceived(msgData []byte, peerID string) {
 			return
 		}
 		if !validCert {
-			c.conn.ApplyPenalty(peerID, 100)
+			c.conn.ApplyPenalty(peerID, p2p.MaxScore)
 			c.logger.Errorf("Invalid commit received. Applying penalty to %s.", peerID)
 			return
 		}
 		// 7. add certificate
 		c.certificatePool.Add(singleCommit)
 	}
+}
+
+// TODO - implement this function (GH issue #70)
+func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	return p2p.ValidationAccept
 }
 
 func (c *Executer) Certify(from, to uint32, address codec.Lisk32, blsPrivateKey []byte) error {
@@ -220,7 +227,10 @@ func (c *Executer) broadcastCertificate() error {
 	if err != nil {
 		return err
 	}
-	c.conn.Send(c.ctx, P2PEventPostSingleCommits, data)
+	err = c.conn.Publish(c.ctx, P2PEventPostSingleCommits, data)
+	if err != nil {
+		return err
+	}
 	c.certificatePool.Upgrade(selectedCommites)
 	return nil
 }

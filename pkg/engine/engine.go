@@ -18,7 +18,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
 	"github.com/LiskHQ/lisk-engine/pkg/router"
 	"github.com/LiskHQ/lisk-engine/pkg/rpc"
 	"github.com/LiskHQ/lisk-engine/pkg/txpool"
@@ -36,7 +35,7 @@ type Engine struct {
 	router          *router.Router
 	blockchainDB    *db.DB
 	generatorDB     *db.DB
-	conn            *p2p.Connection
+	p2pConn         *p2p.P2P
 	chain           *blockchain.Chain
 	consensusExec   *consensus.Executer
 	transactionPool *txpool.TransactionPool
@@ -96,19 +95,19 @@ func (e *Engine) Start() error {
 		return err
 	}
 
-	chainEndpoint := endpoint.NewChainEndpoint(e.chain, e.consensusExec, e.conn, e.transactionPool, e.abi)
+	chainEndpoint := endpoint.NewChainEndpoint(e.chain, e.consensusExec, e.p2pConn, e.transactionPool, e.abi)
 	for method, handler := range chainEndpoint.Endpoint() {
 		if err := e.router.RegisterEndpoint("chain", method, handler); err != nil {
 			return err
 		}
 	}
-	systemEndpoint := endpoint.NewSystemEndpoint(e.config, e.chain, e.consensusExec, e.conn, e.transactionPool, e.abi)
+	systemEndpoint := endpoint.NewSystemEndpoint(e.config, e.chain, e.consensusExec, e.p2pConn, e.transactionPool, e.abi)
 	for method, handler := range systemEndpoint.Endpoint() {
 		if err := e.router.RegisterEndpoint("system", method, handler); err != nil {
 			return err
 		}
 	}
-	networkEndpoint := endpoint.NewNetworkEndpoint(e.config, e.chain, e.consensusExec, e.conn, e.transactionPool, e.abi)
+	networkEndpoint := endpoint.NewNetworkEndpoint(e.config, e.chain, e.consensusExec, e.p2pConn, e.transactionPool, e.abi)
 	for method, handler := range networkEndpoint.Endpoint() {
 		if err := e.router.RegisterEndpoint("network", method, handler); err != nil {
 			return err
@@ -153,7 +152,7 @@ func (e *Engine) Start() error {
 		e.logger.With("module", "TransactionPool"),
 		blockchainDB,
 		e.chain,
-		e.conn,
+		e.p2pConn,
 		e.abi,
 	); err != nil {
 		return err
@@ -170,16 +169,16 @@ func (e *Engine) Start() error {
 	e.initialized = true
 
 	e.logger.Info("Starting application...")
-	nodeInfo := &p2p.NodeInfo{
+	// TODO - Use this in GH issue #67
+	/*handshakeInfo := &p2p.HandshakeInfo{
 		ChainID:          e.config.Genesis.ChainID.String(),
-		NetworkVersion:   e.config.Network.Version,
-		AdvertiseAddress: e.config.Network.AdvertiseAddress,
-		Port:             e.config.Network.Port,
-		Options:          []byte{},
-	}
+		NetworkVersion:   e.config.Network.NetworkVersion,
+		AdvertiseAddress: e.config.Network.AdvertiseAddresses,
+	}*/
 	// start P2P
 	go func() {
-		if err := e.conn.Start(e.logger, nodeInfo); err != nil {
+		// TODO - Uncomment this in GH issue #67
+		if err := e.p2pConn.Start(e.logger /*, handshakeInfo*/); err != nil {
 			e.logger.Error("Fail to start connection. stopping")
 			e.Stop()
 		}
@@ -191,7 +190,13 @@ func (e *Engine) Start() error {
 			e.Stop()
 		}
 	}()
-	go e.transactionPool.Start()
+	// start transaction pool
+	go func() {
+		if err := e.transactionPool.Start(); err != nil {
+			e.logger.Error("Fail to start transaction pool. stopping")
+			e.Stop()
+		}
+	}()
 	go e.generator.Start()
 
 	e.server = rpc.NewRPCServer(
@@ -222,11 +227,11 @@ func (e *Engine) Start() error {
 		if e.server != nil {
 			e.server.Close()
 		}
-		if err := e.conn.Stop(); err != nil {
-			e.logger.Error("Fail to stop connection with %w", err)
+		if err := e.p2pConn.Stop(); err != nil {
+			e.logger.Errorf("Fail to stop connection with %w", err)
 		}
 		if err := e.consensusExec.Stop(); err != nil {
-			e.logger.Error("Fail to stop consensus with %w", err)
+			e.logger.Errorf("Fail to stop consensus with %w", err)
 		}
 	}
 	return nil
@@ -238,14 +243,7 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) init() error {
-	e.conn = p2p.NewConnection(&p2p.ConnectionConfig{
-		SeedAddresses:         NetworkPeers(e.config.Network.SeedPeers).GetP2PAddress(),
-		BannedIPs:             e.config.Network.BlackListedIPs,
-		WhitelistedAddresses:  NetworkPeers(e.config.Network.WhiteListedPeers).GetP2PAddress(),
-		FixedAddresses:        NetworkPeers(e.config.Network.FixedPeers).GetP2PAddress(),
-		MaxInboundConnection:  e.config.Network.MaxInboundConnections,
-		MaxOutboundConnection: e.config.Network.MaxOutboundConnections,
-	})
+	e.p2pConn = p2p.NewP2P(e.config.Network)
 	e.chain = blockchain.NewChain(&blockchain.ChainConfig{
 		MaxBlockCache:         e.config.System.GetMaxBlokckCache(),
 		ChainID:               e.config.Genesis.ChainID,
@@ -255,7 +253,7 @@ func (e *Engine) init() error {
 		CTX:       e.ctx,
 		Chain:     e.chain,
 		ABI:       e.abi,
-		Conn:      e.conn,
+		Conn:      e.p2pConn,
 		BlockTime: e.config.Genesis.BlockTime,
 		BatchSize: int(e.config.Genesis.BFTBatchSize),
 	})
@@ -398,16 +396,6 @@ func (e *Engine) handleEvents() {
 			e.server.Publish(RPCEventTxpoolNewTransaction, publishData)
 		}
 	}
-}
-
-type NetworkPeers config.NetworkIPs
-
-func (n NetworkPeers) GetP2PAddress() []*addressbook.Address {
-	addresses := make([]*addressbook.Address, len(n))
-	for i, addr := range n {
-		addresses[i] = addressbook.NewAddress(addr.IP, addr.Port)
-	}
-	return addresses
 }
 
 func resolvedDataPath(dataPath string) (string, error) {

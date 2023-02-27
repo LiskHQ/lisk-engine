@@ -22,7 +22,7 @@ var (
 	errCommonBlockNotFound = errors.New("peer did not return common block")
 )
 
-func requestLastBlockHeader(ctx context.Context, conn *p2p.Connection, peerID string) (*blockchain.BlockHeader, error) {
+func requestLastBlockHeader(ctx context.Context, conn *p2p.P2P, peerID string) (*blockchain.BlockHeader, error) {
 	respChan := make(chan p2p.Response)
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -33,8 +33,9 @@ func requestLastBlockHeader(ctx context.Context, conn *p2p.Connection, peerID st
 	}()
 	select {
 	case result := <-respChan:
-		if result.Err() != nil {
-			return nil, result.Err()
+		err := result.Error()
+		if err != nil {
+			return nil, err
 		}
 		block, err := blockchain.NewBlock(result.Data())
 		if err != nil {
@@ -54,7 +55,7 @@ type getHighestCommonBlockResponse struct {
 	id []byte `fieldNumber:"1"`
 }
 
-func requestHighestCommonBlock(ctx context.Context, conn *p2p.Connection, peerID string, ids [][]byte) ([]byte, error) {
+func requestHighestCommonBlock(ctx context.Context, conn *p2p.P2P, peerID string, ids [][]byte) ([]byte, error) {
 	respChan := make(chan p2p.Response)
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -70,8 +71,8 @@ func requestHighestCommonBlock(ctx context.Context, conn *p2p.Connection, peerID
 	}()
 	select {
 	case result := <-respChan:
-		if result.Err() != nil {
-			return nil, result.Err()
+		if result.Error() != nil {
+			return nil, result.Error()
 		}
 		commonBlockResp := &getHighestCommonBlockResponse{}
 		if err := commonBlockResp.Decode(result.Data()); err != nil {
@@ -94,7 +95,7 @@ type getBlocksFromIDResponse struct {
 	blocks [][]byte `fieldNumber:"1"`
 }
 
-func requestBlocksFromID(ctx context.Context, conn *p2p.Connection, peerID string, id []byte) ([]*blockchain.Block, error) {
+func requestBlocksFromID(ctx context.Context, conn *p2p.P2P, peerID string, id []byte) ([]*blockchain.Block, error) {
 	respChan := make(chan p2p.Response)
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -110,8 +111,8 @@ func requestBlocksFromID(ctx context.Context, conn *p2p.Connection, peerID strin
 	}()
 	select {
 	case result := <-respChan:
-		if result.Err() != nil {
-			return nil, result.Err()
+		if result.Error() != nil {
+			return nil, result.Error()
 		}
 		if result.Data() == nil {
 			return nil, errors.New("peer did not return common block")

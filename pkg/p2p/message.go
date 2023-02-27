@@ -1,54 +1,68 @@
 package p2p
 
 import (
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/socket"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-// Event holds event message from a peer
-//
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
-type Event struct {
-	peerID string
-	event  string
-	data   []byte
+
+// RequestMsg is a request message type sent to other peer.
+type RequestMsg struct {
+	ID        string `fieldNumber:"1" json:"id"`        // Message ID.
+	Timestamp int64  `json:"timestamp"`                 // Unix time when the message was received.
+	PeerID    string `json:"peerID"`                    // ID of peer that created the request message.
+	Procedure string `fieldNumber:"2" json:"procedure"` // Procedure to be called.
+	Data      []byte `fieldNumber:"3" json:"data"`      // Request data.
 }
 
-func newEvent(peerID string, event string, data []byte) *Event {
-	return &Event{
-		peerID: peerID,
-		event:  event,
-		data:   data,
+// ResponseMsg is a response message type received from a peer in response to a request message.
+type ResponseMsg struct {
+	ID        string `fieldNumber:"1" json:"id"`    // Message ID. It is the same as the ID of the requested message.
+	Timestamp int64  `json:"timestamp"`             // Unix time when the message was received.
+	PeerID    string `json:"peerID"`                // ID of peer that created the response message.
+	Data      []byte `fieldNumber:"2" json:"data"`  // Response data.
+	Error     string `fieldNumber:"3" json:"error"` // Error message in case of an error.
+}
+
+// Message is a message type sent to other peers in the network over GossipSub.
+type Message struct {
+	Timestamp int64  `json:"timestamp"`            // Unix time when the message was received.
+	Data      []byte `fieldNumber:"1" json:"data"` // Message data (payload).
+}
+
+// newRequestMessage creates a new request message.
+func newRequestMessage(peerID peer.ID, procedure string, data []byte) *RequestMsg {
+	return &RequestMsg{
+		ID:        uuid.New().String(),
+		Timestamp: time.Now().Unix(),
+		PeerID:    peerID.String(),
+		Procedure: procedure,
+		Data:      data,
 	}
 }
 
-// PeerID returns sender peer id.
-func (e *Event) PeerID() string {
-	return e.peerID
+// newResponseMessage creates a new response message.
+func newResponseMessage(reqMsgID string, data []byte, err error) *ResponseMsg {
+	errString := ""
+	if err != nil {
+		errString = err.Error()
+	}
+
+	return &ResponseMsg{
+		ID:        reqMsgID,
+		Timestamp: time.Now().Unix(),
+		Data:      data,
+		Error:     errString,
+	}
 }
 
-// Event returns event type.
-func (e *Event) Event() string {
-	return e.event
-}
-
-// Data returns event payload.
-func (e *Event) Data() []byte {
-	return e.data
-}
-
-// Request holds request from a peer.
-type Request socket.Request
-
-type Response socket.Response
-
-// RPCHandler is a definition for accepting the RPC request from a peer.
-type RPCHandler func(w ResponseWriter, r *Request)
-
-type EventHandler func(event *Event)
-
-// ResponseWriter is a interface for handler to write.
-type ResponseWriter socket.ResponseWriter
-
-type rpcGetPeersResponse struct {
-	Peers [][]byte `fieldNumber:"1"`
+// NewMessage creates a new message.
+func NewMessage(data []byte) *Message {
+	return &Message{
+		Timestamp: time.Now().Unix(),
+		Data:      data,
+	}
 }

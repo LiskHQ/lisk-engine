@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus/forkchoice"
@@ -14,7 +15,7 @@ import (
 // Syncer sync the block with network.
 type blockSyncer struct {
 	chain     *blockchain.Chain
-	conn      *p2p.Connection
+	conn      *p2p.P2P
 	logger    log.Logger
 	processor processFn
 	reverter  revertFn
@@ -22,8 +23,29 @@ type blockSyncer struct {
 
 // Sync with network.
 func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
-	peers := s.conn.ConnectedPeers(true)
-	nodeInfo, err := getBestNodeInfo(peers)
+	peers := s.conn.ConnectedPeers()
+
+	nodeInfos := make([]*NodeInfo, len(peers))
+	wg := sync.WaitGroup{}
+
+	// Get last block header from all peers and create node info for each peer.
+	for _, p := range peers {
+		wg.Add(1)
+		go func(peer p2p.PeerID) {
+			defer wg.Done()
+			blockHeader, err := requestLastBlockHeader(ctx.Ctx, s.conn, peer.String())
+			if err != nil {
+				s.logger.Errorf("Fail to get last block header from %s with %v", peer.String(), err)
+				return
+			}
+			nodeInfo := NewNodeInfo(blockHeader.Height, blockHeader.MaxHeightPrevoted, blockHeader.Version, blockHeader.ID)
+			nodeInfo.PeerID = peer.String()
+			nodeInfos = append(nodeInfos, nodeInfo)
+		}(p)
+	}
+	wg.Wait()
+
+	nodeInfo, err := getBestNodeInfo(nodeInfos)
 	if err != nil {
 		return false, err
 	}
@@ -63,7 +85,7 @@ func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
 	}
 
 	if err := s.chain.DataAccess().ClearTempBlocks(); err != nil {
-		s.logger.Error("Fail to clear temp blocks with %v", err)
+		s.logger.Errorf("Fail to clear temp blocks with %v", err)
 	}
 	return true, nil
 }
@@ -76,10 +98,11 @@ func (s *blockSyncer) downloadAndProcess(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			return err
 		}
-		if err := s.processor(ctx.Ctx, downloaded.block, false); err != nil {
+		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
+		if err := s.processor(ctx.Ctx, downloaded.block, publish, false); err != nil {
 			downloader.Stop()
 			return err
 		}
@@ -94,15 +117,15 @@ func (s *blockSyncer) getAndValidateNetworkLastBlock(ctx *SyncContext, nodeInfo 
 		return nil, err
 	}
 	if err := networkLastBlockHeader.Validate(); err != nil {
-		s.conn.ApplyPenalty(nodeInfo.PeerID, 100)
-		s.logger.Infof("Applied penalty to %s because it provided invalid last block", nodeInfo.PeerID)
+		s.logger.Infof("Applying penalty to %s because it provided invalid last block", nodeInfo.PeerID)
+		s.conn.ApplyPenalty(nodeInfo.PeerID, p2p.MaxScore)
 		return nil, fmt.Errorf("invalid block received from %s", nodeInfo.PeerID)
 	}
 	lastBlockHeader := s.chain.LastBlock().Header
 	if lastBlockHeader.Version == 2 {
 		if !forkchoice.IsDifferentChain(lastBlockHeader.MaxHeightPrevoted, networkLastBlockHeader.MaxHeightPrevoted, lastBlockHeader.Height, networkLastBlockHeader.Height) {
-			s.conn.ApplyPenalty(nodeInfo.PeerID, 100)
-			s.logger.Infof("Applied penalty to %s because it provided last block which does not have priority", nodeInfo.PeerID)
+			s.logger.Infof("Applying penalty to %s because it provided last block which does not have priority", nodeInfo.PeerID)
+			s.conn.ApplyPenalty(nodeInfo.PeerID, p2p.MaxScore)
 			return nil, fmt.Errorf("last block received from %s does not have priority", nodeInfo.PeerID)
 		}
 	}

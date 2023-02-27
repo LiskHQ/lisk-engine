@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"container/heap"
 	"context"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -30,12 +28,16 @@ const (
 	RPCEndpointGetTransactions          = "getTransactions"
 )
 
+const maxTransactionResponse = 100
+
 type p2pConnection interface {
-	Broadcast(ctx context.Context, event string, data []byte)
+	Broadcast(ctx context.Context, event string, data []byte) error
 	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error
 	RegisterEventHandler(name string, handler p2p.EventHandler) error
-	ApplyPenalty(peerID string, score int)
+	ApplyPenalty(pid string, score int)
 	RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response
+	Publish(ctx context.Context, topicName string, data []byte) error
+	RegisterTopicValidator(topic string, v p2p.Validator) error
 }
 type ABI interface {
 	VerifyTransaction(req *labi.VerifyTransactionRequest) (*labi.VerifyTransactionResponse, error)
@@ -48,17 +50,16 @@ type TransactionPool struct {
 	feePriorityQueue FeeMinHeap
 
 	// init
-	ctx         context.Context
-	config      *TransactionPoolConfig
-	logger      log.Logger
-	database    DatabaseReader
-	chain       *blockchain.Chain
-	conn        p2pConnection
-	abi         ABI
-	ticker      *time.Ticker
-	broadcaster *Broadcaster
-	events      *event.EventEmitter
-	closeCh     chan bool
+	ctx      context.Context
+	config   *TransactionPoolConfig
+	logger   log.Logger
+	database DatabaseReader
+	chain    *blockchain.Chain
+	conn     p2pConnection
+	abi      ABI
+	ticker   *time.Ticker
+	events   *event.EventEmitter
+	closeCh  chan bool
 }
 
 type TransactionPoolConfig struct {
@@ -96,7 +97,6 @@ func NewTransactionPool(cfg *TransactionPoolConfig) *TransactionPool {
 		allTransactions:  map[string]*TransactionWithFeePriority{},
 		perAccount:       map[string]*addressTransactions{},
 		mutex:            new(sync.RWMutex),
-		broadcaster:      NewBroadcaster(),
 		feePriorityQueue: queue,
 		config:           config,
 		events:           event.New(),
@@ -130,23 +130,26 @@ func (t *TransactionPool) Init(
 	return nil
 }
 
-func (t *TransactionPool) Start() {
-	go t.broadcaster.Start(t.ctx, t.logger, t.conn)
+func (t *TransactionPool) Start() error {
+	// register topic validator for p2p
+	if err := t.conn.RegisterTopicValidator(RPCEventPostTransactionAnnouncement, t.transactionValidator); err != nil {
+		return err
+	}
+
 	for {
 		select {
 		case <-t.ticker.C:
 			t.reorg()
 		case <-t.closeCh:
-			return
+			return nil
 		case <-t.ctx.Done():
-			return
+			return nil
 		}
 	}
 }
 
 func (t *TransactionPool) End() {
 	t.events.Close()
-	t.broadcaster.Stop()
 	close(t.closeCh)
 }
 
@@ -214,8 +217,8 @@ func (t *TransactionPool) Add(tx *blockchain.Transaction) bool {
 		return false
 	}
 
-	if result, _ := t.verifyTransactions([]*blockchain.Transaction{tx}); result != labi.TxVeirfyResultOk {
-		if result == labi.TxVeirfyResultInvalid {
+	if result, _ := t.verifyTransactions([]*blockchain.Transaction{tx}); result != labi.TxVerifyResultOk {
+		if result == labi.TxVerifyResultInvalid {
 			t.logger.Warningf("Received invalid transaction %s from %s", tx.ID.String(), tx.SenderAddress().String())
 			return false
 		}
@@ -250,7 +253,18 @@ func (t *TransactionPool) Add(tx *blockchain.Transaction) bool {
 
 	t.allTransactions[string(tx.ID)] = incomingTx
 	heap.Push(&t.feePriorityQueue, incomingTx)
-	t.broadcaster.Enqueue(tx.ID)
+
+	data, err := tx.Bytes()
+	if err != nil {
+		t.logger.Errorf("Failed to serialize transaction: %s", err)
+		return false
+	}
+	err = t.conn.Publish(t.ctx, RPCEventPostTransactionAnnouncement, data)
+	if err != nil {
+		t.logger.Errorf("Failed to publish transaction announcement: %s", err)
+		return false
+	}
+
 	return true
 }
 
@@ -344,12 +358,12 @@ func (t *TransactionPool) reorg() {
 			}
 			result, failedID := t.verifyTransactions(combinedTxs)
 			// success case
-			if result == labi.TxVeirfyResultOk {
+			if result == labi.TxVerifyResultOk {
 				list.Promote(promotables)
 				return
 			}
 			// if the transaction is just pending keep
-			if result == labi.TxVeirfyResultPending {
+			if result == labi.TxVerifyResultPending {
 				return
 			}
 			t.logger.Warningf("Transaction %s was invalid", failedID)
@@ -377,104 +391,59 @@ func (t *TransactionPool) reorg() {
 
 func (t *TransactionPool) onTransactionAnnoucement(data []byte, peerID string) {
 	if len(data) == 0 {
-		t.logger.Warningf("Banning peer %s for sending invalid post transaction announcement", peerID)
-		t.conn.ApplyPenalty(peerID, 100)
-		return
-	}
-	event := &PostTransactionAnnouncementEvent{}
-	if err := event.Decode(data); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid post transaction announcement", peerID)
-		t.conn.ApplyPenalty(peerID, 100)
-		return
-	}
-	unknownIDs, err := t.getUnknownTransactionIDs(event.TransactionIDs)
-	if err != nil {
-		t.logger.Errorf("Fail to get unknown transactionIDs")
-		return
-	}
-	if len(unknownIDs) == 0 {
+		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement", peerID)
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
 		return
 	}
 
-	t.events.Publish(EventTransactionAnnouncement, &EventNewTransactionAnnouncementMessage{
-		TransactionIDs: unknownIDs,
+	tx, err := blockchain.NewTransaction(data)
+	if err != nil {
+		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement: %w", peerID, err)
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
+		return
+	}
+	if err := tx.Init(); err != nil {
+		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement: %w", peerID, err)
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
+		return
+	}
+
+	resp, err := t.abi.VerifyTransaction(&labi.VerifyTransactionRequest{
+		ContextID:   []byte{},
+		Transaction: tx,
 	})
-
-	req := &GetTransactionsRequest{
-		TransactionIDs: unknownIDs,
-	}
-	encodedReq, err := req.Encode()
 	if err != nil {
-		t.logger.Errorf("Fail to encode get transaction request")
-		return
-	}
-	resp := t.conn.RequestFrom(t.ctx, peerID, RPCEndpointGetTransactions, encodedReq)
-	if err := resp.Err(); err != nil {
-		t.logger.Errorf("Received error from getTransactions endpoint %v", err)
-		return
-	}
-	respData := &GetTransactionsResponse{}
-	if err := respData.Decode(resp.Data()); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid getTransactions response", peerID)
-		t.conn.ApplyPenalty(peerID, 100)
 		return
 	}
 
-	for _, tx := range respData.Transactions {
-		if err := tx.Init(); err != nil {
-			t.logger.Warningf("Banning peer %s for sending invalid getTransactions response with %w", peerID, err)
-			t.conn.ApplyPenalty(peerID, 100)
-			return
-		}
-
-		resp, err := t.abi.VerifyTransaction(&labi.VerifyTransactionRequest{
-			ContextID:   []byte{},
+	if resp.Result == labi.TxVerifyResultInvalid {
+		t.logger.Warningf("Banning peer %s for sending invalid transaction announcement", peerID)
+		t.conn.ApplyPenalty(peerID, p2p.MaxScore)
+		return
+	}
+	if t.Add(tx) {
+		t.events.Publish(EventTransactionNew, &EventNewTransactionMessage{
 			Transaction: tx,
 		})
-		if err != nil {
-			return
-		}
-
-		if resp.Result == labi.TxVeirfyResultInvalid {
-			t.logger.Warningf("Banning peer %s for sending invalid getTransactions response", peerID)
-			t.conn.ApplyPenalty(peerID, 100)
-			return
-		}
-		if t.Add(tx) {
-			t.events.Publish(EventTransactionNew, &EventNewTransactionMessage{
-				Transaction: tx,
-			})
-			t.logger.Info("Added transaction %s received from %s", tx.ID.String(), peerID)
-		}
+		t.logger.Infof("Added transaction %s received from %s", tx.ID.String(), peerID)
 	}
 }
 
-type GetTransactionsRequest struct {
-	TransactionIDs []codec.Hex `json:"transactionIDs" fieldNumber:"1"`
-}
-
-func (e *GetTransactionsRequest) Validate() error {
-	if len(e.TransactionIDs) > broadcastReleaseLimit {
-		return fmt.Errorf("broadcast release cannot be greater than %d, but received %d", broadcastReleaseLimit, len(e.TransactionIDs))
-	}
-	for _, id := range e.TransactionIDs {
-		if len(id) != 32 {
-			return fmt.Errorf("transaction ID must be 32 bytes long")
-		}
-	}
-	return nil
+// TODO - implement this function (GH issue #70)
+func (t *TransactionPool) transactionValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	return p2p.ValidationAccept
 }
 
 type GetTransactionsResponse struct {
 	Transactions []*blockchain.Transaction `json:"transactions" fieldNumber:"1"`
 }
 
-func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, r *p2p.Request) {
+func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 	// Case without request body
 	if len(r.Data) == 0 {
 		processables := t.GetProcessable()
-		if len(processables) > broadcastReleaseLimit {
-			processables = processables[:broadcastReleaseLimit]
+		if len(processables) > maxTransactionResponse {
+			processables = processables[:maxTransactionResponse]
 		}
 		resp := &GetTransactionsResponse{
 			Transactions: processables,
@@ -487,74 +456,11 @@ func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, 
 		w.Write(encoded)
 		return
 	}
-	req := &GetTransactionsRequest{}
-	if err := req.Decode(r.Data); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid get transaction request", r.PeerID)
-		w.Error(err)
-		t.conn.ApplyPenalty(r.PeerID, 100)
-		return
-	}
-	if err := req.Validate(); err != nil {
-		t.logger.Warningf("Banning peer %s for sending invalid get transaction request", r.PeerID)
-		w.Error(err)
-		t.conn.ApplyPenalty(r.PeerID, 100)
-		return
-	}
-	responseList := []*blockchain.Transaction{}
-	idNotInPool := [][]byte{}
-	for _, id := range req.TransactionIDs {
-		tx, exist := t.Get(id)
-		if !exist {
-			idNotInPool = append(idNotInPool, id)
-			continue
-		}
-		responseList = append(responseList, tx)
-	}
-	if len(idNotInPool) > 0 {
-		transactions, err := t.chain.DataAccess().GetTransactions(idNotInPool)
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		responseList = append(responseList, transactions...)
-	}
-	resp := &GetTransactionsResponse{
-		Transactions: responseList,
-	}
-	encoded, err := resp.Encode()
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	w.Write(encoded)
-}
-
-func (t *TransactionPool) getUnknownTransactionIDs(ids []codec.Hex) ([]codec.Hex, error) {
-	notInPool := []codec.Hex{}
-	for _, id := range ids {
-		_, exist := t.Get(id)
-		if !exist {
-			notInPool = append(notInPool, id)
-		}
-	}
-	// TODO: make it parallel
-	unknown := []codec.Hex{}
-	for _, id := range notInPool {
-		_, err := t.chain.DataAccess().GetTransaction(id)
-		if err != nil {
-			if errors.Is(err, db.ErrDataNotFound) {
-				unknown = append(unknown, id)
-				continue
-			}
-			return nil, err
-		}
-	}
-	return unknown, nil
 }
 
 func (t *TransactionPool) verifyTransactions(txs []*blockchain.Transaction) (int32, codec.Hex) {
 	if len(txs) == 0 {
-		return labi.TxVeirfyResultOk, nil
+		return labi.TxVerifyResultOk, nil
 	}
 
 	for _, tx := range txs {
@@ -563,11 +469,11 @@ func (t *TransactionPool) verifyTransactions(txs []*blockchain.Transaction) (int
 			Transaction: tx,
 		})
 		if err != nil {
-			return labi.TxVeirfyResultInvalid, tx.ID
+			return labi.TxVerifyResultInvalid, tx.ID
 		}
-		if res.Result == labi.TxVeirfyResultInvalid {
+		if res.Result == labi.TxVerifyResultInvalid {
 			return res.Result, tx.ID
 		}
 	}
-	return labi.TxVeirfyResultOk, nil
+	return labi.TxVerifyResultOk, nil
 }

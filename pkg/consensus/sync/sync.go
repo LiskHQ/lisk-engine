@@ -19,14 +19,14 @@ import (
 
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
 
-type processFn = func(ctx context.Context, block *blockchain.Block, removeTemp bool) error
+type processFn = func(ctx context.Context, block *blockchain.Block, publish bool, removeTemp bool) error
 type revertFn = func(ctx context.Context, deletingBlock *blockchain.Block, saveTemp bool) error
 
 // Syncer sync the block with network.
 type Syncer struct {
 	chain       *blockchain.Chain
 	blockslot   *validator.BlockSlot
-	conn        *p2p.Connection
+	conn        *p2p.P2P
 	logger      log.Logger
 	blockSyncer *blockSyncer
 	fastSyncer  *fastSyncer
@@ -35,7 +35,7 @@ type Syncer struct {
 func NewSyncer(
 	chain *blockchain.Chain,
 	blockslot *validator.BlockSlot,
-	conn *p2p.Connection,
+	conn *p2p.P2P,
 	logger log.Logger,
 	processor processFn,
 	reverter revertFn,
@@ -127,7 +127,7 @@ func (s *Syncer) shouldSync(ctx *SyncContext) bool {
 }
 
 func (s *Syncer) HandleRPCEndpointGetLastBlock() p2p.RPCHandler {
-	return func(w p2p.ResponseWriter, r *p2p.Request) {
+	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		lastBlock := s.chain.LastBlock()
 		encoded, err := lastBlock.Encode()
 		if err != nil {
@@ -147,26 +147,26 @@ type GetHighestCommonBlockResponse struct {
 }
 
 func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
-	return func(w p2p.ResponseWriter, r *p2p.Request) {
+	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		if r.Data == nil {
-			s.conn.ApplyPenalty(r.PeerID, 100)
+			s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		req := &GetHighestCommonBlockRequest{}
 		if err := req.Decode(r.Data); err != nil {
-			s.conn.ApplyPenalty(r.PeerID, 100)
+			s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		if len(req.IDs) == 0 {
-			s.conn.ApplyPenalty(r.PeerID, 100)
+			s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		for _, id := range req.IDs {
 			if len(id) != 32 {
-				s.conn.ApplyPenalty(r.PeerID, 100)
+				s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 				s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 				return
 			}
@@ -219,20 +219,20 @@ type GetBlocksFromIDResponse struct {
 }
 
 func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
-	return func(w p2p.ResponseWriter, r *p2p.Request) {
+	return func(w p2p.ResponseWriter, r *p2p.RequestMsg) {
 		if r.Data == nil {
-			s.conn.ApplyPenalty(r.PeerID, 100)
+			s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		req := &GetBlocksFromIDRequest{}
 		if err := req.Decode(r.Data); err != nil {
-			s.conn.ApplyPenalty(r.PeerID, 100)
+			s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		if len(req.ID) != 32 {
-			s.conn.ApplyPenalty(r.PeerID, 100)
+			s.conn.ApplyPenalty(r.PeerID, p2p.MaxScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}

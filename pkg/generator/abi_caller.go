@@ -75,7 +75,7 @@ func (c *stateExecuter) VerifyTransaction(tx *blockchain.Transaction) error {
 	if err != nil {
 		return err
 	}
-	if res.Result != labi.TxVeirfyResultOk {
+	if res.Result != labi.TxVerifyResultOk {
 		return fmt.Errorf("failed to verify transaction %s", tx.ID)
 	}
 	return nil

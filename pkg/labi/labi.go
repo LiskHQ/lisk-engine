@@ -29,9 +29,9 @@ type ABI interface {
 }
 
 const (
-	TxVeirfyResultInvalid  int32 = -1
-	TxVeirfyResultPending  int32 = 0
-	TxVeirfyResultOk       int32 = 1
+	TxVerifyResultInvalid  int32 = -1
+	TxVerifyResultPending  int32 = 0
+	TxVerifyResultOk       int32 = 1
 	TxExecuteResultInvalid int32 = -1
 	TxExecuteResultFail    int32 = 0
 	TxExecuteResultSuccess int32 = 1

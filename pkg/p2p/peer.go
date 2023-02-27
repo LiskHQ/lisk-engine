@@ -2,331 +2,379 @@ package p2p
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"math/rand"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
+	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
+	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
+	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
+	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	ma "github.com/multiformats/go-multiaddr"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/addressbook"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/socket"
+	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
+
+type PeerID = peer.ID
+type PeerIDs = peer.IDSlice
 
 const (
-	eventPeerMessage = "eventPeerMessage"
-	eventPeerBanned  = "eventPeerBanned"
-	eventPeerClosed  = "eventPeerClosed"
-
-	rpcGetPeers       = "getPeers"
-	rpcGetNodeInfo    = "getNodeInfo"
-	eventPostNodeInfo = "postNodeInfo"
-
-	minPingInterval = 20
-	maxPingInterval = 60
+	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
+	pingTimeout              = time.Second * 5  // Ping service timeout in seconds.
+	connectionTimeout        = time.Second * 30 // Connection timeout in seconds.
+	expireTimeOfConnGater    = time.Hour * 24   // Peers will be disconnected after this time
+	intervalCheckOfConnGater = time.Second * 10 // Check the blocked list based on this period
 )
 
-// Peer represents a connected Peer.
+// Connection security option type.
+const (
+	ConnectionSecurityNone  = "none"  // Do not support any security.
+	ConnectionSecurityTLS   = "tls"   // Support TLS connections.
+	ConnectionSecurityNoise = "noise" // Support Noise connections.
+)
+
+// Peer type - a p2p node.
 type Peer struct {
-	ctx            context.Context
-	logger         log.Logger
-	ip             string
-	port           uint32
-	penalty        int
-	eventCh        chan *peerEvent
-	closeCh        chan bool
-	socket         *socket.Socket
-	nodeInfo       *NodeInfo
-	netgroup       addressbook.Network
-	latency        int64
-	connectionTime int64
-	latecyTicker   *bufferedTicker
-	requestCount   int64
-	responseCount  int64
+	logger    log.Logger
+	host      host.Host
+	peerbook  *Peerbook
+	connGater *connectionGater
 }
 
-// Peers holds multiple peers.
-type Peers []*Peer
+var autoRelayOptions = []autorelay.Option{
+	autorelay.WithNumRelays(2),
+	autorelay.WithMaxCandidates(20),
+	autorelay.WithMinCandidates(1),
+	autorelay.WithBootDelay(3 * time.Minute),
+	autorelay.WithBackoff(1 * time.Hour),
+	autorelay.WithMaxCandidateAge(30 * time.Minute),
+}
 
-// Include checks if address list includes the ip and port.
-func (p Peers) Include(id string) bool {
-	for _, peer := range p {
-		if peer.ID() == id {
-			return true
+var relayServiceOptions = []relay.Option{
+	relay.WithResources(
+		relay.Resources{
+			Limit:                  &relay.RelayLimit{Duration: 2 * time.Minute, Data: 1 << 17 /*128K*/},
+			ReservationTTL:         time.Hour,
+			MaxReservations:        128,
+			MaxCircuits:            16,
+			BufferSize:             2048,
+			MaxReservationsPerPeer: 4,
+			MaxReservationsPerIP:   8,
+			MaxReservationsPerASN:  32},
+	),
+	relay.WithLimit(&relay.RelayLimit{Duration: 2 * time.Minute, Data: 1 << 17 /*128K*/}),
+}
+
+// NewPeer creates a peer with a libp2p host and message protocol.
+func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, cfgNet config.NetworkConfig) (*Peer, error) {
+	// Create a Peer variable in advance to be able to use it in the libp2p options.
+	var p *Peer
+
+	opts := []libp2p.Option{
+		// Support default transports (TCP, QUIC, WS)
+		libp2p.DefaultTransports,
+	}
+
+	switch cfgNet.AllowIncomingConnections {
+	case true:
+		if len(cfgNet.Addresses) == 0 {
+			opts = append(opts, libp2p.NoListenAddrs)
+		} else {
+			opts = append(opts, libp2p.ListenAddrStrings(cfgNet.Addresses...))
 		}
-	}
-	return false
-}
-
-// Filter address by input address, and return new list.
-func (p Peers) Filter(excludes []*Peer) Peers {
-	filtered := Peers{}
-	for _, peer := range p {
-		if !Peers(excludes).Include(peer.ID()) {
-			filtered = append(filtered, peer)
-		}
-	}
-	return filtered
-}
-
-// Unique returns unique address.
-func (p Peers) Unique() Peers {
-	uniqueMap := map[string]*Peer{}
-	for _, peer := range p {
-		if _, exist := uniqueMap[peer.ID()]; !exist {
-			uniqueMap[peer.ID()] = peer
-		}
+	case false:
+		opts = append(opts, libp2p.NoListenAddrs)
 	}
 
-	filtered := make(Peers, len(uniqueMap))
-	index := 0
-	for _, addr := range uniqueMap {
-		filtered[index] = addr
-	}
-	return filtered
-}
-
-type peerEvent struct {
-	peerID string
-	kind   string
-	event  string
-	data   []byte
-}
-
-// ID is identifier for peer.
-func (p *Peer) ID() string {
-	return fmt.Sprintf("%s:%d", p.ip, p.port)
-}
-
-// IP is getter for ip of the peer.
-func (p *Peer) IP() string {
-	return p.ip
-}
-
-// Port is getter for port of the peer.
-func (p *Peer) Port() int {
-	return int(p.port)
-}
-
-// Options is getter for options of the peer.
-func (p *Peer) Options() []byte {
-	if p.nodeInfo != nil {
-		return p.nodeInfo.Options
-	}
-	return nil
-}
-
-func (p *Peer) responseRate() float64 {
-	return float64(p.responseCount) / float64(p.requestCount)
-}
-
-func (p *Peer) send(ctx context.Context, event string, data []byte) {
-	if err := p.socket.Send(ctx, event, data); err != nil {
-		p.logger.Debug("Fail to send data with %w", err)
-	}
-}
-
-func (p *Peer) request(ctx context.Context, method string, data []byte) Response {
-	p.requestCount++
-	resp := p.socket.Request(ctx, method, data)
-	if resp.Err() == nil {
-		p.responseCount++
-	}
-	return resp
-}
-
-func (p *Peer) getPeers(ctx context.Context) ([]*addressbook.Address, error) {
-	p.logger.Debug("Requesting peers list")
-	resp := p.socket.Request(ctx, rpcGetPeers, nil)
-	if resp.Err() != nil {
-		return nil, resp.Err()
-	}
-	body := &rpcGetPeersResponse{}
-	if err := body.Decode(resp.Data()); err != nil {
+	connGater, err := newConnGater(logger, expireTimeOfConnGater, intervalCheckOfConnGater)
+	if err != nil {
 		return nil, err
 	}
-	addresses := make([]*addressbook.Address, len(body.Peers))
-	for i, peerBytes := range body.Peers {
-		addr, err := addressbook.NewAddressFromBytes(peerBytes)
-		if err != nil {
-			return nil, err
-		}
-		addr.SetSource(p.ip)
-		addresses[i] = addr
+
+	// Load Blacklist
+	connGaterOpt, err := connGater.optionWithBlacklist(cfgNet.BlacklistedIPs)
+	if err != nil {
+		return nil, err
 	}
-	return addresses, nil
+	opts = append(opts, connGaterOpt)
+
+	// Configure TTLs for libp2p's peerstore.
+	peerstore.AddressTTL = time.Hour                      // AddressTTL is the expiration time of addresses.
+	peerstore.TempAddrTTL = time.Minute * 2               // TempAddrTTL is the ttl used for a short lived address.
+	peerstore.RecentlyConnectedAddrTTL = time.Minute * 30 // RecentlyConnectedAddrTTL is used when we recently connected to a peer.
+	peerstore.OwnObservedAddrTTL = time.Minute * 30       // OwnObservedAddrTTL is used for our own external addresses observed by peers.
+
+	// Configure connection security.
+	security := strings.ToLower(cfgNet.ConnectionSecurity)
+	switch security {
+	case ConnectionSecurityNone:
+		opts = append(opts, libp2p.NoSecurity)
+	case ConnectionSecurityTLS:
+		opts = append(opts, libp2p.Security(libp2ptls.ID, libp2ptls.New))
+	case ConnectionSecurityNoise:
+		opts = append(opts, libp2p.Security(noise.ID, noise.New))
+	default:
+		opts = append(opts, libp2p.NoSecurity)
+	}
+
+	// Configure peer to provide a service for other peers for determining their reachability status.
+	if cfgNet.EnableNATService {
+		opts = append(opts, libp2p.EnableNATService())
+		opts = append(opts, libp2p.AutoNATServiceRateLimit(60, 10, time.Minute))
+	}
+	opts = append(opts, libp2p.NATPortMap())
+
+	// Enable using relay service from other peers. In case a peer is not reachable from the network,
+	// it will try to connect to a relay service from other peers.
+	if cfgNet.EnableUsingRelayService {
+		opts = append(opts, libp2p.EnableRelay())
+
+		autoRelayOptions = append(autoRelayOptions, autorelay.WithPeerSource(func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
+			return p.peerSource(ctx, numPeers)
+		}, 1*time.Minute))
+		opts = append(opts, libp2p.EnableAutoRelay(autoRelayOptions...))
+	} else {
+		// Relay is enabled by default, so we need to disable it explicitly.
+		opts = append(opts, libp2p.DisableRelay())
+	}
+
+	// Enable circuit relay service.
+	if cfgNet.EnableRelayService {
+		opts = append(opts, libp2p.EnableRelayService(relayServiceOptions...))
+	}
+
+	// Enable hole punching service.
+	if cfgNet.EnableHolePunching {
+		opts = append(opts, libp2p.EnableHolePunching())
+	}
+
+	host, err := libp2p.New(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	peerbook, err := NewPeerbook(cfgNet.SeedPeers, cfgNet.FixedPeers, cfgNet.BlacklistedIPs)
+	if err != nil {
+		return nil, err
+	}
+
+	p = &Peer{logger: logger, host: host, peerbook: peerbook, connGater: connGater}
+	p.logger.Infof("Peer successfully created")
+	p.connGater.start(ctx, wg)
+	return p, nil
 }
 
-func (p *Peer) updateNodeInfo(ctx context.Context) error {
-	p.logger.Debug("Requesting node info")
-	resp := p.socket.Request(ctx, rpcGetNodeInfo, nil)
-	if resp.Err() != nil {
-		return resp.Err()
-	}
-	nodeInfo := &NodeInfo{}
-	if err := nodeInfo.Decode(resp.Data()); err != nil {
+// Close a peer.
+func (p *Peer) Close() error {
+	err := p.host.Close()
+	if err != nil {
 		return err
 	}
-	p.nodeInfo = nodeInfo
+	p.logger.Infof("Peer successfully stopped")
 	return nil
 }
 
-func (p *Peer) close() {
-	p.logger.Debugf("Closing peer connection")
-	p.socket.Close()
-	close((p.closeCh))
-	p.logger.Debugf("Closed peer connection")
+// Connect to a peer.
+func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, connectionTimeout)
+	err := p.host.Connect(ctxWithTimeout, peer)
+	cancel()
+	if err != nil {
+		return err
+	}
+	p.host.Peerstore().AddAddrs(peer.ID, peer.Addrs, peerstore.PermanentAddrTTL)
+	return nil
 }
 
-func (p *Peer) bind() {
-	// measure latency in different process
-	go p.measureLatency()
-	subscription := p.socket.Subscribe()
-	for {
+// Disconnect from a peer.
+func (p *Peer) Disconnect(peer peer.ID) error {
+	return p.host.Network().ClosePeer(peer)
+}
+
+// ID returns a peers's identifier.
+func (p *Peer) ID() peer.ID {
+	return p.host.ID()
+}
+
+// P2PAddrs returns a peers's listen addresses in multiaddress format.
+func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
+	peerInfo := peer.AddrInfo{
+		ID:    p.ID(),
+		Addrs: p.host.Addrs(),
+	}
+	return peer.AddrInfoToP2pAddrs(&peerInfo)
+}
+
+// ConnectedPeers returns a list of all connected peers IDs.
+func (p *Peer) ConnectedPeers() PeerIDs {
+	return p.host.Network().Peers()
+}
+
+// BlacklistedPeers returns a list of blacklisted peers and their addresses.
+func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
+	blacklistedPeers := make([]peer.AddrInfo, 0)
+
+	for _, knownPeer := range p.KnownPeers() {
+		// Check if the peer ID is blacklisted in connectionGater.
+		peerFound := false
+		for _, id := range p.connGater.listBlockedPeers() {
+			if knownPeer.ID == id {
+				blacklistedPeers = append(blacklistedPeers, knownPeer)
+				peerFound = true
+				break
+			}
+		}
+		if peerFound {
+			continue
+		}
+
+		// Check if the peer IP address is blacklisted in connectionGater.
+		for _, ip := range p.connGater.listBlockedAddrs() {
+			peerFound := false
+			for _, addr := range knownPeer.Addrs {
+				ipKnownPeer := lps.ExtractIP(addr)
+				if ipKnownPeer == ip.String() {
+					blacklistedPeers = append(blacklistedPeers, knownPeer)
+					peerFound = true
+					break
+				}
+			}
+			if peerFound {
+				break
+			}
+		}
+	}
+
+	return blacklistedPeers
+}
+
+// KnownPeers returns a list of all known peers with their addresses.
+func (p *Peer) KnownPeers() []peer.AddrInfo {
+	peers := make([]peer.AddrInfo, 0)
+
+	for _, peerID := range p.host.Peerstore().Peers() {
+		peers = append(peers, p.host.Peerstore().PeerInfo(peerID))
+	}
+
+	return peers
+}
+
+// GetHost returns a libp2p host.
+func (p *Peer) GetHost() host.Host {
+	return p.host
+}
+
+// PingMultiTimes tries to send ping request to a peer for five times.
+func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Duration, err error) {
+	pingService := ping.NewPingService(p.host)
+	ch := pingService.Ping(ctx, peer)
+
+	p.logger.Debugf("Sending %d ping messages to %v", numOfPingMessages, peer)
+	for i := 0; i < numOfPingMessages; i++ {
 		select {
-		case msg, ok := <-subscription:
-			if !ok {
-				close(p.eventCh)
+		case pingRes := <-ch:
+			if pingRes.Error != nil {
+				return rtt, pingRes.Error
+			}
+			p.logger.Debugf("Pinged %v in %v", peer, pingRes.RTT)
+			rtt = append(rtt, pingRes.RTT)
+		case <-ctx.Done():
+			return rtt, errors.New("ping canceled")
+		case <-time.After(pingTimeout):
+			return rtt, errors.New("ping timeout")
+		}
+	}
+	return rtt, nil
+}
+
+// Ping tries to send a ping request to a peer.
+func (p *Peer) Ping(ctx context.Context, peer peer.ID) (rtt time.Duration, err error) {
+	pingService := ping.NewPingService(p.host)
+	ch := pingService.Ping(ctx, peer)
+
+	p.logger.Debugf("Sending ping messages to %v", peer)
+	select {
+	case pingRes := <-ch:
+		if pingRes.Error != nil {
+			return rtt, pingRes.Error
+		}
+		p.logger.Debugf("Pinged %v in %v", peer, pingRes.RTT)
+		return pingRes.RTT, nil
+	case <-ctx.Done():
+		return rtt, errors.New("ping canceled")
+	case <-time.After(time.Second * pingTimeout):
+		return rtt, errors.New("ping timeout")
+	}
+}
+
+// peerSource returns a channel and sends connected peers (possible relayers) to that channel.
+func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
+	peerChan := make(chan peer.AddrInfo, 1)
+
+	go func() {
+		defer close(peerChan)
+
+		knownPeers := p.KnownPeers()
+
+		// Shuffle known peers to avoid always returning the same peers.
+		for i := range knownPeers {
+			j := rand.Intn(i + 1)
+			knownPeers[i], knownPeers[j] = knownPeers[j], knownPeers[i]
+		}
+
+		// If there are less known peers than requested, decrease the number of requested peers.
+		numKnownPeers := len(knownPeers)
+		if numKnownPeers < numPeers {
+			numPeers = numKnownPeers
+		}
+		if numPeers == 0 {
+			return
+		}
+
+		for {
+			select {
+			case peerChan <- knownPeers[numPeers-1]:
+				numPeers--
+				if numPeers == 0 {
+					return
+				}
+			case <-ctx.Done():
 				return
 			}
-			p.handleSocketMessage(msg)
-		case <-p.closeCh:
-			close(p.eventCh)
-			return
 		}
-	}
+	}()
+
+	return peerChan
 }
 
-func (p *Peer) measureLatency() {
-	var cancel context.CancelFunc
-	for {
-		select {
-		case <-p.closeCh:
-			if cancel != nil {
-				cancel()
-			}
-			p.latecyTicker.stop()
-			return
-		case <-p.latecyTicker.C:
-			var ctx context.Context
-			ctx, cancel = context.WithCancel(p.ctx)
-			defer cancel()
-			latency, err := p.socket.Ping(ctx)
-			if err != nil {
-				p.logger.Errorf("Fail to get latency with %v", err)
-				continue
-			}
-			p.latency = latency
-		}
-	}
-}
-
-func (p *Peer) subscribe() <-chan *peerEvent {
-	return p.eventCh
-}
-
-func (p *Peer) handleSocketMessage(msg *socket.Message) {
-	switch msg.Kind() {
-	case socket.EventMessageReceived:
-		if msg.Event() == eventPostNodeInfo {
-			p.handlePostNodeInfo(msg)
-			return
-		}
-		p.eventCh <- &peerEvent{
-			peerID: p.ID(),
-			kind:   eventPeerMessage,
-			event:  msg.Event(),
-			data:   msg.Data(),
-		}
-	case socket.EventSocketClosed:
-		p.logger.Debug("Close socket event received")
-		p.eventCh <- &peerEvent{
-			peerID: p.ID(),
-			kind:   eventPeerClosed,
-		}
-	case socket.EventSocketError:
-		p.logger.Errorf("Socket error received with %v", msg.Err())
-	case socket.EventMessageLimitExceeded:
-		p.logger.Info("Applying penalty for exceeding message rate limit")
-		p.applyPenalty(10)
-	case socket.EventGeneralMessageReceived:
-		p.logger.Info("Applying penalty for accessing not supported message type")
-		p.applyPenalty(10)
-	}
-}
-
-func (p *Peer) applyPenalty(score int) {
-	p.logger.Debugf("Applying penalty")
-	p.penalty += score
-	if p.penalty >= 100 {
-		p.logger.Infof("Banning peer for exceeding max penalty")
-		p.eventCh <- &peerEvent{
-			peerID: p.ID(),
-			kind:   eventPeerBanned,
-		}
-	}
-}
-
-func (p *Peer) handlePostNodeInfo(event *socket.Message) {
-	info := &NodeInfo{}
-
-	if err := info.Decode(event.Data()); err != nil {
-		p.logger.Errorf("Fail to decode with %v", err)
-		p.applyPenalty(100)
-		return
-	}
-	p.nodeInfo = info
-}
-
-func (p *Peer) createHandshakeHandle() socket.HandshakeHandler {
-	return func(conn *websocket.Conn) error {
-		return nil
-	}
-}
-
-func newInboundPeer(addr *addressbook.Address, conn *websocket.Conn, handlers map[string]socket.RPCHandler, logger log.Logger) *Peer {
-	sock := socket.NewServerSocket(conn, logger)
-	sock.RegisterRPCHandlers(handlers)
-	network, _ := addressbook.GetNetwork(addr.IP())
-	peer := &Peer{
-		ip: addr.IP(),
-		// TODO: for inbound peer, is this correct port?
-		netgroup:       network,
-		ctx:            context.Background(),
-		connectionTime: time.Now().Unix(),
-		port:           uint32(addr.Port()),
-		eventCh:        make(chan *peerEvent),
-		closeCh:        make(chan bool),
-		latecyTicker:   newRandomBufferedTicker(minPingInterval*time.Second, maxPingInterval*time.Second),
-		socket:         sock,
-	}
-	sock.RegisterHandshakeHandler(peer.createHandshakeHandle())
-	go sock.StartServerProcess()
-	peer.logger = logger.With("peerID", peer.ID())
-	return peer
-}
-
-func newOutboundPeer(ctx context.Context, addr *addressbook.Address, conn *websocket.Conn, connector socket.Connector, handlers map[string]socket.RPCHandler, logger log.Logger) (*Peer, error) {
-	sock, err := socket.NewClientSocket(ctx, conn, connector, logger)
+// addPenalty will update the score of the given peer ID in connGater.
+// The peer will block if the socre exceeded in maxScore and then disconnected the peer immediately.
+func (p *Peer) addPenalty(pid peer.ID, score int) error {
+	newScore, err := p.connGater.addPenalty(pid, score)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	sock.RegisterRPCHandlers(handlers)
-	network, err := addressbook.GetNetwork(addr.IP())
+	if newScore >= MaxScore {
+		return p.Disconnect(pid)
+	}
+
+	return nil
+}
+
+// BlockPeer blocks the given peer ID and immediately try to close the connection.
+func (p *Peer) BlockPeer(pid peer.ID) error {
+	_, err := p.connGater.addPenalty(pid, MaxScore)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	peer := &Peer{
-		ip:             addr.IP(),
-		ctx:            ctx,
-		netgroup:       network,
-		connectionTime: time.Now().Unix(),
-		port:           uint32(addr.Port()),
-		eventCh:        make(chan *peerEvent),
-		closeCh:        make(chan bool),
-		latecyTicker:   newRandomBufferedTicker(minPingInterval*time.Second, maxPingInterval*time.Second),
-		socket:         sock,
-	}
-	sock.RegisterHandshakeHandler(peer.createHandshakeHandle())
-	peer.logger = logger.With("peerID", peer.ID())
-	return peer, nil
+	return p.Disconnect(pid)
 }

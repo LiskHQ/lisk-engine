@@ -18,7 +18,7 @@ type txpoolEndpoint struct {
 	config        *config.Config
 	chain         *blockchain.Chain
 	consensusExec *consensus.Executer
-	p2pConn       *p2p.Connection
+	p2pConn       *p2p.P2P
 	txPool        *txpool.TransactionPool
 	abi           labi.ABI
 }
@@ -27,7 +27,7 @@ func NewtxpoolEndpoint(
 	config *config.Config,
 	chain *blockchain.Chain,
 	consensusExec *consensus.Executer,
-	p2pConn *p2p.Connection,
+	p2pConn *p2p.P2P,
 	txPool *txpool.TransactionPool,
 	abi labi.ABI,
 ) *txpoolEndpoint {
@@ -104,7 +104,7 @@ func (a *txpoolEndpoint) HandlePostTransaction(w router.EndpointResponseWriter, 
 		w.Error(fmt.Errorf("transaction %s was not added to the pool with err %w", req.Transaction.ID.String(), err))
 		return
 	}
-	if result.Result == labi.TxVeirfyResultInvalid {
+	if result.Result == labi.TxVerifyResultInvalid {
 		w.Error(fmt.Errorf("transaction %s was not added to the pool", req.Transaction.ID.String()))
 		return
 	}

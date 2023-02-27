@@ -7,66 +7,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *GetTransactionsRequest) Encode() ([]byte, error) {
-	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.TransactionIDs)); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *GetTransactionsRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
-}
-
-func (e *GetTransactionsRequest) Decode(data []byte) error {
-	reader := codec.NewReader(data)
-	return e.DecodeFromReader(reader)
-}
-
-func (e *GetTransactionsRequest) MustDecode(data []byte) {
-	if err := e.Decode(data); err != nil {
-		panic(err)
-	}
-}
-
-func (e *GetTransactionsRequest) DecodeStrict(data []byte) error {
-	reader := codec.NewReader(data)
-	if err := e.DecodeStrictFromReader(reader); err != nil {
-		return err
-	}
-	if reader.HasUnreadBytes() {
-		return codec.ErrUnreadBytes
-	}
-	return nil
-}
-
-func (e *GetTransactionsRequest) DecodeFromReader(reader *codec.Reader) error {
-	{
-		val, err := reader.ReadBytesArray(1)
-		if err != nil {
-			return err
-		}
-		e.TransactionIDs = codec.BytesArrayToHexArray(val)
-	}
-	return nil
-}
-
-func (e *GetTransactionsRequest) DecodeStrictFromReader(reader *codec.Reader) error {
-	{
-		val, err := reader.ReadBytesArray(1)
-		if err != nil {
-			return err
-		}
-		e.TransactionIDs = codec.BytesArrayToHexArray(val)
-	}
-	return nil
-}
-
 func (e *GetTransactionsResponse) Encode() ([]byte, error) {
 	writer := codec.NewWriter()
 	{

@@ -11,7 +11,7 @@ import (
 // Syncer sync the block with network.
 type fastSyncer struct {
 	chain     *blockchain.Chain
-	conn      *p2p.Connection
+	conn      *p2p.P2P
 	logger    log.Logger
 	processor processFn
 	reverter  revertFn
@@ -25,7 +25,7 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 		return false, err
 	}
 	if commonBlockHeader.Height < ctx.FinalizedBlockHeader.Height {
-		s.conn.ApplyPenalty(ctx.PeerID, 100)
+		s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 		return false, errors.New("received common block has hight lower than finalized block")
 	}
 	twoRounds := uint32(len(ctx.CurrentValidators)) * 2
@@ -55,18 +55,19 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 	}
 	// apply downloaded block
 	for _, block := range downloadedBlocks {
-		if err := s.processor(ctx.Ctx, block, false); err != nil {
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
+		if err := s.processor(ctx.Ctx, block, publish, false); err != nil {
 			// recover temp block, if failed cannot continue
 			if err := s.restoreBlocks(ctx, commonBlockHeader); err != nil {
 				return true, err
 			}
+			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			return true, err
 		}
 	}
 	// clear temp block
 	if err := s.chain.DataAccess().ClearTempBlocks(); err != nil {
-		s.logger.Error("Fail to clear temp blocks with %v", err)
+		s.logger.Errorf("Fail to clear temp blocks with %v", err)
 	}
 	return true, nil
 }
@@ -80,7 +81,7 @@ func (s *fastSyncer) downloadAndValidate(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			return downloadedBlocks, err
 		}
 		downloadedBlocks = append(downloadedBlocks, downloaded.block)
@@ -101,7 +102,7 @@ func (s *fastSyncer) getCommonBlock(ctx *SyncContext, lastBlockHeader *blockchai
 	blockID, err := requestHighestCommonBlock(ctx.Ctx, s.conn, ctx.PeerID, ids)
 	if err != nil {
 		if errors.Is(err, errCommonBlockNotFound) {
-			s.conn.ApplyPenalty(ctx.PeerID, 100)
+			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			return nil, err
 		}
 		return nil, err
@@ -135,7 +136,8 @@ func (s *fastSyncer) restoreBlocks(ctx *SyncContext, commonBlockHeader *blockcha
 	}
 	blockchain.SortBlockByHeightAsc(blocks)
 	for _, block := range blocks {
-		if err := s.processor(ctx.Ctx, block, true); err != nil {
+		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
+		if err := s.processor(ctx.Ctx, block, publish, true); err != nil {
 			return err
 		}
 	}
