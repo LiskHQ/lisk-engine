@@ -133,15 +133,9 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 	}); err != nil {
 		return err
 	}
-	if err := c.conn.RegisterTopicValidator(P2PEventPostBlock, c.blockValidator); err != nil {
-		return err
-	}
 	if err := c.conn.RegisterEventHandler(P2PEventPostSingleCommits, func(event *p2p.Event) {
 		c.OnSingleCommitsReceived(event.Data(), event.PeerID())
 	}); err != nil {
-		return err
-	}
-	if err := c.conn.RegisterTopicValidator(P2PEventPostSingleCommits, c.singleCommitValidator); err != nil {
 		return err
 	}
 	// check for temp blocks
@@ -154,6 +148,14 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 
 // Start consensus process.
 func (c *Executer) Start() error {
+	// register topic validator for p2p
+	if err := c.conn.RegisterTopicValidator(P2PEventPostBlock, c.blockValidator); err != nil {
+		return err
+	}
+	if err := c.conn.RegisterTopicValidator(P2PEventPostSingleCommits, c.singleCommitValidator); err != nil {
+		return err
+	}
+
 	for {
 		select {
 		case <-c.closeCh:

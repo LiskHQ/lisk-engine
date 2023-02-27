@@ -127,21 +127,23 @@ func (t *TransactionPool) Init(
 	}); err != nil {
 		return err
 	}
-	if err := t.conn.RegisterTopicValidator(RPCEventPostTransactionAnnouncement, t.transactionValidator); err != nil {
-		return err
-	}
 	return nil
 }
 
-func (t *TransactionPool) Start() {
+func (t *TransactionPool) Start() error {
+	// register topic validator for p2p
+	if err := t.conn.RegisterTopicValidator(RPCEventPostTransactionAnnouncement, t.transactionValidator); err != nil {
+		return err
+	}
+
 	for {
 		select {
 		case <-t.ticker.C:
 			t.reorg()
 		case <-t.closeCh:
-			return
+			return nil
 		case <-t.ctx.Done():
-			return
+			return nil
 		}
 	}
 }

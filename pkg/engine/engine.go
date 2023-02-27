@@ -190,7 +190,13 @@ func (e *Engine) Start() error {
 			e.Stop()
 		}
 	}()
-	go e.transactionPool.Start()
+	// start transaction pool
+	go func() {
+		if err := e.transactionPool.Start(); err != nil {
+			e.logger.Error("Fail to start transaction pool. stopping")
+			e.Stop()
+		}
+	}()
 	go e.generator.Start()
 
 	e.server = rpc.NewRPCServer(
