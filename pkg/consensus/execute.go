@@ -315,7 +315,7 @@ func (c *Executer) process(ctx *ProcessContext) error {
 		if err := ctx.block.Validate(); err != nil {
 			return err
 		}
-		if err := c.processValidated(ctx.ctx, ctx.block, false); err != nil {
+		if err := c.processValidated(ctx.ctx, ctx.block, ctx.peerID, false); err != nil {
 			c.logger.Errorf("Fail to process valid block with %v", err)
 			return err
 		}
@@ -334,9 +334,9 @@ func (c *Executer) process(ctx *ProcessContext) error {
 		if err := c.deleteBlock(ctx.ctx, lastBlock, false); err != nil {
 			return err
 		}
-		if err := c.processValidated(ctx.ctx, ctx.block, false); err != nil {
+		if err := c.processValidated(ctx.ctx, ctx.block, ctx.peerID, false); err != nil {
 			c.logger.Errorf("Fail to process tie break block. Reverting to original block.")
-			if err := c.processValidated(ctx.ctx, lastBlock, false); err != nil {
+			if err := c.processValidated(ctx.ctx, lastBlock, ctx.peerID, false); err != nil {
 				c.logger.Errorf("Fail to revert the tie break block")
 			}
 		}
@@ -366,7 +366,7 @@ func (c *Executer) process(ctx *ProcessContext) error {
 	return nil
 }
 
-func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block, removeTemp bool) error {
+func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block, peerID string, removeTemp bool) error {
 	consensusStore := diffdb.New(c.database, blockchain.DBPrefixToBytes(blockchain.DBPrefixState))
 	if err := c.verifyBlock(consensusStore, block); err != nil {
 		return err
@@ -380,19 +380,21 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 		return err
 	}
 
-	// publish block to a topic
-	go func() {
-		eventMsg := &EventPostBlock{
-			Block: block.MustEncode(),
-		}
-		if c.syncying {
-			return
-		}
-		err = c.conn.Publish(ctx, P2PEventPostBlock, eventMsg.MustEncode())
-		if err != nil {
-			c.logger.Errorf("Fail to publish postBlock with %v", err)
-		}
-	}()
+	// publish block to a topic if it was internally generated
+	if peerID == "" {
+		go func() {
+			eventMsg := &EventPostBlock{
+				Block: block.MustEncode(),
+			}
+			if c.syncying {
+				return
+			}
+			err = c.conn.Publish(ctx, P2PEventPostBlock, eventMsg.MustEncode())
+			if err != nil {
+				c.logger.Errorf("Fail to publish postBlock with %v", err)
+			}
+		}()
+	}
 
 	nextValidatorParams, err := abi.Execute(consensusStore, block)
 	if err != nil {
