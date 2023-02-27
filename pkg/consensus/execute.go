@@ -315,7 +315,8 @@ func (c *Executer) process(ctx *ProcessContext) error {
 		if err := ctx.block.Validate(); err != nil {
 			return err
 		}
-		if err := c.processValidated(ctx.ctx, ctx.block, ctx.peerID == "", false); err != nil {
+		publish := ctx.peerID == "" // if peerID is empty, it means it is internal block
+		if err := c.processValidated(ctx.ctx, ctx.block, publish, false); err != nil {
 			c.logger.Errorf("Fail to process valid block with %v", err)
 			return err
 		}
@@ -334,9 +335,10 @@ func (c *Executer) process(ctx *ProcessContext) error {
 		if err := c.deleteBlock(ctx.ctx, lastBlock, false); err != nil {
 			return err
 		}
-		if err := c.processValidated(ctx.ctx, ctx.block, ctx.peerID == "", false); err != nil {
+		publish := ctx.peerID == "" // if peerID is empty, it means it is internal block
+		if err := c.processValidated(ctx.ctx, ctx.block, publish, false); err != nil {
 			c.logger.Errorf("Fail to process tie break block. Reverting to original block.")
-			if err := c.processValidated(ctx.ctx, lastBlock, ctx.peerID == "", false); err != nil {
+			if err := c.processValidated(ctx.ctx, lastBlock, publish, false); err != nil {
 				c.logger.Errorf("Fail to revert the tie break block")
 			}
 		}

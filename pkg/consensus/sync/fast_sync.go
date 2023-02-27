@@ -55,7 +55,8 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 	}
 	// apply downloaded block
 	for _, block := range downloadedBlocks {
-		if err := s.processor(ctx.Ctx, block, ctx.PeerID == "", false); err != nil {
+		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
+		if err := s.processor(ctx.Ctx, block, publish, false); err != nil {
 			// recover temp block, if failed cannot continue
 			if err := s.restoreBlocks(ctx, commonBlockHeader); err != nil {
 				return true, err
@@ -135,7 +136,8 @@ func (s *fastSyncer) restoreBlocks(ctx *SyncContext, commonBlockHeader *blockcha
 	}
 	blockchain.SortBlockByHeightAsc(blocks)
 	for _, block := range blocks {
-		if err := s.processor(ctx.Ctx, block, ctx.PeerID == "", true); err != nil {
+		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
+		if err := s.processor(ctx.Ctx, block, publish, true); err != nil {
 			return err
 		}
 	}

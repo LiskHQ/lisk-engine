@@ -101,7 +101,8 @@ func (s *blockSyncer) downloadAndProcess(ctx *SyncContext, downloader *Downloade
 			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
 			return err
 		}
-		if err := s.processor(ctx.Ctx, downloaded.block, ctx.PeerID == "", false); err != nil {
+		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
+		if err := s.processor(ctx.Ctx, downloaded.block, publish, false); err != nil {
 			downloader.Stop()
 			return err
 		}
