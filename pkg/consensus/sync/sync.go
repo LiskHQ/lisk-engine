@@ -19,7 +19,7 @@ import (
 
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
 
-type processFn = func(ctx context.Context, block *blockchain.Block, peerID string, removeTemp bool) error
+type processFn = func(ctx context.Context, block *blockchain.Block, publish bool, removeTemp bool) error
 type revertFn = func(ctx context.Context, deletingBlock *blockchain.Block, saveTemp bool) error
 
 // Syncer sync the block with network.
