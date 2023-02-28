@@ -37,11 +37,11 @@ func NewP2P(cfgNet *config.NetworkConfig) *P2P {
 }
 
 // Start function starts a P2P and all other related services and handlers.
-func (p2p *P2P) Start(logger log.Logger) error {
+func (p2p *P2P) Start(logger log.Logger, seed []byte) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, &p2p.wg, logger, *p2p.cfgNet)
+	peer, err := NewPeer(ctx, &p2p.wg, logger, seed, *p2p.cfgNet)
 	if err != nil {
 		cancel()
 		return err

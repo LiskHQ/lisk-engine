@@ -40,7 +40,7 @@ func TestGossipSub_Start(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, cfgNet)
+	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -140,7 +140,7 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, cfgNet)
+	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
@@ -190,7 +190,7 @@ func TestGossipSub_Publish(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, cfgNet)
+	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()

@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p"
@@ -92,7 +93,7 @@ func main() {
 		panic(err)
 	}
 
-	err = p2p.Start(logger)
+	err = p2p.Start(logger, crypto.RandomBytes(32))
 	if err != nil {
 		panic(err)
 	}

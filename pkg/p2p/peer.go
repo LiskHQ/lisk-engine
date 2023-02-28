@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"math/rand"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
@@ -19,6 +21,7 @@ import (
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	ma "github.com/multiformats/go-multiaddr"
 
+	lskcrypto "github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
@@ -75,13 +78,23 @@ var relayServiceOptions = []relay.Option{
 }
 
 // NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, cfgNet config.NetworkConfig) (*Peer, error) {
+func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfgNet config.NetworkConfig) (*Peer, error) {
 	// Create a Peer variable in advance to be able to use it in the libp2p options.
 	var p *Peer
 
 	opts := []libp2p.Option{
 		// Support default transports (TCP, QUIC, WS)
 		libp2p.DefaultTransports,
+	}
+
+	// Configure libp2p's identity.
+	if len(seed) > 0 {
+		stdKey := ed25519.NewKeyFromSeed(lskcrypto.Hash(seed))
+		priv, _, err := crypto.KeyPairFromStdKey(&stdKey)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, libp2p.Identity(priv))
 	}
 
 	switch cfgNet.AllowIncomingConnections {

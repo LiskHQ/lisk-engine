@@ -37,7 +37,7 @@ func main() {
 	}
 
 	wg := &sync.WaitGroup{}
-	node, err := p2p.NewPeer(ctx, wg, logger, cfgNet)
+	node, err := p2p.NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	if err != nil {
 		panic(err)
 	}

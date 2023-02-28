@@ -178,7 +178,7 @@ func (e *Engine) Start() error {
 	// start P2P
 	go func() {
 		// TODO - Uncomment this in GH issue #67
-		if err := e.p2pConn.Start(e.logger /*, handshakeInfo*/); err != nil {
+		if err := e.p2pConn.Start(e.logger, []byte{} /*, handshakeInfo*/); err != nil {
 			e.logger.Error("Fail to start connection. stopping")
 			e.Stop()
 		}
