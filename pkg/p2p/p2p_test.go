@@ -95,7 +95,7 @@ func TestP2P_Start(t *testing.T) {
 	_ = cfgNet.InsertDefault()
 	p2p := NewP2P(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
-	err := p2p.Start(logger)
+	err := p2p.Start(logger, []byte{})
 	assert.Nil(err)
 	assert.Equal(logger, p2p.logger)
 	assert.NotNil(p2p.Peer)
@@ -112,6 +112,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	cfgNet := cfg.NetworkConfig{
 		AllowIncomingConnections: true,
+		Addresses:                []string{testIPv4TCP, testIPv4UDP},
 	}
 	_ = cfgNet.InsertDefault()
 	node1 := NewP2P(&cfgNet)
@@ -119,9 +120,9 @@ func TestP2P_AddPenalty(t *testing.T) {
 	logger, _ := logger.NewDefaultProductionLogger()
 	node1.RegisterEventHandler(testTopic1, func(event *Event) {})
 	node2.RegisterEventHandler(testTopic1, func(event *Event) {})
-	err := node1.Start(logger)
+	err := node1.Start(logger, []byte{})
 	assert.Nil(err)
-	err = node2.Start(logger)
+	err = node2.Start(logger, []byte{})
 	assert.Nil(err)
 
 	err = node2.Publish(ctx, testTopic1, testMessageData)
@@ -149,7 +150,7 @@ func TestP2P_Stop(t *testing.T) {
 	_ = cfgNet.InsertDefault()
 	p2p := NewP2P(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
-	_ = p2p.Start(logger)
+	_ = p2p.Start(logger, []byte{})
 
 	ch := make(chan struct{})
 	defer close(ch)
