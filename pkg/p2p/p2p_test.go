@@ -112,6 +112,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	cfgNet := cfg.NetworkConfig{
 		AllowIncomingConnections: true,
+		Addresses:                []string{testIPv4TCP, testIPv4UDP},
 	}
 	_ = cfgNet.InsertDefault()
 	node1 := NewP2P(&cfgNet)
