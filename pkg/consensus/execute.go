@@ -179,7 +179,7 @@ func (c *Executer) Subscribe(topic string) <-chan interface{} {
 	return c.events.Subscribe(topic)
 }
 
-// blockValidator validates block, and if statelessly invalid, then rejects the block
+// blockValidator validates block, and if statelessly invalid, then rejects the block.
 func (c *Executer) blockValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 	block, err := blockchain.NewBlock(msg.Data)
 	if err != nil {

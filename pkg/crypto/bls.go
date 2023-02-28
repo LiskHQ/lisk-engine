@@ -8,6 +8,11 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 )
 
+const (
+	BLSPublicKeyLength = 48
+	BLSSignatureLength = 96
+)
+
 type BLSPublicKey = blst.P1Affine
 type BLSSignature = blst.P2Affine
 type BLSSecretKey = blst.SecretKey

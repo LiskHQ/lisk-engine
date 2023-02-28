@@ -200,7 +200,9 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 
 		validator, exist := gs.validatorHandlers[t]
 		if exist && validator != nil {
-			gs.ps.RegisterTopicValidator(t, newMessageValidator(validator))
+			if err := gs.ps.RegisterTopicValidator(t, newMessageValidator(validator)); err != nil {
+				return err
+			}
 		}
 	}
 

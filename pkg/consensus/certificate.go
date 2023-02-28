@@ -19,21 +19,20 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/statemachine"
 )
 
+// singleCommitValidator check the message and insert into the pool.
+// This function never return p2p.ValidationAccept to prevent republishging of the event.
+// Instead, it will be republished manually from the pool.
 func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 	postCommits := &EventPostSingleCommits{}
 	if err := postCommits.DecodeStrict(msg.Data); err != nil {
 		return p2p.ValidationReject
 	}
-	return p2p.ValidationAccept
-}
-
-func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
-	postCommits := &EventPostSingleCommits{}
-	if err := postCommits.DecodeStrict(event.Data()); err != nil {
-		panic(err)
-	}
 	diffStore := diffdb.New(c.database, blockchain.DBPrefixToBytes(blockchain.DBPrefixState))
 	for _, singleCommit := range postCommits.SingleCommits {
+		if err := singleCommit.Validate(); err != nil {
+			c.logger.Errorf("Invalid single commit received. %v", err)
+			return p2p.ValidationReject
+		}
 		// 1. if certificate already exist in pool, discard
 		if c.certificatePool.Has(singleCommit) {
 			continue
@@ -43,12 +42,12 @@ func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
 		_, maxHeightPrecommited, _, err := c.liskBFT.API().GetBFTHeights(diffStore)
 		if err != nil {
 			c.logger.Errorf("Failed to get votes state while processing single commits with %v", err)
-			return
+			return p2p.ValidationIgnore
 		}
 		finalizedBlockHeader, err := c.chain.DataAccess().GetBlockHeaderByHeight(maxHeightPrecommited)
 		if err != nil {
 			c.logger.Errorf("Failed to get votes state while processing single commits with %v", err)
-			return
+			return p2p.ValidationIgnore
 		}
 		if singleCommit.Height() <= certificate.GetMaxRemovalHeight(finalizedBlockHeader) {
 			continue
@@ -58,7 +57,7 @@ func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
 		paramExist, err := c.liskBFT.API().ExistBFTParameters(diffStore, singleCommit.Height())
 		if err != nil {
 			c.logger.Errorf("Failed to get ExistBFTParameters while processing single commits with %v", err)
-			return
+			return p2p.ValidationIgnore
 		}
 		if (singleCommit.Height() < maxHeightPrecommited-certificate.CommitRangeStored || singleCommit.Height() > maxHeightPrecommited) &&
 			!paramExist {
@@ -69,7 +68,7 @@ func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
 		blockHeader, err := c.chain.DataAccess().GetBlockHeaderByHeight(singleCommit.Height())
 		if err != nil {
 			c.logger.Errorf("Failed to get block with id %s while processing single commits with %v", singleCommit.BlockID(), err)
-			return
+			return p2p.ValidationIgnore
 		}
 		if !bytes.Equal(blockHeader.ID, singleCommit.BlockID()) {
 			continue
@@ -77,34 +76,37 @@ func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
 		// 5. if validatorAddress is not active at the height, discard and ban (bftAPI.getBFTParams(height))
 		params, err := c.liskBFT.API().GetBFTParameters(diffStore, singleCommit.Height())
 		if err != nil {
-			return
+			return p2p.ValidationIgnore
 		}
 		_, active := liskbft.BFTValidators(params.Validators()).Find(singleCommit.ValidatorAddress())
 		if !active {
-			c.conn.ApplyPenalty(event.PeerID(), p2p.MaxScore)
-			c.logger.Errorf("Address %s was not active at height %d. Applying penalty to %s.", blockHeader.GeneratorAddress, singleCommit.Height(), event.PeerID())
-			return
+			c.logger.Errorf("Address %s was not active at height %d.", blockHeader.GeneratorAddress, singleCommit.Height())
+			return p2p.ValidationReject
 		}
 		// 6. check signature of certificate obtained by the block at the height, if invalid discard and ban
 		cert := certificate.NewCertificateFromBlock(blockHeader)
 		validator, exist := liskbft.BFTValidators(params.Validators()).Find(singleCommit.ValidatorAddress())
 		if !exist {
 			c.logger.Errorf("Failed to get registered keys for %s while processing single commits with %v", singleCommit.ValidatorAddress(), err)
-			return
+			return p2p.ValidationIgnore
 		}
 		validCert, err := cert.Verify(c.chain.ChainID(), singleCommit.CertificateSignature(), validator.BLSKey())
 		if err != nil {
 			c.logger.Errorf("Failed to verify signature while processing single commits with %v", err)
-			return
+			return p2p.ValidationIgnore
 		}
 		if !validCert {
-			c.conn.ApplyPenalty(event.PeerID(), p2p.MaxScore)
-			c.logger.Errorf("Invalid commit received. Applying penalty to %s.", event.PeerID())
-			return
+			c.logger.Errorf("Invalid commit received")
+			return p2p.ValidationReject
 		}
 		// 7. add certificate
 		c.certificatePool.Add(singleCommit)
 	}
+	return p2p.ValidationIgnore
+}
+
+// onSingleCommitsReceived does not do anything. Insertion to the pool is done in the validation step.
+func (c *Executer) onSingleCommitsReceived(event *p2p.Event) {
 }
 
 func (c *Executer) Certify(from, to uint32, address codec.Lisk32, blsPrivateKey []byte) error {

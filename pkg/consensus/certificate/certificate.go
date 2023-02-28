@@ -4,6 +4,7 @@
 package certificate
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -127,6 +128,19 @@ func (c *SingleCommit) Height() uint32                  { return c.height }
 func (c *SingleCommit) BlockID() codec.Hex              { return c.blockID }
 func (c *SingleCommit) CertificateSignature() codec.Hex { return c.certificateSignature }
 func (c *SingleCommit) ValidatorAddress() codec.Lisk32  { return c.validatorAddress }
+
+func (c *SingleCommit) Validate() error {
+	if len(c.blockID) != blockchain.IDLength {
+		return errors.New("invalid block ID length")
+	}
+	if len(c.validatorAddress) != blockchain.AddressLength {
+		return errors.New("invalid address length")
+	}
+	if len(c.certificateSignature) != crypto.BLSSignatureLength {
+		return errors.New("invalid BLS signature length")
+	}
+	return nil
+}
 
 type SingleCommits []*SingleCommit
 
