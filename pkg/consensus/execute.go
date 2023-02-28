@@ -128,14 +128,10 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetBlocksFromID, c.syncer.HandleRPCEndpointGetBlocksFromID()); err != nil {
 		return err
 	}
-	if err := c.conn.RegisterEventHandler(P2PEventPostBlock, func(event *p2p.Event) {
-		c.OnBlockReceived(event.Data(), event.PeerID())
-	}); err != nil {
+	if err := c.conn.RegisterEventHandler(P2PEventPostBlock, c.onBlockReceived, c.blockValidator); err != nil {
 		return err
 	}
-	if err := c.conn.RegisterEventHandler(P2PEventPostSingleCommits, func(event *p2p.Event) {
-		c.OnSingleCommitsReceived(event.Data(), event.PeerID())
-	}); err != nil {
+	if err := c.conn.RegisterEventHandler(P2PEventPostSingleCommits, c.onSingleCommitsReceived, c.singleCommitValidator); err != nil {
 		return err
 	}
 	// check for temp blocks
@@ -148,14 +144,6 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 
 // Start consensus process.
 func (c *Executer) Start() error {
-	// register topic validator for p2p
-	if err := c.conn.RegisterTopicValidator(P2PEventPostBlock, c.blockValidator); err != nil {
-		return err
-	}
-	if err := c.conn.RegisterTopicValidator(P2PEventPostSingleCommits, c.singleCommitValidator); err != nil {
-		return err
-	}
-
 	for {
 		select {
 		case <-c.closeCh:
@@ -191,20 +179,23 @@ func (c *Executer) Subscribe(topic string) <-chan interface{} {
 	return c.events.Subscribe(topic)
 }
 
-// Start consensus process.
-func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
-	postBlockEvent := &EventPostBlock{}
-	err := postBlockEvent.DecodeStrict(msgData)
+// blockValidator validates block, and if statelessly invalid, then rejects the block.
+func (c *Executer) blockValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+	block, err := blockchain.NewBlock(msg.Data)
 	if err != nil {
-		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
-		return
+		return p2p.ValidationReject
 	}
-	block, err := blockchain.NewBlock(postBlockEvent.Block)
+	if err := block.Validate(); err != nil {
+		return p2p.ValidationReject
+	}
+	return p2p.ValidationAccept
+}
+
+// Start consensus process.
+func (c *Executer) onBlockReceived(event *p2p.Event) {
+	block, err := blockchain.NewBlock(event.Data())
 	if err != nil {
-		c.conn.ApplyPenalty(peerID, p2p.MaxScore)
-		c.logger.Errorf("Received invalid block from peer %s. Banning", peerID)
-		return
+		panic(err)
 	}
 	c.events.Publish(EventNetworkBlockNew, &EventNetworkBlockNewMessage{
 		Block: block,
@@ -212,7 +203,7 @@ func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
 	ctx := &ProcessContext{
 		ctx:    context.Background(),
 		block:  block,
-		peerID: peerID,
+		peerID: event.PeerID(),
 	}
 	// try insert, and not block
 	select {
@@ -220,11 +211,6 @@ func (c *Executer) OnBlockReceived(msgData []byte, peerID string) {
 	default:
 		c.logger.Info("Process queue is full")
 	}
-}
-
-// TODO - implement this function (GH issue #70)
-func (c *Executer) blockValidator(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
-	return p2p.ValidationAccept
 }
 
 func (c *Executer) AddInternal(block *blockchain.Block) {
@@ -385,13 +371,7 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	// publish block to a topic only if it was internally generated
 	if publish {
 		go func() {
-			eventMsg := &EventPostBlock{
-				Block: block.MustEncode(),
-			}
-			if c.syncying {
-				return
-			}
-			err = c.conn.Publish(ctx, P2PEventPostBlock, eventMsg.MustEncode())
+			err = c.conn.Publish(ctx, P2PEventPostBlock, block.MustEncode())
 			if err != nil {
 				c.logger.Errorf("Fail to publish postBlock with %v", err)
 			}

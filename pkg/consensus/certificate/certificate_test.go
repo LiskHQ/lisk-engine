@@ -114,6 +114,44 @@ func TestSingleCommit(t *testing.T) {
 	assert.Equal(t, true, valid)
 }
 
+func TestSingleCommit_Validate(t *testing.T) {
+	invalidSingleCommits := []*SingleCommit{
+		{
+			blockID:              crypto.RandomBytes(blockchain.IDLength - 1),
+			height:               99,
+			validatorAddress:     crypto.RandomBytes(blockchain.AddressLength),
+			certificateSignature: crypto.RandomBytes(crypto.BLSSignatureLength),
+		},
+		{
+			blockID:              crypto.RandomBytes(blockchain.IDLength),
+			height:               99,
+			validatorAddress:     crypto.RandomBytes(blockchain.AddressLength + 1),
+			certificateSignature: crypto.RandomBytes(crypto.BLSSignatureLength),
+		},
+		{
+			blockID:              crypto.RandomBytes(blockchain.IDLength),
+			height:               99,
+			validatorAddress:     crypto.RandomBytes(blockchain.AddressLength),
+			certificateSignature: crypto.RandomBytes(crypto.BLSSignatureLength + 1),
+		},
+	}
+
+	for _, commit := range invalidSingleCommits {
+		assert.Error(t, commit.Validate(), "invalid single commit should have error")
+	}
+	validSingleCommits := []*SingleCommit{
+		{
+			blockID:              crypto.RandomBytes(blockchain.IDLength),
+			height:               99,
+			validatorAddress:     crypto.RandomBytes(blockchain.AddressLength),
+			certificateSignature: crypto.RandomBytes(crypto.BLSSignatureLength),
+		},
+	}
+	for _, commit := range validSingleCommits {
+		assert.NoError(t, commit.Validate(), "valid single commit should not have error")
+	}
+}
+
 func TestAddressKeyPair(t *testing.T) {
 	passphrases := []string{}
 	for i := 0; i < 3; i++ {

@@ -44,7 +44,7 @@ func TestGossipSub_Start(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {})
+	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	assert.Nil(err)
 
 	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
@@ -74,9 +74,9 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	gs := NewGossipSub()
 	gs.logger = logger
 
-	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
-	gs.RegisterEventHandler(testTopic2, func(event *Event) {})
-	gs.RegisterEventHandler(testTopic3, func(event *Event) {})
+	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
+	gs.RegisterEventHandler(testTopic2, func(event *Event) {}, nil)
+	gs.RegisterEventHandler(testTopic3, func(event *Event) {}, nil)
 
 	host, _ := libp2p.New()
 	gossipSub, _ := pubsub.NewGossipSub(ctx, host)
@@ -109,9 +109,12 @@ func TestGossipSub_RegisterEventHandler(t *testing.T) {
 
 	testHandler := func(event *Event) {
 	}
+	testValidator := func(context.Context, *Message) ValidationResult {
+		return ValidationAccept
+	}
 
 	gs := NewGossipSub()
-	err := gs.RegisterEventHandler(testEvent, testHandler)
+	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
 
 	_, exist := gs.topics[testEvent]
@@ -132,6 +135,9 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 
 	testHandler := func(event *Event) {
 	}
+	testValidator := func(context.Context, *Message) ValidationResult {
+		return ValidationAccept
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -146,7 +152,7 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	gs := NewGossipSub()
 	gs.Start(ctx, wg, logger, p, sk, cfgNet)
 
-	err := gs.RegisterEventHandler(testEvent, testHandler)
+	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.NotNil(err)
 	assert.Equal(err, ErrGossipSubIsRunning)
 
@@ -163,10 +169,13 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 
 	testHandler := func(event *Event) {
 	}
+	testValidator := func(context.Context, *Message) ValidationResult {
+		return ValidationAccept
+	}
 
 	gs := NewGossipSub()
 
-	err := gs.RegisterEventHandler(testEvent, testHandler)
+	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
 	_, exist := gs.topics[testEvent]
 	assert.True(exist)
@@ -175,7 +184,7 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 	_, exist = gs.eventHandlers[testEvent]
 	assert.True(exist)
 
-	err = gs.RegisterEventHandler(testEvent, testHandler)
+	err = gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.NotNil(err)
 	assert.Equal(err, ErrDuplicateHandler)
 }
@@ -194,15 +203,11 @@ func TestGossipSub_Publish(t *testing.T) {
 	sk := ps.NewScoreKeeper()
 
 	gs := NewGossipSub()
-	gs.RegisterEventHandler(testTopic1, func(event *Event) {})
-
-	err := gs.RegisterTopicValidator(testTopic1, testMV)
-	assert.Equal(err, ErrGossipSubIsNotRunnig)
+	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, testMV)
 
 	gs.Start(ctx, wg, logger, p, sk, cfgNet)
-	assert.Nil(gs.RegisterTopicValidator(testTopic1, testMV))
 
-	err = gs.Publish(ctx, testTopic1, testMessageData)
+	err := gs.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
 
 	err = gs.Publish(ctx, testTopic1, testMessageInvalid)

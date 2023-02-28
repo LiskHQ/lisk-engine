@@ -16,6 +16,7 @@ import (
 var (
 	emptyHash     = crypto.Hash([]byte{})
 	AddressLength = 20
+	IDLength      = 32
 )
 
 // RawBlock represents a envelope of a block header.

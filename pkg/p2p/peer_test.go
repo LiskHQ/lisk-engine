@@ -209,7 +209,7 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet2)
 
 	gs := NewGossipSub()
-	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {})
+	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 
 	sk := ps.NewScoreKeeper()
 	err := gs.Start(ctx, wg, logger, p, sk, cfgNet2)

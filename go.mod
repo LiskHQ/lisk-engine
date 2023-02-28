@@ -12,7 +12,6 @@ require (
 	github.com/libp2p/go-libp2p v0.24.2
 	github.com/libp2p/go-libp2p-pubsub v0.8.3
 	github.com/multiformats/go-multiaddr v0.8.0
-	github.com/oklog/ulid v1.3.1
 	github.com/stretchr/testify v1.8.1
 	github.com/supranational/blst v0.3.4
 	github.com/tyler-smith/go-bip39 v1.1.0

@@ -7,8 +7,8 @@ type Event struct {
 	data   []byte
 }
 
-// newEvent creates a new event.
-func newEvent(peerID string, event string, data []byte) *Event {
+// NewEvent creates a new event.
+func NewEvent(peerID string, event string, data []byte) *Event {
 	return &Event{
 		peerID: peerID,
 		event:  event,
