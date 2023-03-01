@@ -20,6 +20,9 @@ const messageProtocolReqID = "/lisk/message/req/0.0.1"
 const messageProtocolResID = "/lisk/message/res/0.0.1"
 
 const messageResponseTimeout = 3 * time.Second // Time to wait for a response message before returning an error
+const messageMaxRetries = 2                    // Maximum number of retries for a request message
+
+var errTimeout = errors.New("timeout")
 
 // MessageProtocol type.
 type MessageProtocol struct {
@@ -143,8 +146,28 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) e
 	return nil
 }
 
-// SendRequestMessage sends a request message to a peer using a message protocol.
+// SendRequestMessage sends a request message to a peer using a message protocol and has a retry mechanism.
 func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, procedure string, data []byte) (*Response, error) {
+	var (
+		err error
+		res *Response
+	)
+
+	for i := 0; i <= messageMaxRetries; i++ {
+		res, err = mp.sendRequestMessage(ctx, id, procedure, data)
+		if err != nil {
+			if errors.Is(err, errTimeout) {
+				continue
+			}
+			return nil, err
+		}
+		return res, nil
+	}
+	return nil, err
+}
+
+// sendRequestMessage sends a request message to a peer using a message protocol.
+func (mp *MessageProtocol) sendRequestMessage(ctx context.Context, id peer.ID, procedure string, data []byte) (*Response, error) {
 	reqMsg := newRequestMessage(mp.peer.ID(), procedure, data)
 	if err := mp.sendMessage(ctx, id, messageProtocolReqID, reqMsg); err != nil {
 		return nil, err
@@ -168,7 +191,7 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 		mp.resMu.Lock()
 		delete(mp.resCh, reqMsg.ID)
 		mp.resMu.Unlock()
-		return nil, errors.New("timeout")
+		return nil, errTimeout
 
 	case <-ctx.Done():
 		mp.resMu.Lock()
