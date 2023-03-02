@@ -47,6 +47,8 @@ func NewMessageProtocol(chainID []byte, version string) *MessageProtocol {
 		resCh:       make(map[string]chan<- *Response),
 		timeout:     messageResponseTimeout,
 		rpcHandlers: make(map[string]RPCHandler),
+		chainID:     chainID,
+		version:     version,
 	}
 	return mp
 }

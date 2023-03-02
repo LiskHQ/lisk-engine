@@ -54,6 +54,8 @@ func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 	assert.Equal(0, len(mp.resCh))
 	assert.Equal(3*time.Second, mp.timeout)
 	assert.Equal(0, len(mp.rpcHandlers))
+	assert.Equal(testChainID, mp.chainID)
+	assert.Equal(testVersion, mp.version)
 }
 
 func TestMessageProtocol_Start(t *testing.T) {
@@ -110,7 +112,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			stream.data = data
 			mp.onRequest(ctx, stream)
 
-			idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Request message received") })
+			idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Error sending response message") })
 			assert.NotEqual(-1, idx)
 
 			idx = slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, tt.want) })
@@ -268,12 +270,24 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	err := p1.Connect(ctx, *p2AddrInfo)
-	assert.Nil(err)
+	assert.NoError(err)
 
 	response, err := mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(err)
 	assert.Equal(p2.ID().String(), response.PeerID())
 	assert.Contains(string(response.Data()), "Average RTT with you:")
+
+	// check sending with different chainID/version
+	p3, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+	mp3 := NewMessageProtocol([]byte{9, 9, 9, 9}, "9.9")
+	mp3.Start(ctx, logger, p3)
+	p3Addrs, _ := p3.P2PAddrs()
+	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+	err = p1.Connect(ctx, *p3AddrInfo)
+	assert.NoError(err)
+
+	_, err = mp1.SendRequestMessage(ctx, p3.ID(), testRPC, []byte(testRequestData))
+	assert.ErrorContains(err, "protocol not supported")
 }
 
 func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
@@ -395,7 +409,7 @@ func (tmr *TestMessageReceive) onMessageReceive(s network.Stream) {
 	tmr.done <- "done"
 }
 
-func TestMessageProtocol_SendProtoMessage(t *testing.T) {
+func TestMessageProtocol_sendMessage(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -407,7 +421,10 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	tmr := TestMessageReceive{done: make(chan any)}
 
 	wg := &sync.WaitGroup{}
+
+	// check sending from matching chainID/version
 	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	p2.host.SetStreamHandler(messageProtocolReqID(testChainID, testVersion), tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
@@ -428,4 +445,17 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	}
 
 	assert.Contains(tmr.msg, testRequestData)
+
+	// check sending from different chainID/version
+	tmr = TestMessageReceive{done: make(chan any)}
+
+	p3, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p3.host.SetStreamHandler(messageProtocolReqID([]byte{9, 9, 9, 9}, "9.9"), tmr.onMessageReceive)
+	p3Addrs, _ := p3.P2PAddrs()
+	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+
+	_ = p1.Connect(ctx, *p3AddrInfo)
+	msg = newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
+	err = mp.sendMessage(ctx, p3.ID(), messageProtocolReqID(testChainID, testVersion), msg)
+	assert.ErrorContains(err, "protocol not supported")
 }

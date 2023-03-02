@@ -287,5 +287,5 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte)
 }
 
 func (gs *GossipSub) formatTopic(name string) string {
-	return fmt.Sprintf("/%s/%s/%s", name, codec.Hex(gs.chainID).String(), gs.version)
+	return fmt.Sprintf("/%s/%s/%s", codec.Hex(gs.chainID).String(), gs.version, name)
 }

@@ -56,9 +56,9 @@ func TestGossipSub_Start(t *testing.T) {
 
 	assert.Equal(1, len(gs.topics))
 	assert.Equal(1, len(gs.subscriptions))
-	_, exist := gs.topics[testTopic1]
+	_, exist := gs.topics[gs.formatTopic(testTopic1)]
 	assert.True(exist)
-	_, exist = gs.subscriptions[testTopic1]
+	_, exist = gs.subscriptions[gs.formatTopic(testTopic1)]
 	assert.True(exist)
 }
 
@@ -117,15 +117,15 @@ func TestGossipSub_RegisterEventHandler(t *testing.T) {
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
 
-	_, exist := gs.topics[testEvent]
+	_, exist := gs.topics[gs.formatTopic(testEvent)]
 	assert.True(exist)
-	_, exist = gs.subscriptions[testEvent]
+	_, exist = gs.subscriptions[gs.formatTopic(testEvent)]
 	assert.True(exist)
 
-	assert.NotNil(gs.eventHandlers[testEvent])
+	assert.NotNil(gs.eventHandlers[gs.formatTopic(testEvent)])
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
-	handler := gs.eventHandlers[testEvent]
+	handler := gs.eventHandlers[gs.formatTopic(testEvent)]
 	f2 := *(*unsafe.Pointer)(unsafe.Pointer(&handler))
 	assert.True(f1 == f2)
 }
@@ -177,11 +177,11 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
-	_, exist := gs.topics[testEvent]
+	_, exist := gs.topics[gs.formatTopic(testEvent)]
 	assert.True(exist)
-	_, exist = gs.subscriptions[testEvent]
+	_, exist = gs.subscriptions[gs.formatTopic(testEvent)]
 	assert.True(exist)
-	_, exist = gs.eventHandlers[testEvent]
+	_, exist = gs.eventHandlers[gs.formatTopic(testEvent)]
 	assert.True(exist)
 
 	err = gs.RegisterEventHandler(testEvent, testHandler, testValidator)
