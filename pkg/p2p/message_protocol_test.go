@@ -276,17 +276,32 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(p2.ID().String(), response.PeerID())
 	assert.Contains(string(response.Data()), "Average RTT with you:")
+}
 
-	// check sending with different chainID/version
-	p3, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp3 := NewMessageProtocol([]byte{9, 9, 9, 9}, "9.9")
-	mp3.Start(ctx, logger, p3)
-	p3Addrs, _ := p3.P2PAddrs()
-	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
-	err = p1.Connect(ctx, *p3AddrInfo)
+func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger, _ := log.NewDefaultProductionLogger()
+	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.InsertDefault()
+
+	wg := &sync.WaitGroup{}
+	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+	mp1 := NewMessageProtocol(testChainID, testVersion)
+	mp1.Start(ctx, logger, p1)
+
+	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+	mp2 := NewMessageProtocol([]byte{9, 9, 9, 9}, "9.9")
+	mp2.Start(ctx, logger, p2)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.NoError(err)
 
-	_, err = mp1.SendRequestMessage(ctx, p3.ID(), testRPC, []byte(testRequestData))
+	_, err = mp1.SendRequestMessage(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.ErrorContains(err, "protocol not supported")
 }
 
@@ -445,17 +460,36 @@ func TestMessageProtocol_sendMessage(t *testing.T) {
 	}
 
 	assert.Contains(tmr.msg, testRequestData)
+}
+
+func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger, _ := log.NewDefaultProductionLogger()
+	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.InsertDefault()
+
+	wg := &sync.WaitGroup{}
+
+	// check sending from matching chainID/version
+	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+
+	mp := NewMessageProtocol(testChainID, testVersion)
+	mp.Start(ctx, logger, p1)
 
 	// check sending from different chainID/version
-	tmr = TestMessageReceive{done: make(chan any)}
+	tmr := TestMessageReceive{done: make(chan any)}
 
-	p3, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p3.host.SetStreamHandler(messageProtocolReqID([]byte{9, 9, 9, 9}, "9.9"), tmr.onMessageReceive)
-	p3Addrs, _ := p3.P2PAddrs()
-	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2.host.SetStreamHandler(messageProtocolReqID([]byte{9, 9, 9, 9}, "9.9"), tmr.onMessageReceive)
+	p2Addrs, _ := p2.P2PAddrs()
+	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
-	_ = p1.Connect(ctx, *p3AddrInfo)
-	msg = newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
-	err = mp.sendMessage(ctx, p3.ID(), messageProtocolReqID(testChainID, testVersion), msg)
+	_ = p1.Connect(ctx, *p2AddrInfo)
+	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
+	err := mp.sendMessage(ctx, p2.ID(), messageProtocolReqID(testChainID, testVersion), msg)
 	assert.ErrorContains(err, "protocol not supported")
 }
