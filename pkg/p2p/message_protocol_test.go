@@ -325,9 +325,13 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	mp1.Start(ctx, logger, p1)
 	mp1.timeout = time.Millisecond * 20 // Reduce timeout to 20 ms to speed up test
 	// Remove response message stream handler to simulate timeout
+	p1.host.RemoveStreamHandler(messageProtocolReqID)
 	p1.host.RemoveStreamHandler(messageProtocolResID)
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	mp2 := NewMessageProtocol()
+	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
+		w.Write([]byte("Average RTT with you:"))
+	})
 	mp2.Start(ctx, logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
