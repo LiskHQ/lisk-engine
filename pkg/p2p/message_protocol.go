@@ -20,7 +20,7 @@ const messageProtocolReqID = "/lisk/message/req/0.0.1"
 const messageProtocolResID = "/lisk/message/res/0.0.1"
 
 const messageResponseTimeout = 3 * time.Second // Time to wait for a response message before returning an error
-const messageMaxRetries = 2                    // Maximum number of retries for a request message
+const messageMaxRetries = 3                    // Maximum number of retries for a request message
 
 var errTimeout = errors.New("timeout")
 
@@ -154,6 +154,9 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 	)
 
 	for i := 0; i <= messageMaxRetries; i++ {
+		if i > 0 {
+			mp.logger.Debugf("Retrying request message to %v. Retry count: %d", id, i)
+		}
 		res, err = mp.sendRequestMessage(ctx, id, procedure, data)
 		if err != nil {
 			if errors.Is(err, errTimeout) {
