@@ -38,6 +38,8 @@ func main() {
 		EnableUsingRelayService:  true,
 		EnableRelayService:       true,
 		EnableHolePunching:       true,
+		Version:                  "1.0",
+		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
 	err = cfgNet.InsertDefault()
 	if err != nil {

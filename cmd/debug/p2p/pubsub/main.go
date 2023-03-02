@@ -56,8 +56,9 @@ func main() {
 	cfgNet := config.NetworkConfig{
 		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
 		AllowIncomingConnections: true,
-		NetworkName:              "lisk-test",
 		SeedPeers:                []string{},
+		Version:                  "2.0",
+		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
 	err = cfgNet.InsertDefault()
 	if err != nil {
@@ -69,7 +70,7 @@ func main() {
 		panic(err)
 	}
 
-	gs := p2p.NewGossipSub()
+	gs := p2p.NewGossipSub(cfgNet.ChainID, cfgNet.Version)
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
 	var validator p2p.Validator

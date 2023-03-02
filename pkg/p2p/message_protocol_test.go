@@ -48,7 +48,7 @@ func (s testStream) Conn() network.Conn {
 func TestMessageProtocol_NewMessageProtocol(t *testing.T) {
 	assert := assert.New(t)
 
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	assert.Nil(mp.logger)
 	assert.Nil(mp.peer)
 	assert.Equal(0, len(mp.resCh))
@@ -68,7 +68,7 @@ func TestMessageProtocol_Start(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	mp.Start(ctx, logger, p)
 	assert.Equal(logger, mp.logger)
 	assert.Equal(p, mp.peer)
@@ -97,7 +97,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			cfgNet := cfg.NetworkConfig{}
 			_ = cfgNet.InsertDefault()
 			p, _ := NewPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
-			mp := NewMessageProtocol()
+			mp := NewMessageProtocol(testChainID, testVersion)
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *RequestMsg) {
 				mp.logger.Debugf("Request received")
 				w.Write([]byte(testResponseData))
@@ -131,7 +131,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	mp.Start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
 	mp.resCh[testReqMsgID] = ch
@@ -168,7 +168,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	mp.Start(ctx, &loggerTest, p)
 	// There is no channel for the request ID "testReqMsgID"
 
@@ -188,7 +188,7 @@ func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
 	testHandler := func(w ResponseWriter, req *RequestMsg) {
 	}
 
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
 
@@ -215,7 +215,7 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	wg := &sync.WaitGroup{}
 	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	mp.Start(ctx, logger, p)
 
 	err := mp.RegisterRPCHandler(testRPC, testHandler)
@@ -232,7 +232,7 @@ func TestMessageProtocol_RegisterRPCHandlerAlreadyRegistered(t *testing.T) {
 	testHandler := func(w ResponseWriter, req *RequestMsg) {
 	}
 
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 
 	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
@@ -256,10 +256,10 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp1 := NewMessageProtocol()
+	mp1 := NewMessageProtocol(testChainID, testVersion)
 	mp1.Start(ctx, logger, p1)
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp2 := NewMessageProtocol()
+	mp2 := NewMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Write([]byte("Average RTT with you:"))
 	})
@@ -288,10 +288,10 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp1 := NewMessageProtocol()
+	mp1 := NewMessageProtocol(testChainID, testVersion)
 	mp1.Start(ctx, logger, p1)
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp2 := NewMessageProtocol()
+	mp2 := NewMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Error(errors.New("Test RPC handler error!"))
 	})
@@ -321,14 +321,15 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp1 := NewMessageProtocol()
+	mp1 := NewMessageProtocol(testChainID, testVersion)
 	mp1.Start(ctx, logger, p1)
 	mp1.timeout = time.Millisecond * 20 // Reduce timeout to 20 ms to speed up test
 	// Remove response message stream handler to simulate timeout
-	p1.host.RemoveStreamHandler(messageProtocolReqID)
-	p1.host.RemoveStreamHandler(messageProtocolResID)
+	p1.host.RemoveStreamHandler(messageProtocolReqID(testChainID, testVersion))
+	p1.host.RemoveStreamHandler(messageProtocolResID(testChainID, testVersion))
+
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp2 := NewMessageProtocol()
+	mp2 := NewMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *RequestMsg) {
 		w.Write([]byte("Average RTT with you:"))
 	})
@@ -356,10 +357,10 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp1 := NewMessageProtocol()
+	mp1 := NewMessageProtocol(testChainID, testVersion)
 	mp1.Start(ctx, logger, p1)
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	mp2 := NewMessageProtocol()
+	mp2 := NewMessageProtocol(testChainID, testVersion)
 	mp2.Start(ctx, logger, p2)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
@@ -408,15 +409,15 @@ func TestMessageProtocol_SendProtoMessage(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
 	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2.host.SetStreamHandler(messageProtocolReqID, tmr.onMessageReceive)
+	p2.host.SetStreamHandler(messageProtocolReqID(testChainID, testVersion), tmr.onMessageReceive)
 	p2Addrs, _ := p2.P2PAddrs()
 	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
 
 	_ = p1.Connect(ctx, *p2AddrInfo)
 	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
-	mp := NewMessageProtocol()
+	mp := NewMessageProtocol(testChainID, testVersion)
 	mp.Start(ctx, logger, p1)
-	err := mp.sendMessage(ctx, p2.ID(), messageProtocolReqID, msg)
+	err := mp.sendMessage(ctx, p2.ID(), messageProtocolReqID(testChainID, testVersion), msg)
 	assert.Nil(err)
 
 	select {

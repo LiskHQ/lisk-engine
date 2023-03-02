@@ -33,7 +33,11 @@ type P2P struct {
 
 // NewP2P creates a new P2P instance.
 func NewP2P(cfgNet *config.NetworkConfig) *P2P {
-	return &P2P{cfgNet: cfgNet, MessageProtocol: NewMessageProtocol(), GossipSub: NewGossipSub()}
+	return &P2P{
+		cfgNet:          cfgNet,
+		MessageProtocol: NewMessageProtocol(cfgNet.ChainID, cfgNet.Version),
+		GossipSub:       NewGossipSub(cfgNet.ChainID, cfgNet.Version),
+	}
 }
 
 // Start function starts a P2P and all other related services and handlers.

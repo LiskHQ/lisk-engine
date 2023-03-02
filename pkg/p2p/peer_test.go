@@ -208,7 +208,7 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	cfgNet2 := cfg.NetworkConfig{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
 	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet2)
 
-	gs := NewGossipSub()
+	gs := NewGossipSub(testChainID, testVersion)
 	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 
 	sk := ps.NewScoreKeeper()

@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -10,6 +11,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
 
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
@@ -33,15 +35,19 @@ type GossipSub struct {
 	subscriptions     map[string]*pubsub.Subscription
 	eventHandlers     map[string]EventHandler
 	validatorHandlers map[string]Validator
+	chainID           []byte
+	version           string
 }
 
 // NewGossipSub makes a new GossipSub struct.
-func NewGossipSub() *GossipSub {
+func NewGossipSub(chainID []byte, version string) *GossipSub {
 	return &GossipSub{
 		topics:            make(map[string]*pubsub.Topic),
 		subscriptions:     make(map[string]*pubsub.Subscription),
 		eventHandlers:     make(map[string]EventHandler),
 		validatorHandlers: make(map[string]Validator),
+		chainID:           chainID,
+		version:           version,
 	}
 }
 
@@ -253,14 +259,15 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler, val
 	if gs.ps != nil {
 		return ErrGossipSubIsRunning
 	}
-	_, exist := gs.eventHandlers[name]
+	formattedTopic := gs.formatTopic(name)
+	_, exist := gs.eventHandlers[formattedTopic]
 	if exist {
 		return ErrDuplicateHandler
 	}
-	gs.topics[name] = nil
-	gs.subscriptions[name] = nil
-	gs.eventHandlers[name] = handler
-	gs.validatorHandlers[name] = validator
+	gs.topics[formattedTopic] = nil
+	gs.subscriptions[formattedTopic] = nil
+	gs.eventHandlers[formattedTopic] = handler
+	gs.validatorHandlers[formattedTopic] = validator
 	return nil
 }
 
@@ -272,9 +279,13 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte)
 	if err != nil {
 		return err
 	}
-	topic := gs.topics[topicName]
+	topic := gs.topics[gs.formatTopic(topicName)]
 	if topic == nil {
 		return ErrTopicNotFound
 	}
 	return topic.Publish(ctx, data)
+}
+
+func (gs *GossipSub) formatTopic(name string) string {
+	return fmt.Sprintf("/%s/%s/%s", name, codec.Hex(gs.chainID).String(), gs.version)
 }
