@@ -22,6 +22,7 @@ const (
 	testReqMsgID     = "123456789"
 	testRequestData  = "testRequestData"
 	testResponseData = "testResponseData"
+	testVersion      = "2.0"
 
 	testIPv4TCP = "/ip4/127.0.0.1/tcp/0"
 	testIPv4UDP = "/ip4/127.0.0.1/udp/0/quic"
@@ -36,7 +37,8 @@ const (
 )
 
 var (
-	testMV = func(ctx context.Context, msg *Message) ValidationResult {
+	testChainID = []byte{1, 2, 0, 0}
+	testMV      = func(ctx context.Context, msg *Message) ValidationResult {
 		if bytes.Contains(msg.Data, []byte("Invalid")) {
 			return ValidationReject
 		} else {
@@ -84,7 +86,6 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal(20, p2p.cfgNet.MinNumOfConnections)
 	assert.Equal(100, p2p.cfgNet.MaxNumOfConnections)
 	assert.Equal(false, p2p.cfgNet.IsSeedNode)
-	assert.Equal("lisk-test", p2p.cfgNet.NetworkName)
 	assert.NotNil(p2p.GossipSub)
 }
 

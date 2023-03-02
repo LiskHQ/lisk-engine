@@ -42,7 +42,7 @@ func main() {
 		panic(err)
 	}
 
-	mp := p2p.NewMessageProtocol()
+	mp := p2p.NewMessageProtocol([]byte{0, 0, 1, 2}, "1.0")
 	err = mp.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.RequestMsg) {
 		rtt, err := node.PingMultiTimes(ctx, node.ConnectedPeers()[0])
 		if err != nil {

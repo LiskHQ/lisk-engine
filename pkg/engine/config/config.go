@@ -265,8 +265,8 @@ type NetworkConfig struct {
 	MinNumOfConnections      int      `json:"minNumOfConnections"`
 	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
 	// GossipSub configuration
-	IsSeedNode  bool   `json:"isSeedNode,omitempty"`
-	NetworkName string `json:"networkName"`
+	IsSeedNode bool      `json:"isSeedNode,omitempty"`
+	ChainID    codec.Hex `json:"chainID"`
 }
 
 func (c *NetworkConfig) InsertDefault() error {
@@ -297,8 +297,8 @@ func (c *NetworkConfig) InsertDefault() error {
 	if c.MaxNumOfConnections == 0 {
 		c.MaxNumOfConnections = 100
 	}
-	if c.NetworkName == "" {
-		c.NetworkName = "lisk-test"
+	if len(c.ChainID) == 0 {
+		c.ChainID = []byte{0xff, 0xff, 0xff, 0xff}
 	}
 	return nil
 }

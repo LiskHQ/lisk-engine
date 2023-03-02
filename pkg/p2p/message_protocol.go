@@ -16,13 +16,18 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const messageProtocolReqID = "/lisk/message/req/0.0.1"
-const messageProtocolResID = "/lisk/message/res/0.0.1"
-
 const messageResponseTimeout = 3 * time.Second // Time to wait for a response message before returning an error
 const messageMaxRetries = 3                    // Maximum number of retries for a request message
 
 var errTimeout = errors.New("timeout")
+
+func messageProtocolReqID(chainID []byte, version string) protocol.ID {
+	return protocol.ID(fmt.Sprintf("/lisk/message/req/%s/%s", codec.Hex(chainID).String(), version))
+}
+
+func messageProtocolResID(chainID []byte, version string) protocol.ID {
+	return protocol.ID(fmt.Sprintf("/lisk/message/res/%s/%s", codec.Hex(chainID).String(), version))
+}
 
 // MessageProtocol type.
 type MessageProtocol struct {
@@ -32,11 +37,19 @@ type MessageProtocol struct {
 	resCh       map[string]chan<- *Response
 	timeout     time.Duration
 	rpcHandlers map[string]RPCHandler
+	chainID     []byte
+	version     string
 }
 
 // NewMessageProtocol creates a new message protocol.
-func NewMessageProtocol() *MessageProtocol {
-	mp := &MessageProtocol{resCh: make(map[string]chan<- *Response), timeout: messageResponseTimeout, rpcHandlers: make(map[string]RPCHandler)}
+func NewMessageProtocol(chainID []byte, version string) *MessageProtocol {
+	mp := &MessageProtocol{
+		resCh:       make(map[string]chan<- *Response),
+		timeout:     messageResponseTimeout,
+		rpcHandlers: make(map[string]RPCHandler),
+		chainID:     chainID,
+		version:     version,
+	}
 	return mp
 }
 
@@ -44,10 +57,10 @@ func NewMessageProtocol() *MessageProtocol {
 func (mp *MessageProtocol) Start(ctx context.Context, logger log.Logger, peer *Peer) {
 	mp.logger = logger
 	mp.peer = peer
-	peer.host.SetStreamHandler(messageProtocolReqID, func(s network.Stream) {
+	peer.host.SetStreamHandler(messageProtocolReqID(mp.chainID, mp.version), func(s network.Stream) {
 		mp.onRequest(ctx, s)
 	})
-	peer.host.SetStreamHandler(messageProtocolResID, mp.onResponse)
+	peer.host.SetStreamHandler(messageProtocolResID(mp.chainID, mp.version), mp.onResponse)
 	mp.logger.Infof("Message protocol is started")
 }
 
@@ -172,7 +185,7 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 // sendRequestMessage sends a request message to a peer using a message protocol.
 func (mp *MessageProtocol) sendRequestMessage(ctx context.Context, id peer.ID, procedure string, data []byte) (*Response, error) {
 	reqMsg := newRequestMessage(mp.peer.ID(), procedure, data)
-	if err := mp.sendMessage(ctx, id, messageProtocolReqID, reqMsg); err != nil {
+	if err := mp.sendMessage(ctx, id, messageProtocolReqID(mp.chainID, mp.version), reqMsg); err != nil {
 		return nil, err
 	}
 
@@ -227,7 +240,7 @@ func (mp *MessageProtocol) Broadcast(ctx context.Context, procedure string, data
 // SendResponseMessage sends a response message to a peer using a message protocol.
 func (mp *MessageProtocol) SendResponseMessage(ctx context.Context, id peer.ID, reqMsgID string, data []byte, err error) error {
 	resMsg := newResponseMessage(reqMsgID, data, err)
-	return mp.sendMessage(ctx, id, messageProtocolResID, resMsg)
+	return mp.sendMessage(ctx, id, messageProtocolResID(mp.chainID, mp.version), resMsg)
 }
 
 // sendMessage sends a message to a peer using a stream.
