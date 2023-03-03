@@ -15,7 +15,7 @@ import (
 type chainEndpoint struct {
 	chain         *blockchain.Chain
 	consensusExec *consensus.Executer
-	p2pConn       *p2p.P2P
+	p2pConn       *p2p.Connection
 	txPool        *txpool.TransactionPool
 	abi           labi.ABI
 }
@@ -23,7 +23,7 @@ type chainEndpoint struct {
 func NewChainEndpoint(
 	chain *blockchain.Chain,
 	consensusExec *consensus.Executer,
-	p2pConn *p2p.P2P,
+	p2pConn *p2p.Connection,
 	txPool *txpool.TransactionPool,
 	abi labi.ABI,
 ) *chainEndpoint {

@@ -35,7 +35,7 @@ type Engine struct {
 	router          *router.Router
 	blockchainDB    *db.DB
 	generatorDB     *db.DB
-	p2pConn         *p2p.P2P
+	p2pConn         *p2p.Connection
 	chain           *blockchain.Chain
 	consensusExec   *consensus.Executer
 	transactionPool *txpool.TransactionPool
@@ -238,7 +238,7 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) init() error {
-	e.p2pConn = p2p.NewP2P(e.config.Network)
+	e.p2pConn = p2p.NewConnection(e.config.Network)
 	e.chain = blockchain.NewChain(&blockchain.ChainConfig{
 		MaxBlockCache:         e.config.System.GetMaxBlokckCache(),
 		ChainID:               e.config.Genesis.ChainID,

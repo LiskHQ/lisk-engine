@@ -15,7 +15,7 @@ import (
 // Syncer sync the block with network.
 type blockSyncer struct {
 	chain     *blockchain.Chain
-	conn      *p2p.P2P
+	conn      *p2p.Connection
 	logger    log.Logger
 	processor processFn
 	reverter  revertFn

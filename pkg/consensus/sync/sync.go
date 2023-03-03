@@ -26,7 +26,7 @@ type revertFn = func(ctx context.Context, deletingBlock *blockchain.Block, saveT
 type Syncer struct {
 	chain       *blockchain.Chain
 	blockslot   *validator.BlockSlot
-	conn        *p2p.P2P
+	conn        *p2p.Connection
 	logger      log.Logger
 	blockSyncer *blockSyncer
 	fastSyncer  *fastSyncer
@@ -35,7 +35,7 @@ type Syncer struct {
 func NewSyncer(
 	chain *blockchain.Chain,
 	blockslot *validator.BlockSlot,
-	conn *p2p.P2P,
+	conn *p2p.Connection,
 	logger log.Logger,
 	processor processFn,
 	reverter revertFn,

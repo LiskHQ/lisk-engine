@@ -20,7 +20,7 @@ type ChatRoom struct {
 	Messages chan *ChatMessage
 
 	ctx  context.Context
-	conn *p2p.P2P
+	conn *p2p.Connection
 
 	roomName string
 	self     peer.ID
@@ -36,7 +36,7 @@ type ChatMessage struct {
 
 // JoinChatRoom tries to subscribe to the PubSub topic for the room name, returning
 // a ChatRoom on success.
-func JoinChatRoom(ctx context.Context, conn *p2p.P2P, ch chan *ChatMessage, nickname string, roomName string) (*ChatRoom, error) {
+func JoinChatRoom(ctx context.Context, conn *p2p.Connection, ch chan *ChatMessage, nickname string, roomName string) (*ChatRoom, error) {
 	cr := &ChatRoom{
 		ctx:      ctx,
 		conn:     conn,

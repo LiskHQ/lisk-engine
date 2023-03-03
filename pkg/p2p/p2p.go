@@ -18,8 +18,8 @@ import (
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
 
-// P2P type - a p2p service.
-type P2P struct {
+// Connection - a connection to p2p network.
+type Connection struct {
 	logger     log.Logger
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
@@ -30,9 +30,9 @@ type P2P struct {
 	*GossipSub
 }
 
-// NewP2P creates a new P2P instance.
-func NewP2P(cfgNet *config.NetworkConfig) *P2P {
-	return &P2P{
+// NewConnection creates a new P2P instance.
+func NewConnection(cfgNet *config.NetworkConfig) *Connection {
+	return &Connection{
 		cfgNet:          cfgNet,
 		MessageProtocol: newMessageProtocol(cfgNet.ChainID, cfgNet.Version),
 		GossipSub:       newGossipSub(cfgNet.ChainID, cfgNet.Version),
@@ -40,64 +40,64 @@ func NewP2P(cfgNet *config.NetworkConfig) *P2P {
 }
 
 // Start the P2P and all other related services and handlers.
-func (p2p *P2P) Start(logger log.Logger, seed []byte) error {
+func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := newPeer(ctx, &p2p.wg, logger, seed, *p2p.cfgNet)
+	peer, err := newPeer(ctx, &conn.wg, logger, seed, *conn.cfgNet)
 	if err != nil {
 		cancel()
 		return err
 	}
 	peer.peerbook.init(logger)
 
-	p2p.MessageProtocol.start(ctx, logger, peer)
+	conn.MessageProtocol.start(ctx, logger, peer)
 
 	sk := newScoreKeeper()
-	err = p2p.GossipSub.start(ctx, &p2p.wg, logger, peer, sk, *p2p.cfgNet)
+	err = conn.GossipSub.start(ctx, &conn.wg, logger, peer, sk, *conn.cfgNet)
 	if err != nil {
 		cancel()
 		return err
 	}
 
 	// Start peer discovery bootstrap process.
-	seedPeers, err := parseAddresses(p2p.cfgNet.SeedPeers)
+	seedPeers, err := parseAddresses(conn.cfgNet.SeedPeers)
 	if err != nil {
 		cancel()
 		return err
 	}
 	cfgBootStrap := bootstrap.BootstrapConfigWithPeers(seedPeers)
-	cfgBootStrap.MinPeerThreshold = p2p.cfgNet.MinNumOfConnections
+	cfgBootStrap.MinPeerThreshold = conn.cfgNet.MinNumOfConnections
 	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, cfgBootStrap)
 	if err != nil {
 		cancel()
 		return err
 	}
 
-	p2p.logger = logger
-	p2p.cancel = cancel
-	p2p.Peer = peer
-	p2p.bootCloser = bootCloser
+	conn.logger = logger
+	conn.cancel = cancel
+	conn.Peer = peer
+	conn.bootCloser = bootCloser
 
-	p2p.wg.Add(1)
-	go natTraversalService(ctx, &p2p.wg, *p2p.cfgNet, p2p.MessageProtocol)
+	conn.wg.Add(1)
+	go natTraversalService(ctx, &conn.wg, *conn.cfgNet, conn.MessageProtocol)
 
-	p2p.wg.Add(1)
-	go p2pEventHandler(ctx, &p2p.wg, peer)
+	conn.wg.Add(1)
+	go connectionEventHandler(ctx, &conn.wg, peer)
 
-	logger.Infof("P2P module successfully started")
+	logger.Infof("P2P connection successfully started")
 	return nil
 }
 
-// Stop the P2P process.
-func (p2p *P2P) Stop() error {
-	p2p.cancel()
+// Stop the connection to the P2P network.
+func (conn *Connection) Stop() error {
+	conn.cancel()
 
-	p2p.bootCloser.Close()
+	conn.bootCloser.Close()
 
 	waitCh := make(chan struct{})
 	go func() {
-		p2p.wg.Wait()
+		conn.wg.Wait()
 		close(waitCh)
 	}()
 
@@ -105,20 +105,20 @@ func (p2p *P2P) Stop() error {
 	case <-waitCh:
 		// All services stopped successfully. Nothing to do.
 	case <-time.After(stopTimeout):
-		return errors.New("P2P module failed to stop")
+		return errors.New("P2P connection failed to stop")
 	}
-	if err := p2p.Peer.close(); err != nil {
-		p2p.logger.Error("Fail to close peer")
+	if err := conn.Peer.close(); err != nil {
+		conn.logger.Error("Fail to close peer")
 	}
 
-	p2p.logger.Infof("P2P module successfully stopped")
+	conn.logger.Infof("P2P connection successfully stopped")
 	return nil
 }
 
-// p2pEventHandler handles P2P events.
-func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
+// connectionEventHandler handles connection events.
+func connectionEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 	defer wg.Done()
-	p.logger.Infof("P2P event handler started")
+	p.logger.Infof("Connection event handler started")
 
 	sub, err := p.host.EventBus().Subscribe(event.WildcardSubscription)
 	if err != nil {
@@ -147,7 +147,7 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 				p.logger.Debugf("New P2P event received. Peer identification completed: %v", ev)
 			}
 		case <-ctx.Done():
-			p.logger.Infof("P2P event handler stopped")
+			p.logger.Infof("Connection event handler stopped")
 			return
 		}
 	}
@@ -155,8 +155,8 @@ func p2pEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
-func (p2p *P2P) ApplyPenalty(pid string, score int) {
-	if err := p2p.addPenalty(peer.ID(pid), score); err != nil {
-		p2p.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+func (conn *Connection) ApplyPenalty(pid string, score int) {
+	if err := conn.addPenalty(peer.ID(pid), score); err != nil {
+		conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
 	}
 }

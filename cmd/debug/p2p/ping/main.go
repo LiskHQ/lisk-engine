@@ -35,10 +35,10 @@ func main() {
 		panic(err)
 	}
 
-	node := p2p.NewP2P(&cfgNet)
+	conn := p2p.NewConnection(&cfgNet)
 
-	if err := node.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.Request) {
-		rtt, err := node.PingMultiTimes(ctx, node.ConnectedPeers()[0])
+	if err := conn.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.Request) {
+		rtt, err := conn.PingMultiTimes(ctx, conn.ConnectedPeers()[0])
 		if err != nil {
 			panic(err)
 		}
@@ -53,11 +53,11 @@ func main() {
 		panic(err)
 	}
 
-	if err := node.Start(log.DefaultLogger, nil); err != nil {
+	if err := conn.Start(log.DefaultLogger, nil); err != nil {
 		panic(err)
 	}
 
-	addrs, err := node.MultiAddress()
+	addrs, err := conn.MultiAddress()
 	if err != nil {
 		panic(err)
 	}
@@ -70,10 +70,10 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		if err := node.Connect(ctx, *peer); err != nil {
+		if err := conn.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		response := node.RequestFrom(ctx, peer.ID.String(), "ping", nil)
+		response := conn.RequestFrom(ctx, peer.ID.String(), "ping", nil)
 		logger.Infof("Response message received: %+v", response)
 		logger.Infof("%s", string(response.Data()))
 	} else {
@@ -84,7 +84,7 @@ func main() {
 		logger.Infof("Received signal, shutting down a node...")
 	}
 
-	if err := node.Stop(); err != nil {
+	if err := conn.Stop(); err != nil {
 		panic(err)
 	}
 }

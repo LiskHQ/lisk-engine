@@ -70,7 +70,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{}
 	err := cfgNet.InsertDefault()
 	assert.Nil(err)
-	p2p := NewP2P(&cfgNet)
+	p2p := NewConnection(&cfgNet)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.cfgNet.Version)
 	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.cfgNet.Addresses)
@@ -94,7 +94,7 @@ func TestP2P_Start(t *testing.T) {
 
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p2p := NewP2P(&cfgNet)
+	p2p := NewConnection(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger, []byte{})
 	assert.Nil(err)
@@ -116,8 +116,8 @@ func TestP2P_AddPenalty(t *testing.T) {
 		Addresses:                []string{testIPv4TCP, testIPv4UDP},
 	}
 	_ = cfgNet.InsertDefault()
-	node1 := NewP2P(&cfgNet)
-	node2 := NewP2P(&cfgNet)
+	node1 := NewConnection(&cfgNet)
+	node2 := NewConnection(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	node1.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	node2.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
@@ -149,7 +149,7 @@ func TestP2P_Stop(t *testing.T) {
 
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p2p := NewP2P(&cfgNet)
+	p2p := NewConnection(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	_ = p2p.Start(logger, []byte{})
 
