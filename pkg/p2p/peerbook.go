@@ -7,11 +7,10 @@ import (
 
 	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
 	log "github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
-// Peerbook keeps track of different lists of peers.
-type Peerbook struct {
+// peerbook keeps track of different lists of peers.
+type peerbook struct {
 	logger                    log.Logger
 	mutex                     sync.Mutex
 	seedPeers                 []*peer.AddrInfo
@@ -19,11 +18,11 @@ type Peerbook struct {
 	permanentlyBlacklistedIPs []string
 }
 
-// NewPeerbook returns a new Peerbook.
-func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []string) (*Peerbook, error) {
+// newPeerbook returns a new Peerbook.
+func newPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []string) (*peerbook, error) {
 	seedPeersAddrInfo := make([]*peer.AddrInfo, len(seedPeers))
 	for i, seedPeer := range seedPeers {
-		addrInfo, err := PeerInfoFromMultiAddr(seedPeer)
+		addrInfo, err := AddrInfoFromMultiAddr(seedPeer)
 		if err != nil {
 			return nil, err
 		}
@@ -32,19 +31,19 @@ func NewPeerbook(seedPeers []string, fixedPeers []string, blacklistedIPs []strin
 
 	fixedPeersAddrInfo := make([]*peer.AddrInfo, len(fixedPeers))
 	for i, fixedPeer := range fixedPeers {
-		addrInfo, err := PeerInfoFromMultiAddr(fixedPeer)
+		addrInfo, err := AddrInfoFromMultiAddr(fixedPeer)
 		if err != nil {
 			return nil, err
 		}
 		fixedPeersAddrInfo[i] = addrInfo
 	}
 
-	peerbook := &Peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, permanentlyBlacklistedIPs: blacklistedIPs}
+	peerbook := &peerbook{mutex: sync.Mutex{}, seedPeers: seedPeersAddrInfo, fixedPeers: fixedPeersAddrInfo, permanentlyBlacklistedIPs: blacklistedIPs}
 	return peerbook, nil
 }
 
 // init initializes the Peerbook.
-func (pb *Peerbook) init(logger log.Logger) {
+func (pb *peerbook) init(logger log.Logger) {
 	pb.logger = logger
 
 	for _, ip := range pb.permanentlyBlacklistedIPs {
@@ -59,34 +58,34 @@ func (pb *Peerbook) init(logger log.Logger) {
 }
 
 // SeedPeers returns seed peers.
-func (pb *Peerbook) SeedPeers() []*peer.AddrInfo {
+func (pb *peerbook) SeedPeers() []*peer.AddrInfo {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.seedPeers
 }
 
 // FixedPeers returns fixed peers.
-func (pb *Peerbook) FixedPeers() []*peer.AddrInfo {
+func (pb *peerbook) FixedPeers() []*peer.AddrInfo {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.fixedPeers
 }
 
 // PermanentlyBlacklistedIPs returns permanently blacklisted IPs.
-func (pb *Peerbook) PermanentlyBlacklistedIPs() []string {
+func (pb *peerbook) PermanentlyBlacklistedIPs() []string {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 	return pb.permanentlyBlacklistedIPs
 }
 
 // isIPInSeedPeers returns true if the IP is in the list of seed peers.
-func (pb *Peerbook) isIPInSeedPeers(ip string) bool {
+func (pb *peerbook) isIPInSeedPeers(ip string) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
 	for _, seedPeer := range pb.seedPeers {
 		for _, addr := range seedPeer.Addrs {
-			if ip == lps.ExtractIP(addr) {
+			if ip == extractIP(addr) {
 				return true
 			}
 		}
@@ -96,13 +95,13 @@ func (pb *Peerbook) isIPInSeedPeers(ip string) bool {
 }
 
 // isIPInFixedPeers returns true if the IP is in the list of fixed peers.
-func (pb *Peerbook) isIPInFixedPeers(ip string) bool {
+func (pb *peerbook) isIPInFixedPeers(ip string) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
 	for _, fixedPeer := range pb.fixedPeers {
 		for _, addr := range fixedPeer.Addrs {
-			if ip == lps.ExtractIP(addr) {
+			if ip == extractIP(addr) {
 				return true
 			}
 		}
@@ -112,7 +111,7 @@ func (pb *Peerbook) isIPInFixedPeers(ip string) bool {
 }
 
 // isIPPermanentlyBlacklisted returns true if the IP is permanently blacklisted.
-func (pb *Peerbook) isIPPermanentlyBlacklisted(ip string) bool {
+func (pb *peerbook) isIPPermanentlyBlacklisted(ip string) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
@@ -124,24 +123,24 @@ func (pb *Peerbook) isIPPermanentlyBlacklisted(ip string) bool {
 }
 
 // isInSeedPeers returns true if the peer is in the list of seed peers.
-func (pb *Peerbook) isInSeedPeers(peerID peer.ID) bool {
+func (pb *peerbook) isInSeedPeers(pid PeerID) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
 	index := collection.FindIndex(pb.seedPeers, func(val *peer.AddrInfo) bool {
-		return peer.ID(val.ID.String()) == peerID
+		return peer.ID(val.ID.String()) == pid
 	})
 
 	return index != -1
 }
 
 // isInFixedPeers returns true if the peer is in the list of fixed peers.
-func (pb *Peerbook) isInFixedPeers(peerID peer.ID) bool {
+func (pb *peerbook) isInFixedPeers(pid PeerID) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
 	index := collection.FindIndex(pb.fixedPeers, func(val *peer.AddrInfo) bool {
-		return peer.ID(val.ID.String()) == peerID
+		return peer.ID(val.ID.String()) == pid
 	})
 
 	return index != -1

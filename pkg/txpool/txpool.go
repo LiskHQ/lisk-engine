@@ -426,7 +426,7 @@ type GetTransactionsResponse struct {
 	Transactions []*blockchain.Transaction `json:"transactions" fieldNumber:"1"`
 }
 
-func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, r *p2p.RequestMsg) {
+func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, r *p2p.Request) {
 	// Case without request body
 	if len(r.Data) == 0 {
 		processables := t.GetProcessable()

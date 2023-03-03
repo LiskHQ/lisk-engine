@@ -70,7 +70,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{}
 	err := cfgNet.InsertDefault()
 	assert.Nil(err)
-	p2p := NewP2P(&cfgNet)
+	p2p := NewConnection(&cfgNet)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.cfgNet.Version)
 	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.cfgNet.Addresses)
@@ -85,7 +85,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal([]string{}, p2p.cfgNet.BlacklistedIPs)
 	assert.Equal(20, p2p.cfgNet.MinNumOfConnections)
 	assert.Equal(100, p2p.cfgNet.MaxNumOfConnections)
-	assert.Equal(false, p2p.cfgNet.IsSeedNode)
+	assert.Equal(false, p2p.cfgNet.IsSeedPeer)
 	assert.NotNil(p2p.GossipSub)
 }
 
@@ -94,7 +94,7 @@ func TestP2P_Start(t *testing.T) {
 
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p2p := NewP2P(&cfgNet)
+	p2p := NewConnection(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger, []byte{})
 	assert.Nil(err)
@@ -116,8 +116,8 @@ func TestP2P_AddPenalty(t *testing.T) {
 		Addresses:                []string{testIPv4TCP, testIPv4UDP},
 	}
 	_ = cfgNet.InsertDefault()
-	node1 := NewP2P(&cfgNet)
-	node2 := NewP2P(&cfgNet)
+	node1 := NewConnection(&cfgNet)
+	node2 := NewConnection(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	node1.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	node2.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
@@ -128,16 +128,16 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	err = node2.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
-	p2Addrs, err := node2.P2PAddrs()
+	p2Addrs, err := node2.MultiAddress()
 	assert.Nil(err)
-	p2AddrInfo, err := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p2AddrInfo, err := AddrInfoFromMultiAddr(p2Addrs[0])
 	assert.Nil(err)
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
 	node1.ApplyPenalty(string(p2AddrInfo.ID), 10)
 	assert.Equal(node2.ID(), node1.ConnectedPeers()[0])
-	node1.ApplyPenalty(string(p2AddrInfo.ID), MaxScore)
+	node1.ApplyPenalty(string(p2AddrInfo.ID), MaxPenaltyScore)
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)
@@ -149,7 +149,7 @@ func TestP2P_Stop(t *testing.T) {
 
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p2p := NewP2P(&cfgNet)
+	p2p := NewConnection(&cfgNet)
 	logger, _ := logger.NewDefaultProductionLogger()
 	_ = p2p.Start(logger, []byte{})
 

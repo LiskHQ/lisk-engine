@@ -19,16 +19,15 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
-	ma "github.com/multiformats/go-multiaddr"
 
 	lskcrypto "github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 type PeerID = peer.ID
 type PeerIDs = peer.IDSlice
+type AddrInfo = peer.AddrInfo
 
 const (
 	numOfPingMessages        = 5                // Number of sent ping messages in Ping service.
@@ -49,7 +48,7 @@ const (
 type Peer struct {
 	logger    log.Logger
 	host      host.Host
-	peerbook  *Peerbook
+	peerbook  *peerbook
 	connGater *connectionGater
 }
 
@@ -77,8 +76,8 @@ var relayServiceOptions = []relay.Option{
 	relay.WithLimit(&relay.RelayLimit{Duration: 2 * time.Minute, Data: 1 << 17 /*128K*/}),
 }
 
-// NewPeer creates a peer with a libp2p host and message protocol.
-func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfgNet config.NetworkConfig) (*Peer, error) {
+// newPeer creates a peer with a libp2p host and message protocol.
+func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfgNet config.NetworkConfig) (*Peer, error) {
 	// Create a Peer variable in advance to be able to use it in the libp2p options.
 	var p *Peer
 
@@ -175,7 +174,7 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 		return nil, err
 	}
 
-	peerbook, err := NewPeerbook(cfgNet.SeedPeers, cfgNet.FixedPeers, cfgNet.BlacklistedIPs)
+	peerbook, err := newPeerbook(cfgNet.SeedPeers, cfgNet.FixedPeers, cfgNet.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -186,8 +185,8 @@ func NewPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 	return p, nil
 }
 
-// Close a peer.
-func (p *Peer) Close() error {
+// close a peer.
+func (p *Peer) close() error {
 	err := p.host.Close()
 	if err != nil {
 		return err
@@ -196,8 +195,9 @@ func (p *Peer) Close() error {
 	return nil
 }
 
-// Connect to a peer.
-func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
+// Connect to a peer using AddrInfo.
+// Direct connection is discouraged. Manually connected peer must be manually disconnected.
+func (p *Peer) Connect(ctx context.Context, peer AddrInfo) error {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, connectionTimeout)
 	err := p.host.Connect(ctxWithTimeout, peer)
 	cancel()
@@ -209,22 +209,30 @@ func (p *Peer) Connect(ctx context.Context, peer peer.AddrInfo) error {
 }
 
 // Disconnect from a peer.
-func (p *Peer) Disconnect(peer peer.ID) error {
+func (p *Peer) Disconnect(peer PeerID) error {
 	return p.host.Network().ClosePeer(peer)
 }
 
 // ID returns a peers's identifier.
-func (p *Peer) ID() peer.ID {
+func (p *Peer) ID() PeerID {
 	return p.host.ID()
 }
 
-// P2PAddrs returns a peers's listen addresses in multiaddress format.
-func (p *Peer) P2PAddrs() ([]ma.Multiaddr, error) {
+// MultiAddress returns a peers's listen addresses.
+func (p *Peer) MultiAddress() ([]string, error) {
 	peerInfo := peer.AddrInfo{
 		ID:    p.ID(),
 		Addrs: p.host.Addrs(),
 	}
-	return peer.AddrInfoToP2pAddrs(&peerInfo)
+	multiaddr, err := peer.AddrInfoToP2pAddrs(&peerInfo)
+	if err != nil {
+		return nil, err
+	}
+	addresses := make([]string, len(multiaddr))
+	for i, addr := range multiaddr {
+		addresses[i] = addr.String()
+	}
+	return addresses, nil
 }
 
 // ConnectedPeers returns a list of all connected peers IDs.
@@ -233,10 +241,10 @@ func (p *Peer) ConnectedPeers() PeerIDs {
 }
 
 // BlacklistedPeers returns a list of blacklisted peers and their addresses.
-func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
+func (p *Peer) BlacklistedPeers() []AddrInfo {
 	blacklistedPeers := make([]peer.AddrInfo, 0)
 
-	for _, knownPeer := range p.KnownPeers() {
+	for _, knownPeer := range p.knownPeers() {
 		// Check if the peer ID is blacklisted in connectionGater.
 		peerFound := false
 		for _, id := range p.connGater.listBlockedPeers() {
@@ -254,7 +262,7 @@ func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
 		for _, ip := range p.connGater.listBlockedAddrs() {
 			peerFound := false
 			for _, addr := range knownPeer.Addrs {
-				ipKnownPeer := lps.ExtractIP(addr)
+				ipKnownPeer := extractIP(addr)
 				if ipKnownPeer == ip.String() {
 					blacklistedPeers = append(blacklistedPeers, knownPeer)
 					peerFound = true
@@ -270,8 +278,8 @@ func (p *Peer) BlacklistedPeers() []PeerAddrInfo {
 	return blacklistedPeers
 }
 
-// KnownPeers returns a list of all known peers with their addresses.
-func (p *Peer) KnownPeers() []peer.AddrInfo {
+// knownPeers returns a list of all known peers with their addresses.
+func (p *Peer) knownPeers() []peer.AddrInfo {
 	peers := make([]peer.AddrInfo, 0)
 
 	for _, peerID := range p.host.Peerstore().Peers() {
@@ -281,13 +289,8 @@ func (p *Peer) KnownPeers() []peer.AddrInfo {
 	return peers
 }
 
-// GetHost returns a libp2p host.
-func (p *Peer) GetHost() host.Host {
-	return p.host
-}
-
 // PingMultiTimes tries to send ping request to a peer for five times.
-func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Duration, err error) {
+func (p *Peer) PingMultiTimes(ctx context.Context, peer PeerID) (rtt []time.Duration, err error) {
 	pingService := ping.NewPingService(p.host)
 	ch := pingService.Ping(ctx, peer)
 
@@ -310,7 +313,7 @@ func (p *Peer) PingMultiTimes(ctx context.Context, peer peer.ID) (rtt []time.Dur
 }
 
 // Ping tries to send a ping request to a peer.
-func (p *Peer) Ping(ctx context.Context, peer peer.ID) (rtt time.Duration, err error) {
+func (p *Peer) Ping(ctx context.Context, peer PeerID) (rtt time.Duration, err error) {
 	pingService := ping.NewPingService(p.host)
 	ch := pingService.Ping(ctx, peer)
 
@@ -336,7 +339,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	go func() {
 		defer close(peerChan)
 
-		knownPeers := p.KnownPeers()
+		knownPeers := p.knownPeers()
 
 		// Shuffle known peers to avoid always returning the same peers.
 		for i := range knownPeers {
@@ -370,22 +373,22 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 }
 
 // addPenalty will update the score of the given peer ID in connGater.
-// The peer will block if the socre exceeded in maxScore and then disconnected the peer immediately.
-func (p *Peer) addPenalty(pid peer.ID, score int) error {
+// The peer will block if the socre exceeded in MaxPenaltyScore and then disconnected the peer immediately.
+func (p *Peer) addPenalty(pid PeerID, score int) error {
 	newScore, err := p.connGater.addPenalty(pid, score)
 	if err != nil {
 		return err
 	}
-	if newScore >= MaxScore {
+	if newScore >= MaxPenaltyScore {
 		return p.Disconnect(pid)
 	}
 
 	return nil
 }
 
-// BlockPeer blocks the given peer ID and immediately try to close the connection.
-func (p *Peer) BlockPeer(pid peer.ID) error {
-	_, err := p.connGater.addPenalty(pid, MaxScore)
+// blockPeer blocks the given peer ID and immediately try to close the connection.
+func (p *Peer) blockPeer(pid PeerID) error {
+	_, err := p.connGater.addPenalty(pid, MaxPenaltyScore)
 	if err != nil {
 		return err
 	}

@@ -61,4 +61,4 @@ func (r *Response) Error() error {
 }
 
 // RPCHandler is a handler function for RPC request received from a peer.
-type RPCHandler func(w ResponseWriter, req *RequestMsg)
+type RPCHandler func(w ResponseWriter, req *Request)

@@ -22,7 +22,7 @@ var (
 	errCommonBlockNotFound = errors.New("peer did not return common block")
 )
 
-func requestLastBlockHeader(ctx context.Context, conn *p2p.P2P, peerID string) (*blockchain.BlockHeader, error) {
+func requestLastBlockHeader(ctx context.Context, conn *p2p.Connection, peerID string) (*blockchain.BlockHeader, error) {
 	respChan := make(chan p2p.Response)
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -55,7 +55,7 @@ type getHighestCommonBlockResponse struct {
 	id []byte `fieldNumber:"1"`
 }
 
-func requestHighestCommonBlock(ctx context.Context, conn *p2p.P2P, peerID string, ids [][]byte) ([]byte, error) {
+func requestHighestCommonBlock(ctx context.Context, conn *p2p.Connection, peerID string, ids [][]byte) ([]byte, error) {
 	respChan := make(chan p2p.Response)
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -95,7 +95,7 @@ type getBlocksFromIDResponse struct {
 	blocks [][]byte `fieldNumber:"1"`
 }
 
-func requestBlocksFromID(ctx context.Context, conn *p2p.P2P, peerID string, id []byte) ([]*blockchain.Block, error) {
+func requestBlocksFromID(ctx context.Context, conn *p2p.Connection, peerID string, id []byte) ([]*blockchain.Block, error) {
 	respChan := make(chan p2p.Response)
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()

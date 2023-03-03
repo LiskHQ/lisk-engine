@@ -6,7 +6,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *RequestMsg) Encode() ([]byte, error) {
+func (e *Request) Encode() ([]byte, error) {
 	writer := codec.NewWriter()
 	if err := writer.WriteString(1, e.ID); err != nil {
 		return nil, err
@@ -20,7 +20,7 @@ func (e *RequestMsg) Encode() ([]byte, error) {
 	return writer.Result(), nil
 }
 
-func (e *RequestMsg) MustEncode() []byte {
+func (e *Request) MustEncode() []byte {
 	encoded, err := e.Encode()
 	if err != nil {
 		panic(err)
@@ -28,18 +28,18 @@ func (e *RequestMsg) MustEncode() []byte {
 	return encoded
 }
 
-func (e *RequestMsg) Decode(data []byte) error {
+func (e *Request) Decode(data []byte) error {
 	reader := codec.NewReader(data)
 	return e.DecodeFromReader(reader)
 }
 
-func (e *RequestMsg) MustDecode(data []byte) {
+func (e *Request) MustDecode(data []byte) {
 	if err := e.Decode(data); err != nil {
 		panic(err)
 	}
 }
 
-func (e *RequestMsg) DecodeStrict(data []byte) error {
+func (e *Request) DecodeStrict(data []byte) error {
 	reader := codec.NewReader(data)
 	if err := e.DecodeStrictFromReader(reader); err != nil {
 		return err
@@ -50,7 +50,7 @@ func (e *RequestMsg) DecodeStrict(data []byte) error {
 	return nil
 }
 
-func (e *RequestMsg) DecodeFromReader(reader *codec.Reader) error {
+func (e *Request) DecodeFromReader(reader *codec.Reader) error {
 	{
 		val, err := reader.ReadString(1, false)
 		if err != nil {
@@ -75,7 +75,7 @@ func (e *RequestMsg) DecodeFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *RequestMsg) DecodeStrictFromReader(reader *codec.Reader) error {
+func (e *Request) DecodeStrictFromReader(reader *codec.Reader) error {
 	{
 		val, err := reader.ReadString(1, true)
 		if err != nil {
@@ -100,7 +100,7 @@ func (e *RequestMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ResponseMsg) Encode() ([]byte, error) {
+func (e *responseMsg) Encode() ([]byte, error) {
 	writer := codec.NewWriter()
 	if err := writer.WriteString(1, e.ID); err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (e *ResponseMsg) Encode() ([]byte, error) {
 	return writer.Result(), nil
 }
 
-func (e *ResponseMsg) MustEncode() []byte {
+func (e *responseMsg) MustEncode() []byte {
 	encoded, err := e.Encode()
 	if err != nil {
 		panic(err)
@@ -122,18 +122,18 @@ func (e *ResponseMsg) MustEncode() []byte {
 	return encoded
 }
 
-func (e *ResponseMsg) Decode(data []byte) error {
+func (e *responseMsg) Decode(data []byte) error {
 	reader := codec.NewReader(data)
 	return e.DecodeFromReader(reader)
 }
 
-func (e *ResponseMsg) MustDecode(data []byte) {
+func (e *responseMsg) MustDecode(data []byte) {
 	if err := e.Decode(data); err != nil {
 		panic(err)
 	}
 }
 
-func (e *ResponseMsg) DecodeStrict(data []byte) error {
+func (e *responseMsg) DecodeStrict(data []byte) error {
 	reader := codec.NewReader(data)
 	if err := e.DecodeStrictFromReader(reader); err != nil {
 		return err
@@ -144,7 +144,7 @@ func (e *ResponseMsg) DecodeStrict(data []byte) error {
 	return nil
 }
 
-func (e *ResponseMsg) DecodeFromReader(reader *codec.Reader) error {
+func (e *responseMsg) DecodeFromReader(reader *codec.Reader) error {
 	{
 		val, err := reader.ReadString(1, false)
 		if err != nil {
@@ -169,7 +169,7 @@ func (e *ResponseMsg) DecodeFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ResponseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
+func (e *responseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 	{
 		val, err := reader.ReadString(1, true)
 		if err != nil {

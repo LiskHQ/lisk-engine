@@ -409,7 +409,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	pool.reorg()
 
 	// empty req
-	req := &p2p.RequestMsg{
+	req := &p2p.Request{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data:      []byte{},
@@ -427,7 +427,7 @@ func TestTxPoolHandleGetTransaction(t *testing.T) {
 	for i := range ids {
 		ids[i] = crypto.RandomBytes(32)
 	}
-	req = &p2p.RequestMsg{
+	req = &p2p.Request{
 		PeerID:    "127.0.0.1:4949",
 		Procedure: RPCEndpointGetTransactions,
 		Data:      crypto.RandomBytes(10),
