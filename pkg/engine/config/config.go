@@ -265,7 +265,7 @@ type NetworkConfig struct {
 	MinNumOfConnections      int      `json:"minNumOfConnections"`
 	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
 	// GossipSub configuration
-	IsSeedNode bool      `json:"isSeedNode,omitempty"`
+	IsSeedPeer bool      `json:"isSeedPeer,omitempty"`
 	ChainID    codec.Hex `json:"chainID"`
 }
 

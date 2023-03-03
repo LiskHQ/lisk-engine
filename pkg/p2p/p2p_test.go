@@ -85,7 +85,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.Equal([]string{}, p2p.cfgNet.BlacklistedIPs)
 	assert.Equal(20, p2p.cfgNet.MinNumOfConnections)
 	assert.Equal(100, p2p.cfgNet.MaxNumOfConnections)
-	assert.Equal(false, p2p.cfgNet.IsSeedNode)
+	assert.Equal(false, p2p.cfgNet.IsSeedPeer)
 	assert.NotNil(p2p.GossipSub)
 }
 

@@ -105,7 +105,7 @@ func (gs *GossipSub) start(ctx context.Context,
 			&pubsub.PeerScoreParams{
 				AppSpecificScore: func(p peer.ID) float64 {
 					_, ok := bootstrappers[p]
-					if ok && !cfgNet.IsSeedNode {
+					if ok && !cfgNet.IsSeedPeer {
 						return 2500
 					}
 					return 0
@@ -133,7 +133,7 @@ func (gs *GossipSub) start(ctx context.Context,
 		pubsub.WithPeerScoreInspect(sk.Update, 10*time.Second),
 	}
 
-	if cfgNet.IsSeedNode {
+	if cfgNet.IsSeedPeer {
 		pubsub.GossipSubD = 0
 		pubsub.GossipSubDscore = 0
 		pubsub.GossipSubDlo = 0
@@ -147,7 +147,7 @@ func (gs *GossipSub) start(ctx context.Context,
 	pgTopicWeights := map[string]float64{}
 
 	var pgParams *pubsub.PeerGaterParams
-	if cfgNet.IsSeedNode {
+	if cfgNet.IsSeedPeer {
 		pgParams = pubsub.NewPeerGaterParams(
 			0.33,
 			pubsub.ScoreParameterDecay(2*time.Minute),
