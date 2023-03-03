@@ -11,6 +11,7 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
 	"github.com/LiskHQ/lisk-engine/pkg/consensus"
+	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/db"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/endpoint"
@@ -169,16 +170,10 @@ func (e *Engine) Start() error {
 	e.initialized = true
 
 	e.logger.Info("Starting application...")
-	// TODO - Use this in GH issue #67
-	/*handshakeInfo := &p2p.HandshakeInfo{
-		ChainID:          e.config.Genesis.ChainID.String(),
-		NetworkVersion:   e.config.Network.NetworkVersion,
-		AdvertiseAddress: e.config.Network.AdvertiseAddresses,
-	}*/
 	// start P2P
 	go func() {
-		// TODO - Uncomment this in GH issue #67
-		if err := e.p2pConn.Start(e.logger, []byte{} /*, handshakeInfo*/); err != nil {
+		// TODO - Update to use consistent seed in #81
+		if err := e.p2pConn.Start(e.logger, crypto.RandomBytes(16)); err != nil {
 			e.logger.Error("Fail to start connection. stopping")
 			e.Stop()
 		}
