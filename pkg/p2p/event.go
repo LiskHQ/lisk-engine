@@ -21,7 +21,7 @@ func (e *Event) PeerID() string {
 	return e.peerID
 }
 
-// Topic returns event type.
+// Topic returns topof of the event.
 func (e *Event) Topic() string {
 	return e.topic
 }

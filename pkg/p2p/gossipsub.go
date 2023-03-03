@@ -52,6 +52,7 @@ func newGossipSub(chainID []byte, version string) *GossipSub {
 	}
 }
 
+// getMessageID compute the ID for the gossipsub message.
 func getMessageID(m *pubsub_pb.Message) string {
 	hash := crypto.Hash(m.Data)
 	return codec.Hex(hash).String()
