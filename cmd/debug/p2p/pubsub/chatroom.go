@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/libp2p/go-libp2p/core/peer"
-
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
@@ -23,7 +21,7 @@ type ChatRoom struct {
 	conn *p2p.Connection
 
 	roomName string
-	self     peer.ID
+	self     p2p.PeerID
 	nick     string
 }
 
@@ -64,7 +62,7 @@ func (cr *ChatRoom) Publish(message string) error {
 }
 
 // ListPeers returns an array of ID.
-func (cr *ChatRoom) ListPeers() []peer.ID {
+func (cr *ChatRoom) ListPeers() []p2p.PeerID {
 	return cr.conn.ConnectedPeers()
 }
 

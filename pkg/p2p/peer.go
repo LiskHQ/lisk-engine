@@ -374,7 +374,7 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 
 // addPenalty will update the score of the given peer ID in connGater.
 // The peer will block if the socre exceeded in MaxPenaltyScore and then disconnected the peer immediately.
-func (p *Peer) addPenalty(pid peer.ID, score int) error {
+func (p *Peer) addPenalty(pid PeerID, score int) error {
 	newScore, err := p.connGater.addPenalty(pid, score)
 	if err != nil {
 		return err
@@ -387,7 +387,7 @@ func (p *Peer) addPenalty(pid peer.ID, score int) error {
 }
 
 // blockPeer blocks the given peer ID and immediately try to close the connection.
-func (p *Peer) blockPeer(pid peer.ID) error {
+func (p *Peer) blockPeer(pid PeerID) error {
 	_, err := p.connGater.addPenalty(pid, MaxPenaltyScore)
 	if err != nil {
 		return err

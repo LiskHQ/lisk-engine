@@ -14,7 +14,7 @@ func AddrInfoFromMultiAddr(s string) (*AddrInfo, error) {
 	return peer.AddrInfoFromP2pAddr(addr)
 }
 
-// ParseAddresses returns an array of AddrInfo based on the array of the string.
+// parseAddresses returns an array of AddrInfo based on the array of the string.
 func parseAddresses(addrs []string) ([]peer.AddrInfo, error) {
 	var maddrs []ma.Multiaddr
 	for _, addr := range addrs {
@@ -31,7 +31,7 @@ func parseAddresses(addrs []string) ([]peer.AddrInfo, error) {
 	return peer.AddrInfosFromP2pAddrs(maddrs...)
 }
 
-// ExtractIP returns the IP address from the multiaddress.
+// extractIP returns the string of the IP address from the multiaddress.
 func extractIP(address ma.Multiaddr) string {
 	component, _ := ma.SplitFirst(address)
 	return component.Value()

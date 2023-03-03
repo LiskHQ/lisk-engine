@@ -123,24 +123,24 @@ func (pb *peerbook) isIPPermanentlyBlacklisted(ip string) bool {
 }
 
 // isInSeedPeers returns true if the peer is in the list of seed peers.
-func (pb *peerbook) isInSeedPeers(peerID peer.ID) bool {
+func (pb *peerbook) isInSeedPeers(pid PeerID) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
 	index := collection.FindIndex(pb.seedPeers, func(val *peer.AddrInfo) bool {
-		return peer.ID(val.ID.String()) == peerID
+		return peer.ID(val.ID.String()) == pid
 	})
 
 	return index != -1
 }
 
 // isInFixedPeers returns true if the peer is in the list of fixed peers.
-func (pb *peerbook) isInFixedPeers(peerID peer.ID) bool {
+func (pb *peerbook) isInFixedPeers(pid PeerID) bool {
 	pb.mutex.Lock()
 	defer pb.mutex.Unlock()
 
 	index := collection.FindIndex(pb.fixedPeers, func(val *peer.AddrInfo) bool {
-		return peer.ID(val.ID.String()) == peerID
+		return peer.ID(val.ID.String()) == pid
 	})
 
 	return index != -1
