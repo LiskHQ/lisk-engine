@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -36,14 +35,9 @@ func main() {
 		panic(err)
 	}
 
-	wg := &sync.WaitGroup{}
-	node, err := p2p.NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	if err != nil {
-		panic(err)
-	}
+	node := p2p.NewP2P(&cfgNet)
 
-	mp := p2p.NewMessageProtocol([]byte{0, 0, 1, 2}, "1.0")
-	err = mp.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.RequestMsg) {
+	if err := node.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.Request) {
 		rtt, err := node.PingMultiTimes(ctx, node.ConnectedPeers()[0])
 		if err != nil {
 			panic(err)
@@ -55,13 +49,15 @@ func main() {
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
 
 		w.Write([]byte(fmt.Sprintf("Average RTT with you: %v", avg)))
-	})
-	if err != nil {
+	}); err != nil {
 		panic(err)
 	}
-	mp.Start(ctx, logger, node)
 
-	addrs, err := node.P2PAddrs()
+	if err := node.Start(log.DefaultLogger, nil); err != nil {
+		panic(err)
+	}
+
+	addrs, err := node.MultiAddress()
 	if err != nil {
 		panic(err)
 	}
@@ -70,17 +66,14 @@ func main() {
 	// if a remote peer has been passed on the command line, connect to it
 	// and send ping request message, otherwise wait for a signal to stop
 	if len(os.Args) > 1 {
-		peer, err := p2p.PeerInfoFromMultiAddr(os.Args[1])
+		peer, err := p2p.AddrInfoFromMultiAddr(os.Args[1])
 		if err != nil {
 			panic(err)
 		}
 		if err := node.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		response, err := mp.SendRequestMessage(ctx, peer.ID, "ping", nil)
-		if err != nil {
-			panic(err)
-		}
+		response := node.RequestFrom(ctx, peer.ID.String(), "ping", nil)
 		logger.Infof("Response message received: %+v", response)
 		logger.Infof("%s", string(response.Data()))
 	} else {
@@ -91,7 +84,7 @@ func main() {
 		logger.Infof("Received signal, shutting down a node...")
 	}
 
-	if err := node.Close(); err != nil {
+	if err := node.Stop(); err != nil {
 		panic(err)
 	}
 }

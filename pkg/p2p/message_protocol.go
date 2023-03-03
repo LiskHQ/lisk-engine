@@ -41,8 +41,8 @@ type MessageProtocol struct {
 	version     string
 }
 
-// NewMessageProtocol creates a new message protocol.
-func NewMessageProtocol(chainID []byte, version string) *MessageProtocol {
+// newMessageProtocol creates a new message protocol.
+func newMessageProtocol(chainID []byte, version string) *MessageProtocol {
 	mp := &MessageProtocol{
 		resCh:       make(map[string]chan<- *Response),
 		timeout:     messageResponseTimeout,
@@ -53,8 +53,40 @@ func NewMessageProtocol(chainID []byte, version string) *MessageProtocol {
 	return mp
 }
 
-// Start starts a message protocol with a stream handlers.
-func (mp *MessageProtocol) Start(ctx context.Context, logger log.Logger, peer *Peer) {
+// RegisterRPCHandler registers a new RPC handler function.
+func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) error {
+	if mp.peer != nil {
+		return errors.New("cannot register RPC handler after MessageProtocol is started")
+	}
+	if _, ok := mp.rpcHandlers[name]; ok {
+		return fmt.Errorf("rpcHandler %s is already registered", name)
+	}
+	mp.rpcHandlers[name] = handler
+	return nil
+}
+
+// RequestFrom sends a request message to a peer using a message protocol.
+func (mp *MessageProtocol) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
+	response, err := mp.request(ctx, peer.ID(peerID), procedure, data)
+	if err != nil {
+		return Response{err: err}
+	}
+	return *response
+}
+
+// Broadcast sends a request message to all connected peers using a message protocol.
+func (mp *MessageProtocol) Broadcast(ctx context.Context, procedure string, data []byte) error {
+	peers := mp.peer.ConnectedPeers()
+	for _, peerID := range peers {
+		if _, err := mp.request(ctx, peerID, procedure, data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// start starts a message protocol with a stream handlers.
+func (mp *MessageProtocol) start(ctx context.Context, logger log.Logger, peer *Peer) {
 	mp.logger = logger
 	mp.peer = peer
 	peer.host.SetStreamHandler(messageProtocolReqID(mp.chainID, mp.version), func(s network.Stream) {
@@ -79,7 +111,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	newMsg := newRequestMessage(s.Conn().RemotePeer(), "", nil)
 	if err := newMsg.Decode(buf); err != nil {
 		mp.logger.Errorf("Error while decoding message: %v", err)
-		err = mp.peer.BlockPeer(remoteID)
+		err = mp.peer.blockPeer(remoteID)
 		if err != nil {
 			mp.logger.Errorf("BlockPeer error: %v", err)
 		}
@@ -90,7 +122,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	handler, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
 		mp.logger.Errorf("rpcHandler %s is not registered", newMsg.Procedure)
-		err = mp.peer.BlockPeer(remoteID)
+		err = mp.peer.blockPeer(remoteID)
 		if err != nil {
 			mp.logger.Errorf("BlockPeer error: %v", err)
 		}
@@ -99,7 +131,7 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	mp.logger.Debugf("%s request received", newMsg.Procedure)
 	w := &responseWriter{}
 	handler(w, newMsg)
-	err = mp.SendResponseMessage(ctx, s.Conn().RemotePeer(), newMsg.ID, w.data, w.err)
+	err = mp.respond(ctx, s.Conn().RemotePeer(), newMsg.ID, w.data, w.err)
 	if err != nil {
 		mp.logger.Errorf("Error sending response message: %v", err)
 		return
@@ -121,7 +153,7 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	if err := newMsg.Decode(buf); err != nil {
 		remoteID := s.Conn().RemotePeer()
 		mp.logger.Errorf("Error while decoding message: %v", err)
-		err = mp.peer.BlockPeer(remoteID)
+		err = mp.peer.blockPeer(remoteID)
 		if err != nil {
 			mp.logger.Errorf("BlockPeer error: %v", err)
 		}
@@ -147,20 +179,8 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	}
 }
 
-// RegisterRPCHandler registers a new RPC handler function.
-func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) error {
-	if mp.peer != nil {
-		return errors.New("cannot register RPC handler after MessageProtocol is started")
-	}
-	if _, ok := mp.rpcHandlers[name]; ok {
-		return fmt.Errorf("rpcHandler %s is already registered", name)
-	}
-	mp.rpcHandlers[name] = handler
-	return nil
-}
-
-// SendRequestMessage sends a request message to a peer using a message protocol and has a retry mechanism.
-func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, procedure string, data []byte) (*Response, error) {
+// request to a peer using a message protocol and has a retry mechanism.
+func (mp *MessageProtocol) request(ctx context.Context, id peer.ID, procedure string, data []byte) (*Response, error) {
 	var (
 		err error
 		res *Response
@@ -182,10 +202,10 @@ func (mp *MessageProtocol) SendRequestMessage(ctx context.Context, id peer.ID, p
 	return nil, err
 }
 
-// sendRequestMessage sends a request message to a peer using a message protocol.
+// sendRequestMessage to a peer using a message protocol.
 func (mp *MessageProtocol) sendRequestMessage(ctx context.Context, id peer.ID, procedure string, data []byte) (*Response, error) {
 	reqMsg := newRequestMessage(mp.peer.ID(), procedure, data)
-	if err := mp.sendMessage(ctx, id, messageProtocolReqID(mp.chainID, mp.version), reqMsg); err != nil {
+	if err := mp.send(ctx, id, messageProtocolReqID(mp.chainID, mp.version), reqMsg); err != nil {
 		return nil, err
 	}
 
@@ -217,34 +237,14 @@ func (mp *MessageProtocol) sendRequestMessage(ctx context.Context, id peer.ID, p
 	}
 }
 
-// RequestFrom sends a request message to a peer using a message protocol.
-func (mp *MessageProtocol) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
-	response, err := mp.SendRequestMessage(ctx, peer.ID(peerID), procedure, data)
-	if err != nil {
-		return Response{err: err}
-	}
-	return *response
-}
-
-// Broadcast sends a request message to all connected peers using a message protocol.
-func (mp *MessageProtocol) Broadcast(ctx context.Context, procedure string, data []byte) error {
-	peers := mp.peer.ConnectedPeers()
-	for _, peerID := range peers {
-		if _, err := mp.SendRequestMessage(ctx, peerID, procedure, data); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// SendResponseMessage sends a response message to a peer using a message protocol.
-func (mp *MessageProtocol) SendResponseMessage(ctx context.Context, id peer.ID, reqMsgID string, data []byte, err error) error {
+// respond a message to a peer using a message protocol.
+func (mp *MessageProtocol) respond(ctx context.Context, id peer.ID, reqMsgID string, data []byte, err error) error {
 	resMsg := newResponseMessage(reqMsgID, data, err)
-	return mp.sendMessage(ctx, id, messageProtocolResID(mp.chainID, mp.version), resMsg)
+	return mp.send(ctx, id, messageProtocolResID(mp.chainID, mp.version), resMsg)
 }
 
-// sendMessage sends a message to a peer using a stream.
-func (mp *MessageProtocol) sendMessage(ctx context.Context, id peer.ID, pId protocol.ID, msg codec.Encodable) error {
+// send a message to a peer using a stream.
+func (mp *MessageProtocol) send(ctx context.Context, id peer.ID, pId protocol.ID, msg codec.Encodable) error {
 	s, err := mp.peer.host.NewStream(network.WithUseTransient(ctx, "Transient connections are allowed."), id, pId)
 	if err != nil {
 		return err

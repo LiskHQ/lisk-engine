@@ -52,7 +52,7 @@ func main() {
 		err = p2p.RegisterEventHandler(topic, func(event *p2pLib.Event) {
 			logger.Infof("Received event: %v", event)
 			logger.Infof("PeerID: %v", event.PeerID())
-			logger.Infof("Event: %v", event.Event())
+			logger.Infof("Event: %v", event.Topic())
 			logger.Infof("Data: %s", string(event.Data()))
 		}, nil)
 		if err != nil {
@@ -63,14 +63,14 @@ func main() {
 	err = p2p.RegisterEventHandler("testEventName", func(event *p2pLib.Event) {
 		logger.Infof("Received event: %v", event)
 		logger.Infof("PeerID: %v", event.PeerID())
-		logger.Infof("Event: %v", event.Event())
+		logger.Infof("Event: %v", event.Topic())
 		logger.Infof("Data: %s", string(event.Data()))
 	}, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	err = p2p.RegisterRPCHandler("ping", func(w p2pLib.ResponseWriter, req *p2pLib.RequestMsg) {
+	err = p2p.RegisterRPCHandler("ping", func(w p2pLib.ResponseWriter, req *p2pLib.Request) {
 		rtt, err := p2p.PingMultiTimes(ctx, p2p.ConnectedPeers()[0])
 		if err != nil {
 			panic(err)
@@ -87,7 +87,7 @@ func main() {
 		panic(err)
 	}
 
-	err = p2p.RegisterRPCHandler("knownPeers", func(w p2pLib.ResponseWriter, req *p2pLib.RequestMsg) {
+	err = p2p.RegisterRPCHandler("knownPeers", func(w p2pLib.ResponseWriter, req *p2pLib.Request) {
 		peers := p2p.ConnectedPeers()
 		w.Write([]byte(fmt.Sprintf("All known peers: %v", peers)))
 	})
@@ -100,7 +100,7 @@ func main() {
 		panic(err)
 	}
 
-	addrs, err := p2p.P2PAddrs()
+	addrs, err := p2p.MultiAddress()
 	if err != nil {
 		panic(err)
 	}
@@ -109,15 +109,15 @@ func main() {
 	// if a remote peer has been passed on the command line, connect to it
 	// and send ping request message, otherwise wait for a signal to stop
 	if len(os.Args) > 1 {
-		peer, err := p2pLib.PeerInfoFromMultiAddr(os.Args[1])
+		peer, err := p2pLib.AddrInfoFromMultiAddr(os.Args[1])
 		if err != nil {
 			panic(err)
 		}
 		if err := p2p.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		response, err := p2p.SendRequestMessage(ctx, peer.ID, "ping", nil)
-		if err != nil {
+		response := p2p.RequestFrom(ctx, peer.ID.String(), "ping", nil)
+		if response.Error() != nil {
 			panic(err)
 		}
 		logger.Infof("Response message received: %+v", response)
@@ -178,15 +178,14 @@ func demoRoutine(ctx context.Context, logger log.Logger, wg *sync.WaitGroup, p2p
 			counter++
 
 			logger.Debugf("List of connected peers: %v", p2p.ConnectedPeers())
-			logger.Debugf("List of known peers: %v", p2p.KnownPeers())
 			logger.Debugf("List of blacklisted peers: %v", p2p.BlacklistedPeers())
 
-			addrs, _ := p2p.P2PAddrs()
+			addrs, _ := p2p.MultiAddress()
 			logger.Debugf("My listen addresses: %v", addrs)
 			for _, connectedPeer := range p2p.ConnectedPeers() {
-				response, err := p2p.SendRequestMessage(ctx, connectedPeer, "knownPeers", nil)
-				if err != nil {
-					logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, err)
+				response := p2p.RequestFrom(ctx, connectedPeer.String(), "knownPeers", nil)
+				if response.Error() != nil {
+					logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, response.Error())
 				} else {
 					logger.Debugf("Received response from peer %v: %v", connectedPeer, string(response.Data()))
 				}

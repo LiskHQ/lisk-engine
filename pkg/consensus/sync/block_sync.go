@@ -98,7 +98,7 @@ func (s *blockSyncer) downloadAndProcess(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxScore)
+			s.conn.ApplyPenalty(ctx.PeerID, p2p.MaxPenaltyScore)
 			return err
 		}
 		publish := ctx.PeerID == "" // if PeerID is empty, it means it is internal block
@@ -118,14 +118,14 @@ func (s *blockSyncer) getAndValidateNetworkLastBlock(ctx *SyncContext, nodeInfo 
 	}
 	if err := networkLastBlockHeader.Validate(); err != nil {
 		s.logger.Infof("Applying penalty to %s because it provided invalid last block", nodeInfo.PeerID)
-		s.conn.ApplyPenalty(nodeInfo.PeerID, p2p.MaxScore)
+		s.conn.ApplyPenalty(nodeInfo.PeerID, p2p.MaxPenaltyScore)
 		return nil, fmt.Errorf("invalid block received from %s", nodeInfo.PeerID)
 	}
 	lastBlockHeader := s.chain.LastBlock().Header
 	if lastBlockHeader.Version == 2 {
 		if !forkchoice.IsDifferentChain(lastBlockHeader.MaxHeightPrevoted, networkLastBlockHeader.MaxHeightPrevoted, lastBlockHeader.Height, networkLastBlockHeader.Height) {
 			s.logger.Infof("Applying penalty to %s because it provided last block which does not have priority", nodeInfo.PeerID)
-			s.conn.ApplyPenalty(nodeInfo.PeerID, p2p.MaxScore)
+			s.conn.ApplyPenalty(nodeInfo.PeerID, p2p.MaxPenaltyScore)
 			return nil, fmt.Errorf("last block received from %s does not have priority", nodeInfo.PeerID)
 		}
 	}

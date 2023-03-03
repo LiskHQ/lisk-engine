@@ -15,7 +15,6 @@ import (
 
 	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 func TestPeer_New(t *testing.T) {
@@ -25,7 +24,7 @@ func TestPeer_New(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p, err := NewPeer(context.Background(), wg, logger, []byte{}, cfgNet)
+	p, err := newPeer(context.Background(), wg, logger, []byte{}, cfgNet)
 	assert.Nil(err)
 	assert.NotNil(p.host)
 	assert.NotNil(p.peerbook)
@@ -38,7 +37,7 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p1, err := NewPeer(context.Background(),
+	p1, err := newPeer(context.Background(),
 		wg,
 		logger,
 		[]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -46,7 +45,7 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("12D3KooWKwTLPoFzjLMuUAM8rSiUDUnJFhpMLtLQ7zKq5cCPoNhQ", p1.ID().Pretty())
 
-	p2, err := NewPeer(context.Background(),
+	p2, err := newPeer(context.Background(),
 		wg,
 		logger,
 		[]byte{1, 2, 3, 4, 5, 6, 7, 8,
@@ -57,14 +56,14 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("12D3KooWGW7EBxs51H6huNYsJhCgrk7xRHmURiQ2w3FoVp9bekVi", p2.ID().Pretty())
 
-	p3, err := NewPeer(context.Background(),
+	p3, err := newPeer(context.Background(),
 		wg,
 		logger,
 		[]byte{},
 		cfgNet)
 	assert.Nil(err)
 
-	p4, err := NewPeer(context.Background(),
+	p4, err := newPeer(context.Background(),
 		wg,
 		logger,
 		[]byte{},
@@ -81,8 +80,8 @@ func TestPeer_Close(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p, _ := NewPeer(context.Background(), wg, logger, []byte{}, cfgNet)
-	err := p.Close()
+	p, _ := newPeer(context.Background(), wg, logger, []byte{}, cfgNet)
+	err := p.close()
 	assert.Nil(err)
 }
 
@@ -96,10 +95,10 @@ func TestPeer_Connect(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
@@ -115,10 +114,10 @@ func TestPeer_Disconnect(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
@@ -141,12 +140,12 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	cfgNet2 := cfg.NetworkConfig{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfgNet2.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet1)
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet2)
-	p1Addrs, _ := p1.P2PAddrs()
-	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet1)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet2)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	// p1 is not allowed to connect to p2
 	err := p1.Connect(ctx, *p2AddrInfo)
@@ -170,10 +169,10 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p, err := NewPeer(context.Background(), wg, logger, []byte{}, cfgNet)
+	p, err := newPeer(context.Background(), wg, logger, []byte{}, cfgNet)
 	assert.Nil(err)
 
-	addrs, err := p.P2PAddrs()
+	addrs, err := p.MultiAddress()
 	assert.Nil(err)
 	assert.Equal(len(addrs), 2)
 }
@@ -191,38 +190,38 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	_ = cfgNet1.InsertDefault()
 
 	// create peer1, will be used for blacklisting via gossipsub
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet1)
-	p1Addrs, _ := p1.P2PAddrs()
-	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet1)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
 
 	// create peer2, will be used for blacklisting via connection gater (peer ID)
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet1)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet1)
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	// create peer3, will be used for blacklisting via connection gater (IP address)
-	p3, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet1)
-	p3Addrs, _ := p3.P2PAddrs()
-	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+	p3, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet1)
+	p3Addrs, _ := p3.MultiAddress()
+	p3AddrInfo, _ := AddrInfoFromMultiAddr(p3Addrs[0])
 
 	cfgNet2 := cfg.NetworkConfig{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
-	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet2)
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet2)
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 
-	sk := ps.NewScoreKeeper()
-	err := gs.Start(ctx, wg, logger, p, sk, cfgNet2)
+	sk := newScoreKeeper()
+	err := gs.start(ctx, wg, logger, p, sk, cfgNet2)
 	assert.Nil(err)
 
 	_ = p.host.Connect(ctx, *p1AddrInfo) // Connect directly using host to avoid check regarding blacklisted IP address
 	_ = p.host.Connect(ctx, *p2AddrInfo)
 	_ = p.host.Connect(ctx, *p3AddrInfo)
 
-	gs.ps.BlacklistPeer(p1.ID())                             // blacklisting peer1
-	_, err = gs.peer.connGater.addPenalty(p2.ID(), MaxScore) // blacklisting peer2
+	gs.ps.BlacklistPeer(p1.ID())                                    // blacklisting peer1
+	_, err = gs.peer.connGater.addPenalty(p2.ID(), MaxPenaltyScore) // blacklisting peer2
 	assert.Nil(err)
-	gs.peer.connGater.blockAddr(net.ParseIP(p3Addrs[0].String())) // blacklisting peer3
+	gs.peer.connGater.blockAddr(net.ParseIP(p3Addrs[0])) // blacklisting peer3
 
 	peers := p.BlacklistedPeers()
 	assert.Equal(3, len(peers))
@@ -247,10 +246,10 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	_ = p1.Connect(ctx, *p2AddrInfo)
 	rtt, err := p1.PingMultiTimes(ctx, p2.ID())
@@ -268,10 +267,10 @@ func TestPeer_Ping(t *testing.T) {
 	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfgNet.InsertDefault()
 	wg := &sync.WaitGroup{}
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	_ = p1.Connect(ctx, *p2AddrInfo)
 	_, err := p1.Ping(ctx, p2.ID())
@@ -291,22 +290,22 @@ func TestPeer_PeerSource(t *testing.T) {
 	_ = cfgNet.InsertDefault()
 
 	// Peer 1
-	p1, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p1Addrs, _ := p1.P2PAddrs()
-	p1AddrInfo, _ := PeerInfoFromMultiAddr(p1Addrs[0].String())
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
 
 	// Peer 2
-	p2, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2Addrs, _ := p2.P2PAddrs()
-	p2AddrInfo, _ := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	// Peer 3
-	p3, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p3Addrs, _ := p3.P2PAddrs()
-	p3AddrInfo, _ := PeerInfoFromMultiAddr(p3Addrs[0].String())
+	p3, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p3Addrs, _ := p3.MultiAddress()
+	p3AddrInfo, _ := AddrInfoFromMultiAddr(p3Addrs[0])
 
 	// Peer which will be connected to other peers
-	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	err := p.Connect(ctx, *p1AddrInfo)
 	assert.Nil(err)
 	err = p.Connect(ctx, *p2AddrInfo)

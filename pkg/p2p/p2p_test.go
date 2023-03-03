@@ -128,16 +128,16 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	err = node2.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
-	p2Addrs, err := node2.P2PAddrs()
+	p2Addrs, err := node2.MultiAddress()
 	assert.Nil(err)
-	p2AddrInfo, err := PeerInfoFromMultiAddr(p2Addrs[0].String())
+	p2AddrInfo, err := AddrInfoFromMultiAddr(p2Addrs[0])
 	assert.Nil(err)
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
 	node1.ApplyPenalty(string(p2AddrInfo.ID), 10)
 	assert.Equal(node2.ID(), node1.ConnectedPeers()[0])
-	node1.ApplyPenalty(string(p2AddrInfo.ID), MaxScore)
+	node1.ApplyPenalty(string(p2AddrInfo.ID), MaxPenaltyScore)
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)

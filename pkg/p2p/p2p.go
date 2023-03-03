@@ -14,7 +14,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
@@ -35,34 +34,34 @@ type P2P struct {
 func NewP2P(cfgNet *config.NetworkConfig) *P2P {
 	return &P2P{
 		cfgNet:          cfgNet,
-		MessageProtocol: NewMessageProtocol(cfgNet.ChainID, cfgNet.Version),
-		GossipSub:       NewGossipSub(cfgNet.ChainID, cfgNet.Version),
+		MessageProtocol: newMessageProtocol(cfgNet.ChainID, cfgNet.Version),
+		GossipSub:       newGossipSub(cfgNet.ChainID, cfgNet.Version),
 	}
 }
 
-// Start function starts a P2P and all other related services and handlers.
+// Start the P2P and all other related services and handlers.
 func (p2p *P2P) Start(logger log.Logger, seed []byte) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := NewPeer(ctx, &p2p.wg, logger, seed, *p2p.cfgNet)
+	peer, err := newPeer(ctx, &p2p.wg, logger, seed, *p2p.cfgNet)
 	if err != nil {
 		cancel()
 		return err
 	}
 	peer.peerbook.init(logger)
 
-	p2p.MessageProtocol.Start(ctx, logger, peer)
+	p2p.MessageProtocol.start(ctx, logger, peer)
 
-	sk := lps.NewScoreKeeper()
-	err = p2p.GossipSub.Start(ctx, &p2p.wg, logger, peer, sk, *p2p.cfgNet)
+	sk := newScoreKeeper()
+	err = p2p.GossipSub.start(ctx, &p2p.wg, logger, peer, sk, *p2p.cfgNet)
 	if err != nil {
 		cancel()
 		return err
 	}
 
 	// Start peer discovery bootstrap process.
-	seedPeers, err := lps.ParseAddresses(p2p.cfgNet.SeedPeers)
+	seedPeers, err := parseAddresses(p2p.cfgNet.SeedPeers)
 	if err != nil {
 		cancel()
 		return err
@@ -90,9 +89,10 @@ func (p2p *P2P) Start(logger log.Logger, seed []byte) error {
 	return nil
 }
 
-// Stop function stops a P2P.
+// Stop the P2P process.
 func (p2p *P2P) Stop() error {
 	p2p.cancel()
+
 	p2p.bootCloser.Close()
 
 	waitCh := make(chan struct{})
@@ -106,6 +106,9 @@ func (p2p *P2P) Stop() error {
 		// All services stopped successfully. Nothing to do.
 	case <-time.After(stopTimeout):
 		return errors.New("P2P module failed to stop")
+	}
+	if err := p2p.Peer.close(); err != nil {
+		p2p.logger.Error("Fail to close peer")
 	}
 
 	p2p.logger.Infof("P2P module successfully stopped")

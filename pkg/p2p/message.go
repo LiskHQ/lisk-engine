@@ -9,17 +9,17 @@ import (
 
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
 
-// RequestMsg is a request message type sent to other peer.
-type RequestMsg struct {
+// Request is a request message type sent to other peer.
+type Request struct {
 	ID        string `fieldNumber:"1" json:"id"`        // Message ID.
-	Timestamp int64  `json:"timestamp"`                 // Unix time when the message was received.
-	PeerID    string `json:"peerID"`                    // ID of peer that created the request message.
 	Procedure string `fieldNumber:"2" json:"procedure"` // Procedure to be called.
 	Data      []byte `fieldNumber:"3" json:"data"`      // Request data.
+	Timestamp int64  `json:"timestamp"`                 // Unix time when the message was received.
+	PeerID    string `json:"peerID"`                    // ID of peer that created the request message.
 }
 
-// ResponseMsg is a response message type received from a peer in response to a request message.
-type ResponseMsg struct {
+// responseMsg is a response message type received from a peer in response to a request message.
+type responseMsg struct {
 	ID        string `fieldNumber:"1" json:"id"`    // Message ID. It is the same as the ID of the requested message.
 	Timestamp int64  `json:"timestamp"`             // Unix time when the message was received.
 	PeerID    string `json:"peerID"`                // ID of peer that created the response message.
@@ -34,8 +34,8 @@ type Message struct {
 }
 
 // newRequestMessage creates a new request message.
-func newRequestMessage(peerID peer.ID, procedure string, data []byte) *RequestMsg {
-	return &RequestMsg{
+func newRequestMessage(peerID peer.ID, procedure string, data []byte) *Request {
+	return &Request{
 		ID:        uuid.New().String(),
 		Timestamp: time.Now().Unix(),
 		PeerID:    peerID.String(),
@@ -45,13 +45,13 @@ func newRequestMessage(peerID peer.ID, procedure string, data []byte) *RequestMs
 }
 
 // newResponseMessage creates a new response message.
-func newResponseMessage(reqMsgID string, data []byte, err error) *ResponseMsg {
+func newResponseMessage(reqMsgID string, data []byte, err error) *responseMsg {
 	errString := ""
 	if err != nil {
 		errString = err.Error()
 	}
 
-	return &ResponseMsg{
+	return &responseMsg{
 		ID:        reqMsgID,
 		Timestamp: time.Now().Unix(),
 		Data:      data,

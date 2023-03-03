@@ -9,12 +9,13 @@ import (
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	lps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const maxAllowedTopics = 10
@@ -39,8 +40,8 @@ type GossipSub struct {
 	version           string
 }
 
-// NewGossipSub makes a new GossipSub struct.
-func NewGossipSub(chainID []byte, version string) *GossipSub {
+// newGossipSub makes a new GossipSub struct.
+func newGossipSub(chainID []byte, version string) *GossipSub {
 	return &GossipSub{
 		topics:            make(map[string]*pubsub.Topic),
 		subscriptions:     make(map[string]*pubsub.Subscription),
@@ -51,19 +52,24 @@ func NewGossipSub(chainID []byte, version string) *GossipSub {
 	}
 }
 
-// Start starts a GossipSub based on input parameters.
-func (gs *GossipSub) Start(ctx context.Context,
+func getMessageID(m *pubsub_pb.Message) string {
+	hash := crypto.Hash(m.Data)
+	return codec.Hex(hash).String()
+}
+
+// start starts a GossipSub based on input parameters.
+func (gs *GossipSub) start(ctx context.Context,
 	wg *sync.WaitGroup,
 	logger log.Logger,
 	p *Peer,
-	sk *lps.ScoreKeeper,
+	sk *scoreKeeper,
 	cfgNet config.NetworkConfig,
 ) error {
-	seedNodes, err := lps.ParseAddresses(cfgNet.SeedPeers)
+	seedNodes, err := parseAddresses(cfgNet.SeedPeers)
 	if err != nil {
 		return err
 	}
-	fixedNodes, err := lps.ParseAddresses(cfgNet.FixedPeers)
+	fixedNodes, err := parseAddresses(cfgNet.FixedPeers)
 	if err != nil {
 		return err
 	}
@@ -93,7 +99,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	var ipWhitelist []*net.IPNet
 	options := []pubsub.Option{
 		pubsub.WithFloodPublish(true),
-		pubsub.WithMessageIdFn(lps.HashMsgID),
+		pubsub.WithMessageIdFn(getMessageID),
 		pubsub.WithPeerScore(
 			&pubsub.PeerScoreParams{
 				AppSpecificScore: func(p peer.ID) float64 {
@@ -168,7 +174,7 @@ func (gs *GossipSub) Start(ctx context.Context,
 	// We want to enable peer exchange for all peers and not only for seed peers.
 	options = append(options, pubsub.WithPeerExchange(true))
 
-	gossipSub, err := pubsub.NewGossipSub(ctx, p.GetHost(), options...)
+	gossipSub, err := pubsub.NewGossipSub(ctx, p.host, options...)
 	if err != nil {
 		return err
 	}
@@ -228,7 +234,7 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 					continue
 				}
 				// Only process messages delivered by others.
-				if msg.ReceivedFrom == gs.peer.GetHost().ID() {
+				if msg.ReceivedFrom == gs.peer.host.ID() {
 					continue
 				}
 				gs.logger.Debugf("Received message: %s", msg.Data)

@@ -19,10 +19,13 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
+const (
+	MaxPenaltyScore = 100 // When a peer exceeded the MaxPenaltyScore, it should be blocked
+)
+
 var (
 	errInvalidDuration       = errors.New("invalid duration")
 	errConnGaterIsNotrunning = errors.New("failed to add new peer, start needs to be called first")
-	MaxScore                 = 100 // When a peer exceeded the maxScore, it should be blocked
 )
 
 // peerInfo keeps information of each peer ID in the peerScore of the connectionGater.
@@ -87,7 +90,7 @@ func (cg *connectionGater) addPenalty(pid peer.ID, score int) (int, error) {
 		cg.peerScore[pid] = newPeerInfo(0, newScore)
 	}
 
-	if newScore >= MaxScore {
+	if newScore >= MaxPenaltyScore {
 		exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
 		if info, ok := cg.peerScore[pid]; ok {
 			info.expiration = exTime

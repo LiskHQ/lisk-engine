@@ -17,7 +17,7 @@ func TestPeerbook_NewPeerbook(t *testing.T) {
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/4.4.4.4/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
 	permanentlyBlacklistedIPs := []string{"5.5.5.5", "6.6.6.6"}
 
-	pb, err := NewPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
+	pb, err := newPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
 	assert.Nil(err)
 	assert.NotNil(pb)
 
@@ -50,7 +50,7 @@ func TestPeerbook_Init(t *testing.T) {
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/4.4.4.4/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
 	permanentlyBlacklistedIPs := []string{"5.5.5.5", "6.6.6.6"}
 
-	pb, _ := NewPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
+	pb, _ := newPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
 
 	assert.Nil(pb.logger)
 	pb.init(logger)
@@ -67,7 +67,7 @@ func TestPeerbook_InitPermanentlyBlacklistedIPInSeedPeers(t *testing.T) {
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/4.4.4.4/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
 	permanentlyBlacklistedIPs := []string{"5.5.5.5", "6.6.6.6"}
 
-	pb, _ := NewPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
+	pb, _ := newPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
 
 	pb.init(&loggerTest)
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool {
@@ -86,7 +86,7 @@ func TestPeerbook_InitPermanentlyBlacklistedIPInFixedPeers(t *testing.T) {
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/6.6.6.6/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
 	permanentlyBlacklistedIPs := []string{"5.5.5.5", "6.6.6.6"}
 
-	pb, _ := NewPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
+	pb, _ := newPeerbook(seedPeers, fixedPeers, permanentlyBlacklistedIPs)
 
 	pb.init(&loggerTest)
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool {
@@ -99,7 +99,7 @@ func TestPeerbook_SeedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	seedPeers := []string{"/ip4/1.1.1.1/tcp/10/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", "/ip4/2.2.2.2/tcp/20/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXB"}
-	pb, _ := NewPeerbook(seedPeers, []string{}, []string{})
+	pb, _ := newPeerbook(seedPeers, []string{}, []string{})
 
 	peers := pb.SeedPeers()
 	assert.Equal(2, len(peers))
@@ -113,7 +113,7 @@ func TestPeerbook_FixedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/4.4.4.4/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
-	pb, _ := NewPeerbook([]string{}, fixedPeers, []string{})
+	pb, _ := newPeerbook([]string{}, fixedPeers, []string{})
 
 	peers := pb.FixedPeers()
 	assert.Equal(2, len(peers))
@@ -127,7 +127,7 @@ func TestPeerbook_PermanentlyBlacklistedIPs(t *testing.T) {
 	assert := assert.New(t)
 
 	permanentlyBlacklistedIPs := []string{"5.5.5.5", "6.6.6.6"}
-	pb, _ := NewPeerbook([]string{}, []string{}, permanentlyBlacklistedIPs)
+	pb, _ := newPeerbook([]string{}, []string{}, permanentlyBlacklistedIPs)
 
 	peers := pb.PermanentlyBlacklistedIPs()
 	assert.Equal(2, len(peers))
@@ -139,7 +139,7 @@ func TestPeerbook_IsIPInSeedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	seedPeers := []string{"/ip4/1.1.1.1/tcp/10/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", "/ip4/2.2.2.2/tcp/20/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXB"}
-	pb, _ := NewPeerbook(seedPeers, []string{}, []string{})
+	pb, _ := newPeerbook(seedPeers, []string{}, []string{})
 
 	result := pb.isIPInSeedPeers("1.2.3.4")
 	assert.False(result)
@@ -152,7 +152,7 @@ func TestPeerbook_IsIPInFixedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/6.6.6.6/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
-	pb, _ := NewPeerbook([]string{}, fixedPeers, []string{})
+	pb, _ := newPeerbook([]string{}, fixedPeers, []string{})
 
 	result := pb.isIPInFixedPeers("1.2.3.4")
 	assert.False(result)
@@ -165,7 +165,7 @@ func TestPeerbook_IsIPPermanentlyBlacklisted(t *testing.T) {
 	assert := assert.New(t)
 
 	permanentlyBlacklistedIPs := []string{"5.5.5.5", "6.6.6.6"}
-	pb, _ := NewPeerbook([]string{}, []string{}, permanentlyBlacklistedIPs)
+	pb, _ := newPeerbook([]string{}, []string{}, permanentlyBlacklistedIPs)
 
 	result := pb.isIPPermanentlyBlacklisted("1.2.3.4")
 	assert.False(result)
@@ -178,7 +178,7 @@ func TestPeerbook_IsInSeedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	seedPeers := []string{"/ip4/1.1.1.1/tcp/10/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA", "/ip4/2.2.2.2/tcp/20/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXB"}
-	pb, _ := NewPeerbook(seedPeers, []string{}, []string{})
+	pb, _ := newPeerbook(seedPeers, []string{}, []string{})
 
 	result := pb.isInSeedPeers("12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXF")
 	assert.False(result)
@@ -191,7 +191,7 @@ func TestPeerbook_IsInFixedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	fixedPeers := []string{"/ip4/3.3.3.3/tcp/30/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXC", "/ip4/6.6.6.6/tcp/40/p2p/12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXD"}
-	pb, _ := NewPeerbook([]string{}, fixedPeers, []string{})
+	pb, _ := newPeerbook([]string{}, fixedPeers, []string{})
 
 	result := pb.isInFixedPeers("12D3KooWNLGFBbaLyFtMzXAPmD7xL63xjXoC4Bg1cW8zoD8jJdXA")
 	assert.False(result)

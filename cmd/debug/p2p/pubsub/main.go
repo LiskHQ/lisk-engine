@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -15,7 +14,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
-	"github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 const (
@@ -27,25 +25,17 @@ const (
 
 var (
 	port         = flag.Uint("port", 8010, "listening port")
-	isLocal      = flag.Bool("isLocal", true, "run the application in local mode")
 	hasValidator = flag.Bool("hasValidator", true, "run the application with message validator")
 )
 
 const roomName = "test-chat"
 
 func main() {
-	logger, err := log.NewDefaultProductionLogger()
-	if err != nil {
-		panic(err)
-	}
-
 	nickFlag := flag.String("nick", "", "nickname to use in chat. will be generated if empty")
 	flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	wg := &sync.WaitGroup{}
 
 	ip6quic := fmt.Sprintf("/ip6/::/udp/%d/quic", *port)
 	ip4quic := fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", *port)
@@ -60,17 +50,11 @@ func main() {
 		Version:                  "2.0",
 		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
-	err = cfgNet.InsertDefault()
-	if err != nil {
+	if err := cfgNet.InsertDefault(); err != nil {
 		panic(err)
 	}
 
-	p, err := p2p.NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	if err != nil {
-		panic(err)
-	}
-
-	gs := p2p.NewGossipSub(cfgNet.ChainID, cfgNet.Version)
+	p := p2p.NewP2P(&cfgNet)
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
 	var validator p2p.Validator
@@ -89,42 +73,34 @@ func main() {
 			}
 		}
 	}
-	err = gs.RegisterEventHandler(topicName(roomName), func(event *p2p.Event) {
+	if err := p.RegisterEventHandler(topicName(roomName), func(event *p2p.Event) {
 		readMessage(event, ch)
-	}, validator)
-	if err != nil {
+	}, validator); err != nil {
 		panic(err)
 	}
 
-	sk := pubsub.NewScoreKeeper()
-	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
-	if err != nil {
+	if err := p.Start(log.DefaultLogger, nil); err != nil {
 		panic(err)
 	}
 
 	nick := *nickFlag
 	if len(nick) == 0 {
-		nick = defaultNick(p.GetHost().ID())
+		nick = defaultNick(p.ID())
 	}
 
-	cr, err := JoinChatRoom(ctx, gs, p, ch, nick, roomName)
+	cr, err := JoinChatRoom(ctx, p, ch, nick, roomName)
 	if err != nil {
 		panic(err)
 	}
 
 	ui := NewChatUI(cr)
-	if *isLocal {
-		if err := setupDiscovery(p.GetHost(), ui); err != nil {
-			panic(err)
-		}
-	}
-	addrs, err := p.P2PAddrs()
+	addrs, err := p.MultiAddress()
 	if err != nil {
 		panic(err)
 	}
 	info := []string{}
 	for _, addr := range addrs {
-		str := fmt.Sprintf("%s%v", P2pPrefix, addr.String())
+		str := fmt.Sprintf("%s%v", P2pPrefix, addr)
 		info = append(info, str)
 	}
 	if err = ui.Run(info); err != nil {
@@ -133,7 +109,7 @@ func main() {
 }
 
 func topicName(roomName string) string {
-	return pubsub.MessageTopic(roomName)
+	return fmt.Sprintf("/lsk/%s", roomName)
 }
 
 // discoveryNotifee gets notified when we find a new peer via mDNS discovery.

@@ -8,11 +8,13 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	ps "github.com/LiskHQ/lisk-engine/pkg/p2p/pubsub"
 )
 
 var (
@@ -20,10 +22,19 @@ var (
 	testMessageInvalid = []byte("testMessageInvalid")
 )
 
+func TestGetMessageID(t *testing.T) {
+	assert := assert.New(t)
+
+	msg := pubsub_pb.Message{}
+	hash := getMessageID(&msg)
+	expected := codec.Hex(crypto.Hash([]byte{})).String()
+	assert.Equal(expected, hash)
+}
+
 func TestGossipSub_NewGossipSub(t *testing.T) {
 	assert := assert.New(t)
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 	assert.NotNil(gs)
 	assert.NotNil(gs.topics)
 	assert.NotNil(gs.subscriptions)
@@ -40,14 +51,14 @@ func TestGossipSub_Start(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	sk := ps.NewScoreKeeper()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	sk := newScoreKeeper()
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	assert.Nil(err)
 
-	err = gs.Start(ctx, wg, logger, p, sk, cfgNet)
+	err = gs.start(ctx, wg, logger, p, sk, cfgNet)
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
@@ -71,7 +82,7 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 	gs.logger = logger
 
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
@@ -113,7 +124,7 @@ func TestGossipSub_RegisterEventHandler(t *testing.T) {
 		return ValidationAccept
 	}
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
 
@@ -146,11 +157,11 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	sk := ps.NewScoreKeeper()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	sk := newScoreKeeper()
 
-	gs := NewGossipSub(testChainID, testVersion)
-	gs.Start(ctx, wg, logger, p, sk, cfgNet)
+	gs := newGossipSub(testChainID, testVersion)
+	gs.start(ctx, wg, logger, p, sk, cfgNet)
 
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.NotNil(err)
@@ -173,7 +184,7 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 		return ValidationAccept
 	}
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
@@ -199,13 +210,13 @@ func TestGossipSub_Publish(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	cfgNet := cfg.NetworkConfig{}
 	_ = cfgNet.InsertDefault()
-	p, _ := NewPeer(ctx, wg, logger, []byte{}, cfgNet)
-	sk := ps.NewScoreKeeper()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	sk := newScoreKeeper()
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, testMV)
 
-	gs.Start(ctx, wg, logger, p, sk, cfgNet)
+	gs.start(ctx, wg, logger, p, sk, cfgNet)
 
 	err := gs.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
@@ -220,7 +231,7 @@ func TestGossipSub_Publish(t *testing.T) {
 func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	assert := assert.New(t)
 
-	gs := NewGossipSub(testChainID, testVersion)
+	gs := newGossipSub(testChainID, testVersion)
 
 	err := gs.Publish(context.Background(), testTopic1, testMessageData)
 	assert.Equal(err, ErrTopicNotFound)
