@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"sync"
 	"time"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 
@@ -39,37 +39,39 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	initCtx.MustWaitAllInstancesInitialized(ctx)
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
-	config := p2p.Config{
+	cfgNet := config.NetworkConfig{
 		AllowIncomingConnections: true,
 		ConnectionSecurity:       secureChannel,
 		Addresses:                []string{fmt.Sprintf("/ip4/%s/tcp/0", ip)},
+		Version:                  "2.0",
+		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
-	err := config.InsertDefault()
+	err := cfgNet.InsertDefault()
 	if err != nil {
 		panic(err)
 	}
 	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
 
-	// init a logger to use it for NewPeer
+	host := p2p.NewConnection(&cfgNet)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
+	}
+	// init a logger to use it for Host
 	logger, err := log.NewDefaultProductionLogger()
 	if err != nil {
 		panic(err)
 	}
-
-	wg := &sync.WaitGroup{}
-	host, err := p2p.NewPeer(ctx, wg, logger, config)
-	if err != nil {
-		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
+	if err := host.Start(logger, nil); err != nil {
+		panic(err)
 	}
-	defer host.Close()
 
 	addrs := func() []ma.Multiaddr {
-		hostAddrs, err := host.P2PAddrs()
+		hostAddrs, err := host.MultiAddress()
 		if err != nil {
 			panic(err)
 		}
 
-		ai, err := p2p.PeerInfoFromMultiAddr(hostAddrs[0].String())
+		ai, err := p2p.AddrInfoFromMultiAddr(hostAddrs[0])
 		if err != nil {
 			panic(err)
 		}
@@ -80,13 +82,13 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 	var (
 		hostId     = host.ID()
-		ai         = &p2p.PeerAddrInfo{ID: hostId, Addrs: addrs()}
-		peersTopic = tgSync.NewTopic("peers", new(p2p.PeerAddrInfo))
-		peers      = make([]*p2p.PeerAddrInfo, 0, runenv.TestInstanceCount)
+		ai         = &p2p.AddrInfo{ID: hostId, Addrs: addrs()}
+		peersTopic = tgSync.NewTopic("peers", new(p2p.AddrInfo))
+		peers      = make([]*p2p.AddrInfo, 0, runenv.TestInstanceCount)
 	)
 
 	initCtx.SyncClient.MustPublish(ctx, peersTopic, ai)
-	peersCh := make(chan *p2p.PeerAddrInfo)
+	peersCh := make(chan *p2p.AddrInfo)
 	sctx, scancel := context.WithCancel(ctx)
 	sub := initCtx.SyncClient.MustSubscribe(sctx, peersTopic, peersCh)
 
@@ -165,6 +167,5 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		initCtx.SyncClient.MustSignalAndWait(ctx, doneState, runenv.TestInstanceCount)
 	}
 
-	_ = host.Close()
 	return nil
 }
