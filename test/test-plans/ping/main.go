@@ -8,7 +8,7 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/testground/sdk-go/network"

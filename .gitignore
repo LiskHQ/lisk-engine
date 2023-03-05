@@ -6,3 +6,10 @@ vendor
 *.test
 .tmp
 testdata
+
+venv/
+test/test-plans/gossipsub/scripts/output/
+/test/test-plans/gossipsub/scripts/config-snapshot.json
+/test/test-plans/gossipsub/scripts/configs/snapshot.json
+__pycache__/
+.ipynb_checkpoints/
