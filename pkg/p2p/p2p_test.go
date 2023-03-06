@@ -73,7 +73,6 @@ func TestP2P_NewP2P(t *testing.T) {
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.cfgNet.Version)
 	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.cfgNet.Addresses)
-	assert.True(p2p.cfgNet.AdvertiseAddresses)
 	assert.Equal(false, p2p.cfgNet.AllowIncomingConnections)
 	assert.Equal(false, p2p.cfgNet.EnableNATService)
 	assert.Equal(false, p2p.cfgNet.EnableUsingRelayService)

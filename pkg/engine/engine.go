@@ -24,6 +24,11 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/txpool"
 )
 
+const (
+	// NetworkVersion specifies the network protocol.
+	NetworkVersion = "1.0"
+)
+
 type Engine struct {
 	abi         labi.ABI
 	ctx         context.Context
@@ -235,12 +240,10 @@ func (e *Engine) Stop() {
 
 func (e *Engine) init() error {
 	e.p2pConn = p2p.NewConnection(&p2p.Config{
+		Version:                  NetworkVersion,
 		ChainID:                  e.config.Genesis.ChainID,
-		Version:                  e.config.Network.Version,
 		Addresses:                e.config.Network.Addresses,
 		EnableHolePunching:       e.config.Network.EnableHolePunching,
-		AdvertiseAddresses:       e.config.Network.AdvertiseAddresses,
-		ConnectionSecurity:       e.config.Network.ConnectionSecurity,
 		AllowIncomingConnections: e.config.Network.AllowIncomingConnections,
 		EnableNATService:         e.config.Network.EnableNATService,
 		EnableUsingRelayService:  e.config.Network.EnableUsingRelayService,

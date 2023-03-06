@@ -13,7 +13,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
-	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
 const (
@@ -42,10 +41,10 @@ func main() {
 		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
-	conn := p2pLib.NewConnection(&cfgNet)
+	conn := p2p.NewConnection(&cfgNet)
 
 	for _, topic := range Topics {
-		err = conn.RegisterEventHandler(topic, func(event *p2pLib.Event) {
+		err = conn.RegisterEventHandler(topic, func(event *p2p.Event) {
 			logger.Infof("Received event: %v", event)
 			logger.Infof("PeerID: %v", event.PeerID())
 			logger.Infof("Event: %v", event.Topic())
@@ -56,7 +55,7 @@ func main() {
 		}
 	}
 
-	err = conn.RegisterEventHandler("testEventName", func(event *p2pLib.Event) {
+	err = conn.RegisterEventHandler("testEventName", func(event *p2p.Event) {
 		logger.Infof("Received event: %v", event)
 		logger.Infof("PeerID: %v", event.PeerID())
 		logger.Infof("Event: %v", event.Topic())
@@ -66,7 +65,7 @@ func main() {
 		panic(err)
 	}
 
-	err = conn.RegisterRPCHandler("ping", func(w p2pLib.ResponseWriter, req *p2pLib.Request) {
+	err = conn.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.Request) {
 		rtt, err := conn.PingMultiTimes(ctx, conn.ConnectedPeers()[0])
 		if err != nil {
 			panic(err)
@@ -83,7 +82,7 @@ func main() {
 		panic(err)
 	}
 
-	err = conn.RegisterRPCHandler("knownPeers", func(w p2pLib.ResponseWriter, req *p2pLib.Request) {
+	err = conn.RegisterRPCHandler("knownPeers", func(w p2p.ResponseWriter, req *p2p.Request) {
 		peers := conn.ConnectedPeers()
 		w.Write([]byte(fmt.Sprintf("All known peers: %v", peers)))
 	})
@@ -105,7 +104,7 @@ func main() {
 	// if a remote peer has been passed on the command line, connect to it
 	// and send ping request message, otherwise wait for a signal to stop
 	if len(os.Args) > 1 {
-		peer, err := p2pLib.AddrInfoFromMultiAddr(os.Args[1])
+		peer, err := p2p.AddrInfoFromMultiAddr(os.Args[1])
 		if err != nil {
 			panic(err)
 		}
@@ -143,7 +142,7 @@ func main() {
 }
 
 // demoRoutine starts the demo routine which will publish messages to the network.
-func demoRoutine(ctx context.Context, logger log.Logger, wg *sync.WaitGroup, p2p *p2pLib.Connection) {
+func demoRoutine(ctx context.Context, logger log.Logger, wg *sync.WaitGroup, p2p *p2p.Connection) {
 	defer wg.Done()
 	logger.Infof("Demo routine started")
 

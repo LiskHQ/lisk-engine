@@ -5,7 +5,6 @@ import "github.com/LiskHQ/lisk-engine/pkg/codec"
 type Config struct {
 	Version                  string
 	Addresses                []string
-	AdvertiseAddresses       bool
 	ConnectionSecurity       string
 	AllowIncomingConnections bool
 	EnableNATService         bool
@@ -28,9 +27,6 @@ func (c *Config) insertDefault() error {
 	}
 	if c.Addresses == nil {
 		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
-	}
-	if !c.AdvertiseAddresses {
-		c.AdvertiseAddresses = true
 	}
 	if c.ConnectionSecurity == "" {
 		c.ConnectionSecurity = "tls"

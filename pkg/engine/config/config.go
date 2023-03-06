@@ -247,10 +247,7 @@ func (c *GenesisConfig) InsertDefault() error {
 
 // Config type - a p2p configuration.
 type NetworkConfig struct {
-	Version                  string   `json:"version"`
 	Addresses                []string `json:"addresses"`
-	AdvertiseAddresses       bool     `json:"advertiseAddresses"`
-	ConnectionSecurity       string   `json:"connectionSecurity"`
 	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
 	EnableNATService         bool     `json:"enableNATService,omitempty"`
 	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`

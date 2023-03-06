@@ -42,6 +42,11 @@ func NewConnection(cfgNet *Config) *Connection {
 	}
 }
 
+// Version returns network version set for the protocol.
+func (conn *Connection) Version() string {
+	return conn.cfgNet.Version
+}
+
 // Start the P2P and all other related services and handlers.
 func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	logger.Infof("Starting P2P module")
