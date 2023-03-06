@@ -13,7 +13,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
-	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -49,8 +48,8 @@ func TestGossipSub_Start(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	sk := newScoreKeeper()
 
@@ -155,8 +154,8 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	sk := newScoreKeeper()
 
@@ -208,8 +207,8 @@ func TestGossipSub_Publish(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	sk := newScoreKeeper()
 

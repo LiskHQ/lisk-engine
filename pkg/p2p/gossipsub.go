@@ -14,7 +14,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -64,7 +63,7 @@ func (gs *GossipSub) start(ctx context.Context,
 	logger log.Logger,
 	p *Peer,
 	sk *scoreKeeper,
-	cfgNet config.NetworkConfig,
+	cfgNet *Config,
 ) error {
 	seedNodes, err := parseAddresses(cfgNet.SeedPeers)
 	if err != nil {

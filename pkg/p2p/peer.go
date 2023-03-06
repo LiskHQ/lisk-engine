@@ -21,7 +21,6 @@ import (
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 
 	lskcrypto "github.com/LiskHQ/lisk-engine/pkg/crypto"
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -77,7 +76,7 @@ var relayServiceOptions = []relay.Option{
 }
 
 // newPeer creates a peer with a libp2p host and message protocol.
-func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfgNet config.NetworkConfig) (*Peer, error) {
+func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfgNet *Config) (*Peer, error) {
 	// Create a Peer variable in advance to be able to use it in the libp2p options.
 	var p *Peer
 

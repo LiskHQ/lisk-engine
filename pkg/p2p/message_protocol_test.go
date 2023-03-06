@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
-	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -65,8 +64,8 @@ func TestMessageProtocol_Start(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 
@@ -96,8 +95,8 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logger, _ := log.NewDefaultProductionLogger()
 			loggerTest := testLogger{Logger: logger}
-			cfgNet := cfg.NetworkConfig{}
-			_ = cfgNet.InsertDefault()
+			cfgNet := &Config{}
+			_ = cfgNet.insertDefault()
 			p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
 			mp := newMessageProtocol(testChainID, testVersion)
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *Request) {
@@ -129,8 +128,8 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
 	mp := newMessageProtocol(testChainID, testVersion)
@@ -166,8 +165,8 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
 	mp := newMessageProtocol(testChainID, testVersion)
@@ -212,8 +211,8 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 
@@ -253,8 +252,8 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -285,8 +284,8 @@ func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -312,8 +311,8 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -345,8 +344,8 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -381,8 +380,8 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -431,8 +430,8 @@ func TestMessageProtocol_sendMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 
 	wg := &sync.WaitGroup{}
@@ -469,8 +468,8 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	wg := &sync.WaitGroup{}
 

@@ -12,7 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/peer"
 
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -23,7 +22,7 @@ type Connection struct {
 	logger     log.Logger
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
-	cfgNet     *config.NetworkConfig
+	cfgNet     *Config
 	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
@@ -31,7 +30,11 @@ type Connection struct {
 }
 
 // NewConnection creates a new P2P instance.
-func NewConnection(cfgNet *config.NetworkConfig) *Connection {
+func NewConnection(cfgNet *Config) *Connection {
+	if err := cfgNet.insertDefault(); err != nil {
+		// if there is an error on configuration, it should not start the package.
+		panic(err)
+	}
 	return &Connection{
 		cfgNet:          cfgNet,
 		MessageProtocol: newMessageProtocol(cfgNet.ChainID, cfgNet.Version),
@@ -44,7 +47,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := newPeer(ctx, &conn.wg, logger, seed, *conn.cfgNet)
+	peer, err := newPeer(ctx, &conn.wg, logger, seed, conn.cfgNet)
 	if err != nil {
 		cancel()
 		return err
@@ -54,7 +57,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.MessageProtocol.start(ctx, logger, peer)
 
 	sk := newScoreKeeper()
-	err = conn.GossipSub.start(ctx, &conn.wg, logger, peer, sk, *conn.cfgNet)
+	err = conn.GossipSub.start(ctx, &conn.wg, logger, peer, sk, conn.cfgNet)
 	if err != nil {
 		cancel()
 		return err
@@ -80,7 +83,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.bootCloser = bootCloser
 
 	conn.wg.Add(1)
-	go natTraversalService(ctx, &conn.wg, *conn.cfgNet, conn.MessageProtocol)
+	go natTraversalService(ctx, &conn.wg, conn.cfgNet, conn.MessageProtocol)
 
 	conn.wg.Add(1)
 	go connectionEventHandler(ctx, &conn.wg, peer)

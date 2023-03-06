@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
-	cfg "github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -21,8 +20,8 @@ func TestPeer_New(t *testing.T) {
 	assert := assert.New(t)
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, err := newPeer(context.Background(), wg, logger, []byte{}, cfgNet)
 	assert.Nil(err)
@@ -34,8 +33,8 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 	assert := assert.New(t)
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, err := newPeer(context.Background(),
 		wg,
@@ -77,8 +76,8 @@ func TestPeer_Close(t *testing.T) {
 	assert := assert.New(t)
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(context.Background(), wg, logger, []byte{}, cfgNet)
 	err := p.close()
@@ -92,8 +91,8 @@ func TestPeer_Connect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -111,8 +110,8 @@ func TestPeer_Disconnect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -135,10 +134,10 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet1 := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet1.InsertDefault()
-	cfgNet2 := cfg.NetworkConfig{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet2.InsertDefault()
+	cfgNet1 := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet1.insertDefault()
+	cfgNet2 := &Config{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet2.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet2)
@@ -166,8 +165,8 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	ip4quic := fmt.Sprintf("/ip4/127.0.0.1/udp/%d/quic", 12345)
 	ip4tcp := fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", 12345)
-	cfgNet := cfg.NetworkConfig{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, err := newPeer(context.Background(), wg, logger, []byte{}, cfgNet)
 	assert.Nil(err)
@@ -186,8 +185,8 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	cfgNet1 := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet1.InsertDefault()
+	cfgNet1 := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet1.insertDefault()
 
 	// create peer1, will be used for blacklisting via gossipsub
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet1)
@@ -204,7 +203,7 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	p3Addrs, _ := p3.MultiAddress()
 	p3AddrInfo, _ := AddrInfoFromMultiAddr(p3Addrs[0])
 
-	cfgNet2 := cfg.NetworkConfig{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
+	cfgNet2 := &Config{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet2)
 
 	gs := newGossipSub(testChainID, testVersion)
@@ -243,8 +242,8 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -264,8 +263,8 @@ func TestPeer_Ping(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
@@ -286,8 +285,8 @@ func TestPeer_PeerSource(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
+	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfgNet.insertDefault()
 
 	// Peer 1
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)

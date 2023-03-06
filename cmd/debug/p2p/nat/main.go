@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 	p2pLib "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
 
@@ -32,7 +32,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cfgNet := config.NetworkConfig{
+	cfgNet := p2p.Config{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
@@ -40,10 +40,6 @@ func main() {
 		EnableHolePunching:       true,
 		Version:                  "1.0",
 		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
-	}
-	err = cfgNet.InsertDefault()
-	if err != nil {
-		panic(err)
 	}
 
 	conn := p2pLib.NewConnection(&cfgNet)

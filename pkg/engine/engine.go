@@ -53,9 +53,6 @@ func NewEngine(abi labi.ABI, config *config.Config) *Engine {
 }
 
 func (e *Engine) Start() error {
-	if err := e.init(); err != nil {
-		return err
-	}
 	if err := e.config.InsertDefault(); err != nil {
 		return err
 	}
@@ -70,6 +67,10 @@ func (e *Engine) Start() error {
 	e.ctx = ctx
 	e.cancel = cancel
 	defer e.cancel()
+
+	if err := e.init(); err != nil {
+		return err
+	}
 
 	dataPath, err := resolvedDataPath(e.config.System.DataPath)
 	if err != nil {
@@ -233,7 +234,24 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) init() error {
-	e.p2pConn = p2p.NewConnection(e.config.Network)
+	e.p2pConn = p2p.NewConnection(&p2p.Config{
+		ChainID:                  e.config.Genesis.ChainID,
+		Version:                  e.config.Network.Version,
+		Addresses:                e.config.Network.Addresses,
+		EnableHolePunching:       e.config.Network.EnableHolePunching,
+		AdvertiseAddresses:       e.config.Network.AdvertiseAddresses,
+		ConnectionSecurity:       e.config.Network.ConnectionSecurity,
+		AllowIncomingConnections: e.config.Network.AllowIncomingConnections,
+		EnableNATService:         e.config.Network.EnableNATService,
+		EnableUsingRelayService:  e.config.Network.EnableUsingRelayService,
+		EnableRelayService:       e.config.Network.EnableRelayService,
+		SeedPeers:                e.config.Network.SeedPeers,
+		FixedPeers:               e.config.Network.FixedPeers,
+		BlacklistedIPs:           e.config.Network.BlacklistedIPs,
+		MinNumOfConnections:      e.config.Network.MinNumOfConnections,
+		MaxNumOfConnections:      e.config.Network.MaxNumOfConnections,
+		IsSeedPeer:               e.config.Network.IsSeedPeer,
+	})
 	e.chain = blockchain.NewChain(&blockchain.ChainConfig{
 		MaxBlockCache:         e.config.System.GetMaxBlokckCache(),
 		ChainID:               e.config.Genesis.ChainID,
