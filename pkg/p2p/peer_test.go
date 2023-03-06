@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
@@ -157,6 +158,62 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	assert.Equal(p1.ID(), p2.ConnectedPeers()[0])
 	err = p2.Disconnect(p1.ID())
 	assert.Nil(err)
+}
+
+func TestPeer_New_ConnectionManager(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger, _ := log.NewDefaultProductionLogger()
+	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true,
+		Addresses:           []string{testIPv4TCP, testIPv4UDP},
+		MinNumOfConnections: 2,
+		MaxNumOfConnections: 4}
+	_ = cfgNet.InsertDefault()
+
+	// Adjust the connection manager options to make the test run faster
+	connMgrOptions = []connmgr.Option{
+		connmgr.WithGracePeriod(time.Nanosecond),
+		connmgr.WithSilencePeriod(time.Second),
+	}
+
+	wg := &sync.WaitGroup{}
+	p, err := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	assert.Nil(err)
+
+	// Create four new peers and connect them to our peer
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p3, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p4, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
+	p3Addrs, _ := p3.MultiAddress()
+	p3AddrInfo, _ := AddrInfoFromMultiAddr(p3Addrs[0])
+	p4Addrs, _ := p4.MultiAddress()
+	p4AddrInfo, _ := AddrInfoFromMultiAddr(p4Addrs[0])
+
+	err = p.Connect(ctx, *p1AddrInfo)
+	assert.Nil(err)
+	err = p.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+	err = p.Connect(ctx, *p3AddrInfo)
+	assert.Nil(err)
+	err = p.Connect(ctx, *p4AddrInfo)
+	assert.Nil(err)
+
+	// Check if the number of connected peers is the same as the one we have connected
+	assert.Equal(4, len(p.ConnectedPeers()))
+
+	// Wait for the connection manager to disconnect one of the peers
+	time.Sleep(time.Second + time.Millisecond*200)
+
+	// Check that the number of connected peers is equal to the max number of connections
+	assert.Equal(2, len(p.ConnectedPeers()))
 }
 
 func TestPeer_TestP2PAddrs(t *testing.T) {
