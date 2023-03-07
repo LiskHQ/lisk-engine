@@ -251,7 +251,7 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 					gs.logger.Errorf("EventHandler for %s not found", sub.Topic())
 					continue
 				}
-				event := NewEvent(msg.ReceivedFrom.String(), sub.Topic(), m.Data)
+				event := NewEvent(msg.ReceivedFrom, sub.Topic(), m.Data)
 				handler(event)
 			}
 		}(sub)

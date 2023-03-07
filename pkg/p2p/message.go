@@ -15,7 +15,7 @@ type Request struct {
 	Procedure string `fieldNumber:"2" json:"procedure"` // Procedure to be called.
 	Data      []byte `fieldNumber:"3" json:"data"`      // Request data.
 	Timestamp int64  `json:"timestamp"`                 // Unix time when the message was received.
-	PeerID    string `json:"peerID"`                    // ID of peer that created the request message.
+	PeerID    PeerID `json:"peerID"`                    // ID of peer that created the request message.
 }
 
 // responseMsg is a response message type received from a peer in response to a request message.
@@ -38,7 +38,7 @@ func newRequestMessage(peerID peer.ID, procedure string, data []byte) *Request {
 	return &Request{
 		ID:        uuid.New().String(),
 		Timestamp: time.Now().Unix(),
-		PeerID:    peerID.String(),
+		PeerID:    peerID,
 		Procedure: procedure,
 		Data:      data,
 	}

@@ -25,13 +25,13 @@ func (w *responseWriter) Error(err error) {
 // Event holds event message from a peer.
 type Response struct {
 	timestamp int64  // Unix time when the message was received.
-	peerID    string // ID of peer that created the response message.
+	peerID    PeerID // ID of peer that created the response message.
 	data      []byte // Response data.
 	err       error  // Error message in case of an error.
 }
 
 // NewResponse creates a new Response struct.
-func NewResponse(timestamp int64, peerID string, data []byte, err error) *Response {
+func NewResponse(timestamp int64, peerID PeerID, data []byte, err error) *Response {
 	return &Response{
 		timestamp: timestamp,
 		peerID:    peerID,
@@ -46,7 +46,7 @@ func (r *Response) Timestamp() int64 {
 }
 
 // PeerID returns sender peer ID.
-func (r *Response) PeerID() string {
+func (r *Response) PeerID() PeerID {
 	return r.peerID
 }
 

@@ -68,7 +68,7 @@ func main() {
 		if err := conn.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		response := conn.RequestFrom(ctx, peer.ID.String(), "ping", nil)
+		response := conn.RequestFrom(ctx, peer.ID, "ping", nil)
 		logger.Infof("Response message received: %+v", response)
 		logger.Infof("%s", string(response.Data()))
 	} else {

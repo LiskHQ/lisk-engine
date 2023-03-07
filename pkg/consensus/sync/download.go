@@ -15,7 +15,7 @@ type Downloader struct {
 	ctx               context.Context
 	chain             *blockchain.Chain
 	conn              *p2p.Connection
-	peerID            string
+	peerID            p2p.PeerID
 	logger            log.Logger
 	start             []byte
 	startHeight       uint32
@@ -38,7 +38,7 @@ func NewDownloader(
 	logger log.Logger,
 	conn *p2p.Connection,
 	chain *blockchain.Chain,
-	peerID string,
+	peerID p2p.PeerID,
 	startID []byte,
 	startHeight uint32,
 	endID []byte,

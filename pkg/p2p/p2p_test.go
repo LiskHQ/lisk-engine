@@ -13,7 +13,7 @@ import (
 
 const (
 	testTimestamp    = int64(123456789)
-	testPeerID       = "testPeerID"
+	testPeerID       = PeerID("testPeerID")
 	testEvent        = "testEvent"
 	testProcedure    = "testProcedure"
 	testRPC          = "testRPC"
@@ -133,9 +133,9 @@ func TestP2P_AddPenalty(t *testing.T) {
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
-	node1.ApplyPenalty(string(p2AddrInfo.ID), 10)
+	node1.ApplyPenalty(p2AddrInfo.ID, 10)
 	assert.Equal(node2.ID(), node1.ConnectedPeers()[0])
-	node1.ApplyPenalty(string(p2AddrInfo.ID), MaxPenaltyScore)
+	node1.ApplyPenalty(p2AddrInfo.ID, MaxPenaltyScore)
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)

@@ -49,8 +49,8 @@ func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) e
 func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler, validator p2p.Validator) error {
 	return nil
 }
-func (c *connMock) ApplyPenalty(peerID string, score int) {}
-func (c *connMock) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) p2p.Response {
+func (c *connMock) ApplyPenalty(peerID p2p.PeerID, score int) {}
+func (c *connMock) RequestFrom(ctx context.Context, peerID p2p.PeerID, procedure string, data []byte) p2p.Response {
 	if procedure == RPCEndpointGetTransactions {
 		return *p2p.NewResponse(0, "", nil, nil)
 	}

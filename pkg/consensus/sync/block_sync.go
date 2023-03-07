@@ -33,13 +33,13 @@ func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
 		wg.Add(1)
 		go func(peer p2p.PeerID) {
 			defer wg.Done()
-			blockHeader, err := requestLastBlockHeader(ctx.Ctx, s.conn, peer.String())
+			blockHeader, err := requestLastBlockHeader(ctx.Ctx, s.conn, peer)
 			if err != nil {
 				s.logger.Errorf("Fail to get last block header from %s with %v", peer.String(), err)
 				return
 			}
 			nodeInfo := NewNodeInfo(blockHeader.Height, blockHeader.MaxHeightPrevoted, blockHeader.Version, blockHeader.ID)
-			nodeInfo.PeerID = peer.String()
+			nodeInfo.PeerID = peer
 			nodeInfos = append(nodeInfos, nodeInfo)
 		}(p)
 	}
