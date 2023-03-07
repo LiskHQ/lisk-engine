@@ -5,24 +5,32 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 
+	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const stopTimeout = time.Second * 5 // P2P service stop timeout in seconds.
+const stopTimeout = time.Second * 5       // P2P service stop timeout in seconds.
+const dropConnTimeout = time.Minute * 30  // Randomly drop one connection after this timeout.
+const manageConnTimeout = time.Minute * 5 // Manage number of connections periodically.
 
 // Connection - a connection to p2p network.
 type Connection struct {
-	logger     log.Logger
-	cancel     context.CancelFunc
-	wg         sync.WaitGroup
-	cfg        *Config
-	bootCloser io.Closer
+	logger            log.Logger
+	cancel            context.CancelFunc
+	wg                sync.WaitGroup
+	cfg               *config.NetworkConfig
+	bootCloser        io.Closer
+	dropConnTimeout   time.Duration
+	manageConnTimeout time.Duration
 	*MessageProtocol
 	*Peer
 	*GossipSub
@@ -35,9 +43,11 @@ func NewConnection(cfg *Config) *Connection {
 		panic(err)
 	}
 	return &Connection{
-		cfg:             cfg,
-		MessageProtocol: newMessageProtocol(cfg.ChainID, cfg.Version),
-		GossipSub:       newGossipSub(cfg.ChainID, cfg.Version),
+		cfg:               cfg,
+		dropConnTimeout:   dropConnTimeout,
+		manageConnTimeout: manageConnTimeout,
+		MessageProtocol:   newMessageProtocol(cfgNet.ChainID, cfgNet.Version),
+		GossipSub:         newGossipSub(cfgNet.ChainID, cfgNet.Version),
 	}
 }
 
@@ -92,6 +102,9 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.wg.Add(1)
 	go connectionEventHandler(ctx, &conn.wg, peer)
 
+	conn.wg.Add(1)
+	go connectionsHandler(ctx, &conn.wg, conn)
+
 	logger.Infof("P2P connection successfully started")
 	return nil
 }
@@ -120,6 +133,14 @@ func (conn *Connection) Stop() error {
 
 	conn.logger.Infof("P2P connection successfully stopped")
 	return nil
+}
+
+// ApplyPenalty updates the score of the given PeerID and blocks the peer if the
+// score exceeded. Also disconnected the peer immediately.
+func (conn *Connection) ApplyPenalty(pid string, score int) {
+	if err := conn.addPenalty(peer.ID(pid), score); err != nil {
+		conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+	}
 }
 
 // connectionEventHandler handles connection events.
@@ -160,10 +181,72 @@ func connectionEventHandler(ctx context.Context, wg *sync.WaitGroup, p *Peer) {
 	}
 }
 
-// ApplyPenalty updates the score of the given PeerID and blocks the peer if the
-// score exceeded. Also disconnected the peer immediately.
-func (conn *Connection) ApplyPenalty(pid PeerID, score int) {
-	if err := conn.addPenalty(pid, score); err != nil {
-		conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+// connectionsHandler handles P2P connections (randomly drop a connection to a peer to make room for a new one).
+func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connection) {
+	defer wg.Done()
+	conn.logger.Infof("Connections handler started")
+
+	timerDrop := time.NewTicker(conn.dropConnTimeout)
+	timerConnect := time.NewTicker(conn.manageConnTimeout)
+
+	for {
+		select {
+		case <-timerDrop.C:
+			conns := conn.Peer.host.Network().Conns()
+			// Only drop a connection if we have more than the minimum number of connections.
+			if len(conns) > conn.cfgNet.MinNumOfConnections {
+				conn.logger.Debugf("Dropping a random connection")
+				rand.Seed(time.Now().UnixNano())
+				rand.Shuffle(len(conns), func(i, j int) { conns[i], conns[j] = conns[j], conns[i] })
+				if err := conn.Disconnect(conns[0].RemotePeer()); err != nil {
+					conn.logger.Errorf("Failed to close connection to peer %s: %v", conns[0].RemotePeer(), err)
+				}
+			}
+			timerDrop.Reset(conn.dropConnTimeout)
+		case <-timerConnect.C:
+			conns := conn.Peer.host.Network().Conns()
+			// Only try to connect to known peers if we have less than two thirds of the maximum number of connections.
+			if len(conns) < conn.cfgNet.MaxNumOfConnections*2/3 {
+				conn.logger.Debugf("Trying to connect to a random peer")
+
+				peers := conn.knownPeers()
+				rand.Seed(time.Now().UnixNano())
+				rand.Shuffle(len(peers), func(i, j int) { peers[i], peers[j] = peers[j], peers[i] })
+
+				for _, peer := range peers {
+					// Skip ourselves.
+					if peer.ID == conn.Peer.host.ID() {
+						continue
+					}
+					// Skip peers we are already connected to.
+					if conn.Peer.host.Network().Connectedness(peer.ID) == network.Connected {
+						continue
+					}
+
+					for _, addr := range peer.Addrs {
+						addrInfo, err := AddrInfoFromMultiAddr(addr.String() + "/p2p/" + peer.ID.Pretty())
+						if err != nil {
+							continue
+						}
+						if err := conn.Connect(ctx, *addrInfo); err != nil {
+							conn.logger.Debugf("Failed to connect to peer %s: %v", peer.ID.Pretty(), err)
+							continue
+						} else {
+							break
+						}
+					}
+
+					// Stop trying to connect to peers if we reached the maximum number of connections.
+					if len(conn.Peer.host.Network().Conns()) >= conn.cfgNet.MaxNumOfConnections {
+						break
+					}
+				}
+			}
+
+			timerConnect.Reset(conn.manageConnTimeout)
+		case <-ctx.Done():
+			conn.logger.Infof("Connections handler stopped")
+			return
+		}
 	}
 }
