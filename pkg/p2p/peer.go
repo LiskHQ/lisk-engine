@@ -145,8 +145,8 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 
 	// Configure connection manager to prevent too many connections.
 	connMgr, err := connmgr.NewConnManager(
-		cfgNet.MinNumOfConnections, // Lowwater
-		cfgNet.MaxNumOfConnections, // HighWater,
+		cfg.MinNumOfConnections, // Lowwater
+		cfg.MaxNumOfConnections, // HighWater,
 		connMgrOptions...,
 	)
 	if err != nil {

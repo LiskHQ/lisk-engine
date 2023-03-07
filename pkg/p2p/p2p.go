@@ -14,7 +14,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -27,7 +26,7 @@ type Connection struct {
 	logger            log.Logger
 	cancel            context.CancelFunc
 	wg                sync.WaitGroup
-	cfg               *config.NetworkConfig
+	cfg               *Config
 	bootCloser        io.Closer
 	dropConnTimeout   time.Duration
 	manageConnTimeout time.Duration
@@ -46,8 +45,8 @@ func NewConnection(cfg *Config) *Connection {
 		cfg:               cfg,
 		dropConnTimeout:   dropConnTimeout,
 		manageConnTimeout: manageConnTimeout,
-		MessageProtocol:   newMessageProtocol(cfgNet.ChainID, cfgNet.Version),
-		GossipSub:         newGossipSub(cfgNet.ChainID, cfgNet.Version),
+		MessageProtocol:   newMessageProtocol(cfg.ChainID, cfg.Version),
+		GossipSub:         newGossipSub(cfg.ChainID, cfg.Version),
 	}
 }
 
@@ -198,7 +197,7 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 			conns := make([]network.Conn, 0)
 			for _, c := range allConns {
 				isFixedPeerConn := false
-				for _, p := range conn.cfgNet.FixedPeers {
+				for _, p := range conn.cfg.FixedPeers {
 					if c.RemoteMultiaddr().String()+"/p2p/"+c.RemotePeer().String() == p {
 						isFixedPeerConn = true
 						break
@@ -210,7 +209,7 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 			}
 
 			// Only drop a connection if we have more than the minimum number of connections.
-			if len(allConns) > conn.cfgNet.MinNumOfConnections {
+			if len(allConns) > conn.cfg.MinNumOfConnections {
 				conn.logger.Debugf("Dropping a random connection")
 				rand.Seed(time.Now().UnixNano())
 				rand.Shuffle(len(conns), func(i, j int) { conns[i], conns[j] = conns[j], conns[i] })
@@ -222,7 +221,7 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 		case <-timerConnect.C:
 			conns := conn.Peer.host.Network().Conns()
 			// Only try to connect to known peers if we have less than two thirds of the maximum number of connections.
-			if len(conns) < conn.cfgNet.MaxNumOfConnections*2/3 {
+			if len(conns) < conn.cfg.MaxNumOfConnections*2/3 {
 				conn.logger.Debugf("Trying to connect to a random peer")
 
 				peers := conn.knownPeers()
@@ -253,7 +252,7 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 					}
 
 					// Stop trying to connect to peers if we reached the maximum number of connections.
-					if len(conn.Peer.host.Network().Conns()) >= conn.cfgNet.MaxNumOfConnections {
+					if len(conn.Peer.host.Network().Conns()) >= conn.cfg.MaxNumOfConnections {
 						break
 					}
 				}

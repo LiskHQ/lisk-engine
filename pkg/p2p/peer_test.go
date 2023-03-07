@@ -167,11 +167,11 @@ func TestPeer_New_ConnectionManager(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true,
+	cfg := Config{AllowIncomingConnections: true,
 		Addresses:           []string{testIPv4TCP, testIPv4UDP},
 		MinNumOfConnections: 2,
 		MaxNumOfConnections: 4}
-	_ = cfgNet.InsertDefault()
+	_ = cfg.insertDefault()
 
 	// Adjust the connection manager options to make the test run faster
 	connMgrOptions = []connmgr.Option{
@@ -180,14 +180,14 @@ func TestPeer_New_ConnectionManager(t *testing.T) {
 	}
 
 	wg := &sync.WaitGroup{}
-	p, err := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p, err := newPeer(ctx, wg, logger, []byte{}, &cfg)
 	assert.Nil(err)
 
 	// Create four new peers and connect them to our peer
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p3, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p4, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p3, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p4, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
 	p1Addrs, _ := p1.MultiAddress()
 	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
 	p2Addrs, _ := p2.MultiAddress()

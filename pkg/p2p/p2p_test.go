@@ -175,19 +175,19 @@ func TestP2P_connectionsHandler_DropRandomPeer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
-	p2p := NewConnection(&cfgNet)
+	cfg := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
+	p2p := NewConnection(&cfg)
 	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
-	p2p.cfgNet.MinNumOfConnections = 1
+	p2p.cfg.MinNumOfConnections = 1
 	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger, []byte{})
 	assert.Nil(err)
 
 	// Create two new peers and connect them to our p2p node
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
 	p1Addrs, _ := p1.MultiAddress()
 	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
 	p2Addrs, _ := p2.MultiAddress()
@@ -216,31 +216,31 @@ func TestP2P_connectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	logger, _ := logger.NewDefaultProductionLogger()
 
 	// Create two new peers
-	cfg1 := cfg.NetworkConfig{
+	cfg1 := Config{
 		AllowIncomingConnections: true,
 		Addresses:                []string{testIPv4TCP, testIPv4UDP},
 	}
-	_ = cfg1.InsertDefault()
+	_ = cfg1.insertDefault()
 
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{1, 2, 3}, cfg1)
-	p2, _ := newPeer(ctx, wg, logger, []byte{4, 5, 6}, cfg1)
+	p1, _ := newPeer(ctx, wg, logger, []byte{1, 2, 3}, &cfg1)
+	p2, _ := newPeer(ctx, wg, logger, []byte{4, 5, 6}, &cfg1)
 	p1Addrs, _ := p1.MultiAddress()
 	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
 
 	// Create a p2p node with fixed peers
-	cfg2 := cfg.NetworkConfig{
+	cfg2 := Config{
 		AllowIncomingConnections: true,
 		Addresses:                []string{testIPv4TCP, testIPv4UDP},
 		FixedPeers:               []string{p1Addrs[0], p1Addrs[1]},
 	}
 
-	_ = cfg2.InsertDefault()
+	_ = cfg2.insertDefault()
 	p2p := NewConnection(&cfg2)
 	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
-	p2p.cfgNet.MinNumOfConnections = 1
+	p2p.cfg.MinNumOfConnections = 1
 
 	err := p2p.Start(logger, []byte{})
 	assert.Nil(err)
@@ -268,9 +268,9 @@ func TestP2P_connectionsHandler_BelowMinimumNumberOfConnections(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfgNet := cfg.NetworkConfig{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.InsertDefault()
-	p2p := NewConnection(&cfgNet)
+	cfg := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
+	p2p := NewConnection(&cfg)
 	p2p.manageConnTimeout = 1 * time.Second // Set manage connections timeout to 1s to speed up the test
 	logger, _ := logger.NewDefaultProductionLogger()
 	err := p2p.Start(logger, []byte{})
@@ -278,8 +278,8 @@ func TestP2P_connectionsHandler_BelowMinimumNumberOfConnections(t *testing.T) {
 
 	// Create two new peers
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
 	p1Addrs, _ := p1.MultiAddress()
 	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
 	p2Addrs, _ := p2.MultiAddress()
