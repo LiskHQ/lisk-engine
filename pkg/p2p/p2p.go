@@ -192,9 +192,25 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 	for {
 		select {
 		case <-timerDrop.C:
-			conns := conn.Peer.host.Network().Conns()
+			allConns := conn.Peer.host.Network().Conns()
+
+			// Remove fixed peers connections from the list.
+			conns := make([]network.Conn, 0)
+			for _, c := range allConns {
+				isFixedPeerConn := false
+				for _, p := range conn.cfgNet.FixedPeers {
+					if c.RemoteMultiaddr().String()+"/p2p/"+c.RemotePeer().String() == p {
+						isFixedPeerConn = true
+						break
+					}
+				}
+				if !isFixedPeerConn {
+					conns = append(conns, c)
+				}
+			}
+
 			// Only drop a connection if we have more than the minimum number of connections.
-			if len(conns) > conn.cfgNet.MinNumOfConnections {
+			if len(allConns) > conn.cfgNet.MinNumOfConnections {
 				conn.logger.Debugf("Dropping a random connection")
 				rand.Seed(time.Now().UnixNano())
 				rand.Shuffle(len(conns), func(i, j int) { conns[i], conns[j] = conns[j], conns[i] })
