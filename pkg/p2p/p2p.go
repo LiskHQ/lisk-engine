@@ -110,6 +110,19 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 
 // Stop the connection to the P2P network.
 func (conn *Connection) Stop() error {
+	// Cancel all subscriptions (to send graft messages (PX exchange) to peers).
+	for _, s := range conn.subscriptions {
+		s.Cancel()
+	}
+
+	// Close all topics.
+	for _, t := range conn.topics {
+		err := t.Close()
+		if err != nil {
+			conn.logger.Errorf("Failed to close topic: %v", err)
+		}
+	}
+
 	conn.cancel()
 
 	conn.bootCloser.Close()

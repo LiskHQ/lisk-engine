@@ -230,6 +230,10 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 						gs.logger.Infof("Topic \"%s\" subscription handler stopped", sub.Topic())
 						return
 					}
+					if errors.Is(err, pubsub.ErrSubscriptionCancelled) {
+						gs.logger.Infof("Subscription for topic \"%s\" cancelled. Handler stopped", sub.Topic())
+						return
+					}
 					gs.logger.Errorf("Error while receiving message: %s", err)
 					continue
 				}
