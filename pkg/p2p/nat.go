@@ -31,13 +31,13 @@ func newAutoNAT(p *Peer) (autonat.AutoNAT, error) {
 }
 
 // natTraversalService handles all NAT traversal related events.
-func natTraversalService(ctx context.Context, wg *sync.WaitGroup, cfgNet *Config, mp *MessageProtocol) {
+func natTraversalService(ctx context.Context, wg *sync.WaitGroup, cfg *Config, mp *MessageProtocol) {
 	defer wg.Done()
 	mp.peer.logger.Infof("NAT traversal service started")
 
 	var nat autonat.AutoNAT
 	var err error
-	if cfgNet.EnableNATService {
+	if cfg.EnableNATService {
 		if nat, err = newAutoNAT(mp.peer); err != nil {
 			mp.peer.logger.Errorf("Failed to create and enable peer AutoNAT feature: %v", err)
 		}
@@ -54,7 +54,7 @@ func natTraversalService(ctx context.Context, wg *sync.WaitGroup, cfgNet *Config
 	for {
 		select {
 		case <-t.C:
-			if cfgNet.EnableNATService {
+			if cfg.EnableNATService {
 				mp.peer.logger.Debugf("NAT status: %v", nat.Status())
 			}
 			t.Reset(10 * time.Second)

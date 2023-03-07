@@ -31,7 +31,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cfgNet := p2p.Config{
+	cfg := p2p.Config{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
@@ -41,7 +41,7 @@ func main() {
 		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
-	conn := p2p.NewConnection(&cfgNet)
+	conn := p2p.NewConnection(&cfg)
 
 	for _, topic := range Topics {
 		err = conn.RegisterEventHandler(topic, func(event *p2p.Event) {

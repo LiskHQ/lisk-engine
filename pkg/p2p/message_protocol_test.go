@@ -64,10 +64,10 @@ func TestMessageProtocol_Start(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{}
+	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
-	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, logger, p)
@@ -95,9 +95,9 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logger, _ := log.NewDefaultProductionLogger()
 			loggerTest := testLogger{Logger: logger}
-			cfgNet := &Config{}
-			_ = cfgNet.insertDefault()
-			p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
+			cfg := &Config{}
+			_ = cfg.insertDefault()
+			p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 			mp := newMessageProtocol(testChainID, testVersion)
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *Request) {
 				mp.logger.Debugf("Request received")
@@ -128,10 +128,10 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{}
+	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
-	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
+	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
@@ -165,10 +165,10 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 	logger, _ := log.NewDefaultProductionLogger()
 	loggerTest := testLogger{Logger: logger}
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{}
+	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
-	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfgNet)
+	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, &loggerTest, p)
 	// There is no channel for the request ID "testReqMsgID"
@@ -211,10 +211,10 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{}
+	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
-	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, logger, p)
@@ -252,14 +252,14 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	mp1.start(ctx, logger, p1)
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
@@ -284,15 +284,15 @@ func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	mp1.start(ctx, logger, p1)
 
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol([]byte{9, 9, 9, 9}, "9.9")
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
@@ -311,14 +311,14 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	mp1.start(ctx, logger, p1)
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Error(errors.New("Test RPC handler error!"))
@@ -344,11 +344,11 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	mp1.start(ctx, logger, p1)
 	mp1.timeout = time.Millisecond * 20 // Reduce timeout to 20 ms to speed up test
@@ -356,7 +356,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	p1.host.RemoveStreamHandler(messageProtocolReqID(testChainID, testVersion))
 	p1.host.RemoveStreamHandler(messageProtocolResID(testChainID, testVersion))
 
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
@@ -380,14 +380,14 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	mp1.start(ctx, logger, p1)
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
@@ -430,16 +430,16 @@ func TestMessageProtocol_sendMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 
 	wg := &sync.WaitGroup{}
 
 	// check sending from matching chainID/version
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	p2.host.SetStreamHandler(messageProtocolReqID(testChainID, testVersion), tmr.onMessageReceive)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -468,13 +468,13 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
-	_ = cfgNet.insertDefault()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
 
 	// check sending from matching chainID/version
-	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, logger, p1)
@@ -482,7 +482,7 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	// check sending from different chainID/version
 	tmr := TestMessageReceive{done: make(chan any)}
 
-	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	p2.host.SetStreamHandler(messageProtocolReqID([]byte{9, 9, 9, 9}, "9.9"), tmr.onMessageReceive)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])

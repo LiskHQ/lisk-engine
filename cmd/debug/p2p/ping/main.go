@@ -22,7 +22,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfgNet := p2p.Config{
+	cfg := p2p.Config{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
@@ -30,7 +30,7 @@ func main() {
 		EnableHolePunching:       true,
 	}
 
-	conn := p2p.NewConnection(&cfgNet)
+	conn := p2p.NewConnection(&cfg)
 
 	if err := conn.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.Request) {
 		rtt, err := conn.PingMultiTimes(ctx, conn.ConnectedPeers()[0])

@@ -76,7 +76,7 @@ var relayServiceOptions = []relay.Option{
 }
 
 // newPeer creates a peer with a libp2p host and message protocol.
-func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfgNet *Config) (*Peer, error) {
+func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []byte, cfg *Config) (*Peer, error) {
 	// Create a Peer variable in advance to be able to use it in the libp2p options.
 	var p *Peer
 
@@ -95,12 +95,12 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 		opts = append(opts, libp2p.Identity(priv))
 	}
 
-	switch cfgNet.AllowIncomingConnections {
+	switch cfg.AllowIncomingConnections {
 	case true:
-		if len(cfgNet.Addresses) == 0 {
+		if len(cfg.Addresses) == 0 {
 			opts = append(opts, libp2p.NoListenAddrs)
 		} else {
-			opts = append(opts, libp2p.ListenAddrStrings(cfgNet.Addresses...))
+			opts = append(opts, libp2p.ListenAddrStrings(cfg.Addresses...))
 		}
 	case false:
 		opts = append(opts, libp2p.NoListenAddrs)
@@ -112,7 +112,7 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 	}
 
 	// Load Blacklist
-	connGaterOpt, err := connGater.optionWithBlacklist(cfgNet.BlacklistedIPs)
+	connGaterOpt, err := connGater.optionWithBlacklist(cfg.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 	peerstore.OwnObservedAddrTTL = time.Minute * 30       // OwnObservedAddrTTL is used for our own external addresses observed by peers.
 
 	// Configure connection security.
-	security := strings.ToLower(cfgNet.ConnectionSecurity)
+	security := strings.ToLower(cfg.ConnectionSecurity)
 	switch security {
 	case ConnectionSecurityNone:
 		opts = append(opts, libp2p.NoSecurity)
@@ -138,7 +138,7 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 	}
 
 	// Configure peer to provide a service for other peers for determining their reachability status.
-	if cfgNet.EnableNATService {
+	if cfg.EnableNATService {
 		opts = append(opts, libp2p.EnableNATService())
 		opts = append(opts, libp2p.AutoNATServiceRateLimit(60, 10, time.Minute))
 	}
@@ -146,7 +146,7 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 
 	// Enable using relay service from other peers. In case a peer is not reachable from the network,
 	// it will try to connect to a relay service from other peers.
-	if cfgNet.EnableUsingRelayService {
+	if cfg.EnableUsingRelayService {
 		opts = append(opts, libp2p.EnableRelay())
 
 		autoRelayOptions = append(autoRelayOptions, autorelay.WithPeerSource(func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
@@ -159,12 +159,12 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 	}
 
 	// Enable circuit relay service.
-	if cfgNet.EnableRelayService {
+	if cfg.EnableRelayService {
 		opts = append(opts, libp2p.EnableRelayService(relayServiceOptions...))
 	}
 
 	// Enable hole punching service.
-	if cfgNet.EnableHolePunching {
+	if cfg.EnableHolePunching {
 		opts = append(opts, libp2p.EnableHolePunching())
 	}
 
@@ -173,7 +173,7 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 		return nil, err
 	}
 
-	peerbook, err := newPeerbook(cfgNet.SeedPeers, cfgNet.FixedPeers, cfgNet.BlacklistedIPs)
+	peerbook, err := newPeerbook(cfg.SeedPeers, cfg.FixedPeers, cfg.BlacklistedIPs)
 	if err != nil {
 		return nil, err
 	}

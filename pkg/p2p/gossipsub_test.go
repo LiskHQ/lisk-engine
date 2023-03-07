@@ -48,16 +48,16 @@ func TestGossipSub_Start(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
-	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	cfg := &Config{}
+	_ = cfg.insertDefault()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
 	gs := newGossipSub(testChainID, testVersion)
 	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	assert.Nil(err)
 
-	err = gs.start(ctx, wg, logger, p, sk, cfgNet)
+	err = gs.start(ctx, wg, logger, p, sk, cfg)
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
@@ -154,13 +154,13 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
-	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	cfg := &Config{}
+	_ = cfg.insertDefault()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
 	gs := newGossipSub(testChainID, testVersion)
-	gs.start(ctx, wg, logger, p, sk, cfgNet)
+	gs.start(ctx, wg, logger, p, sk, cfg)
 
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.NotNil(err)
@@ -207,15 +207,15 @@ func TestGossipSub_Publish(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfgNet := &Config{}
-	_ = cfgNet.insertDefault()
-	p, _ := newPeer(ctx, wg, logger, []byte{}, cfgNet)
+	cfg := &Config{}
+	_ = cfg.insertDefault()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
 	gs := newGossipSub(testChainID, testVersion)
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, testMV)
 
-	gs.start(ctx, wg, logger, p, sk, cfgNet)
+	gs.start(ctx, wg, logger, p, sk, cfg)
 
 	err := gs.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)

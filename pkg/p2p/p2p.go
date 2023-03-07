@@ -22,7 +22,7 @@ type Connection struct {
 	logger     log.Logger
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
-	cfgNet     *Config
+	cfg        *Config
 	bootCloser io.Closer
 	*MessageProtocol
 	*Peer
@@ -30,21 +30,21 @@ type Connection struct {
 }
 
 // NewConnection creates a new P2P instance.
-func NewConnection(cfgNet *Config) *Connection {
-	if err := cfgNet.insertDefault(); err != nil {
+func NewConnection(cfg *Config) *Connection {
+	if err := cfg.insertDefault(); err != nil {
 		// if there is an error on configuration, it should not start the package.
 		panic(err)
 	}
 	return &Connection{
-		cfgNet:          cfgNet,
-		MessageProtocol: newMessageProtocol(cfgNet.ChainID, cfgNet.Version),
-		GossipSub:       newGossipSub(cfgNet.ChainID, cfgNet.Version),
+		cfg:             cfg,
+		MessageProtocol: newMessageProtocol(cfg.ChainID, cfg.Version),
+		GossipSub:       newGossipSub(cfg.ChainID, cfg.Version),
 	}
 }
 
 // Version returns network version set for the protocol.
 func (conn *Connection) Version() string {
-	return conn.cfgNet.Version
+	return conn.cfg.Version
 }
 
 // Start the P2P and all other related services and handlers.
@@ -52,7 +52,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := newPeer(ctx, &conn.wg, logger, seed, conn.cfgNet)
+	peer, err := newPeer(ctx, &conn.wg, logger, seed, conn.cfg)
 	if err != nil {
 		cancel()
 		return err
@@ -62,20 +62,20 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.MessageProtocol.start(ctx, logger, peer)
 
 	sk := newScoreKeeper()
-	err = conn.GossipSub.start(ctx, &conn.wg, logger, peer, sk, conn.cfgNet)
+	err = conn.GossipSub.start(ctx, &conn.wg, logger, peer, sk, conn.cfg)
 	if err != nil {
 		cancel()
 		return err
 	}
 
 	// Start peer discovery bootstrap process.
-	seedPeers, err := parseAddresses(conn.cfgNet.SeedPeers)
+	seedPeers, err := parseAddresses(conn.cfg.SeedPeers)
 	if err != nil {
 		cancel()
 		return err
 	}
 	cfgBootStrap := bootstrap.BootstrapConfigWithPeers(seedPeers)
-	cfgBootStrap.MinPeerThreshold = conn.cfgNet.MinNumOfConnections
+	cfgBootStrap.MinPeerThreshold = conn.cfg.MinNumOfConnections
 	bootCloser, err := bootstrap.Bootstrap(peer.ID(), peer.host, nil, cfgBootStrap)
 	if err != nil {
 		cancel()
@@ -88,7 +88,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.bootCloser = bootCloser
 
 	conn.wg.Add(1)
-	go natTraversalService(ctx, &conn.wg, conn.cfgNet, conn.MessageProtocol)
+	go natTraversalService(ctx, &conn.wg, conn.cfg, conn.MessageProtocol)
 
 	conn.wg.Add(1)
 	go connectionEventHandler(ctx, &conn.wg, peer)
