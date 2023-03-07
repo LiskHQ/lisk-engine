@@ -56,9 +56,6 @@ func (c *Config) InsertDefault() error {
 	if c.Network == nil {
 		c.Network = &NetworkConfig{}
 	}
-	if err := c.Network.InsertDefault(); err != nil {
-		return err
-	}
 	if c.Genesis == nil {
 		c.Genesis = &GenesisConfig{}
 	}
@@ -250,10 +247,7 @@ func (c *GenesisConfig) InsertDefault() error {
 
 // Config type - a p2p configuration.
 type NetworkConfig struct {
-	Version                  string   `json:"version"`
 	Addresses                []string `json:"addresses"`
-	AdvertiseAddresses       bool     `json:"advertiseAddresses"`
-	ConnectionSecurity       string   `json:"connectionSecurity"`
 	AllowIncomingConnections bool     `json:"allowIncomingConnections"`
 	EnableNATService         bool     `json:"enableNATService,omitempty"`
 	EnableUsingRelayService  bool     `json:"enableUsingRelayService"`
@@ -265,40 +259,5 @@ type NetworkConfig struct {
 	MinNumOfConnections      int      `json:"minNumOfConnections"`
 	MaxNumOfConnections      int      `json:"maxNumOfConnections"`
 	// GossipSub configuration
-	IsSeedPeer bool      `json:"isSeedPeer,omitempty"`
-	ChainID    codec.Hex `json:"chainID"`
-}
-
-func (c *NetworkConfig) InsertDefault() error {
-	if c.Version == "" {
-		c.Version = "1.0"
-	}
-	if c.Addresses == nil {
-		c.Addresses = []string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}
-	}
-	if !c.AdvertiseAddresses {
-		c.AdvertiseAddresses = true
-	}
-	if c.ConnectionSecurity == "" {
-		c.ConnectionSecurity = "tls"
-	}
-	if c.SeedPeers == nil {
-		c.SeedPeers = []string{}
-	}
-	if c.FixedPeers == nil {
-		c.FixedPeers = []string{}
-	}
-	if c.BlacklistedIPs == nil {
-		c.BlacklistedIPs = []string{}
-	}
-	if c.MinNumOfConnections == 0 {
-		c.MinNumOfConnections = 20
-	}
-	if c.MaxNumOfConnections == 0 {
-		c.MaxNumOfConnections = 100
-	}
-	if len(c.ChainID) == 0 {
-		c.ChainID = []byte{0xff, 0xff, 0xff, 0xff}
-	}
-	return nil
+	IsSeedPeer bool `json:"isSeedPeer,omitempty"`
 }

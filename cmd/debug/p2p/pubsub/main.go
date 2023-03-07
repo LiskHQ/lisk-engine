@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
@@ -39,18 +38,15 @@ func main() {
 	ip6tcp := fmt.Sprintf("/ip6/::/tcp/%d", *port)
 	ip4tcp := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port)
 
-	cfgNet := config.NetworkConfig{
+	cfg := p2p.Config{
 		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
 		AllowIncomingConnections: true,
 		SeedPeers:                []string{},
 		Version:                  "2.0",
 		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
-	if err := cfgNet.InsertDefault(); err != nil {
-		panic(err)
-	}
 
-	conn := p2p.NewConnection(&cfgNet)
+	conn := p2p.NewConnection(&cfg)
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
 	var validator p2p.Validator

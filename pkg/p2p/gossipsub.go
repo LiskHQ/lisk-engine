@@ -14,7 +14,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -64,13 +63,13 @@ func (gs *GossipSub) start(ctx context.Context,
 	logger log.Logger,
 	p *Peer,
 	sk *scoreKeeper,
-	cfgNet config.NetworkConfig,
+	cfg *Config,
 ) error {
-	seedNodes, err := parseAddresses(cfgNet.SeedPeers)
+	seedNodes, err := parseAddresses(cfg.SeedPeers)
 	if err != nil {
 		return err
 	}
-	fixedNodes, err := parseAddresses(cfgNet.FixedPeers)
+	fixedNodes, err := parseAddresses(cfg.FixedPeers)
 	if err != nil {
 		return err
 	}
@@ -105,7 +104,7 @@ func (gs *GossipSub) start(ctx context.Context,
 			&pubsub.PeerScoreParams{
 				AppSpecificScore: func(p peer.ID) float64 {
 					_, ok := bootstrappers[p]
-					if ok && !cfgNet.IsSeedPeer {
+					if ok && !cfg.IsSeedPeer {
 						return 2500
 					}
 					return 0
@@ -133,7 +132,7 @@ func (gs *GossipSub) start(ctx context.Context,
 		pubsub.WithPeerScoreInspect(sk.Update, 10*time.Second),
 	}
 
-	if cfgNet.IsSeedPeer {
+	if cfg.IsSeedPeer {
 		pubsub.GossipSubD = 0
 		pubsub.GossipSubDscore = 0
 		pubsub.GossipSubDlo = 0
@@ -147,7 +146,7 @@ func (gs *GossipSub) start(ctx context.Context,
 	pgTopicWeights := map[string]float64{}
 
 	var pgParams *pubsub.PeerGaterParams
-	if cfgNet.IsSeedPeer {
+	if cfg.IsSeedPeer {
 		pgParams = pubsub.NewPeerGaterParams(
 			0.33,
 			pubsub.ScoreParameterDecay(2*time.Minute),

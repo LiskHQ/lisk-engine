@@ -79,7 +79,7 @@ func (a *systemEndpoint) HandleGetNodeInfo(w router.EndpointResponseWriter, r *r
 		FinalizedHeight:          finalizedHeight,
 		Syncing:                  syncing,
 		GenesisConfig:            a.config.Genesis,
-		NetworkVersion:           a.config.Network.Version,
+		NetworkVersion:           a.p2pConn.Version(),
 	}
 	if err := w.Write(resp); err != nil {
 		w.Error(err)

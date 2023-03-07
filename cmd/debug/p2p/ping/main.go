@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	p2p "github.com/LiskHQ/lisk-engine/pkg/p2p"
 )
@@ -23,19 +22,15 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfgNet := config.NetworkConfig{
+	cfg := p2p.Config{
 		AllowIncomingConnections: true,
 		EnableNATService:         true,
 		EnableUsingRelayService:  true,
 		EnableRelayService:       true,
 		EnableHolePunching:       true,
 	}
-	err = cfgNet.InsertDefault()
-	if err != nil {
-		panic(err)
-	}
 
-	conn := p2p.NewConnection(&cfgNet)
+	conn := p2p.NewConnection(&cfg)
 
 	if err := conn.RegisterRPCHandler("ping", func(w p2p.ResponseWriter, req *p2p.Request) {
 		rtt, err := conn.PingMultiTimes(ctx, conn.ConnectedPeers()[0])
