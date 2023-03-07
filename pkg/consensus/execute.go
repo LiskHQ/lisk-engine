@@ -276,7 +276,7 @@ func (c *Executer) ImpliesMaximalPrevotes(context *diffdb.Database, blockHeader 
 type ProcessContext struct {
 	ctx    context.Context
 	block  *blockchain.Block
-	peerID string
+	peerID p2p.PeerID
 }
 
 // process received block.

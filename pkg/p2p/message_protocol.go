@@ -66,8 +66,8 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) e
 }
 
 // RequestFrom sends a request message to a peer using a message protocol.
-func (mp *MessageProtocol) RequestFrom(ctx context.Context, peerID string, procedure string, data []byte) Response {
-	response, err := mp.request(ctx, peer.ID(peerID), procedure, data)
+func (mp *MessageProtocol) RequestFrom(ctx context.Context, peerID PeerID, procedure string, data []byte) Response {
+	response, err := mp.request(ctx, peerID, procedure, data)
 	if err != nil {
 		return Response{err: err}
 	}
@@ -170,7 +170,7 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 		}
 		ch <- NewResponse(
 			newMsg.Timestamp,
-			s.Conn().RemotePeer().String(),
+			s.Conn().RemotePeer(),
 			newMsg.Data,
 			resError,
 		)

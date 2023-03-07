@@ -69,7 +69,7 @@ type SyncContext struct {
 	Ctx                  context.Context
 	Block                *blockchain.Block
 	FinalizedBlockHeader *blockchain.BlockHeader
-	PeerID               string
+	PeerID               p2p.PeerID
 	CurrentValidators    []codec.Lisk32
 }
 

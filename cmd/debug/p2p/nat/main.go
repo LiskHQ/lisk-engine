@@ -111,9 +111,9 @@ func main() {
 		if err := conn.Connect(ctx, *peer); err != nil {
 			panic(err)
 		}
-		response := conn.RequestFrom(ctx, peer.ID.String(), "ping", nil)
+		response := conn.RequestFrom(ctx, peer.ID, "ping", nil)
 		if response.Error() != nil {
-			panic(err)
+			panic(response.Error())
 		}
 		logger.Infof("Response message received: %+v", response)
 		logger.Infof("%s", string(response.Data()))
@@ -178,7 +178,7 @@ func demoRoutine(ctx context.Context, logger log.Logger, wg *sync.WaitGroup, p2p
 			addrs, _ := p2p.MultiAddress()
 			logger.Debugf("My listen addresses: %v", addrs)
 			for _, connectedPeer := range p2p.ConnectedPeers() {
-				response := p2p.RequestFrom(ctx, connectedPeer.String(), "knownPeers", nil)
+				response := p2p.RequestFrom(ctx, connectedPeer, "knownPeers", nil)
 				if response.Error() != nil {
 					logger.Errorf("Failed to send message to peer %v: %v", connectedPeer, response.Error())
 				} else {

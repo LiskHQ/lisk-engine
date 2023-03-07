@@ -273,7 +273,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 
 	response, err := mp1.request(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(err)
-	assert.Equal(p2.ID().String(), response.PeerID())
+	assert.Equal(p2.ID(), response.PeerID())
 	assert.Contains(string(response.Data()), "Average RTT with you:")
 }
 
@@ -332,7 +332,7 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 
 	response, err := mp1.request(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(err)
-	assert.Equal(p2.ID().String(), response.PeerID())
+	assert.Equal(p2.ID(), response.PeerID())
 	assert.Equal([]byte{}, response.Data())
 	assert.Contains(response.Error().Error(), "Test RPC handler error!")
 }
@@ -402,7 +402,7 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 
 	select {
 	case response := <-ch:
-		assert.Equal(p1.ID().String(), response.PeerID())
+		assert.Equal(p1.ID(), response.PeerID())
 		assert.Equal(testResponseData, string(response.Data()))
 		assert.Equal(testError, response.Error().Error())
 		break

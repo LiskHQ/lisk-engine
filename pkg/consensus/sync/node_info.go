@@ -1,12 +1,14 @@
 package sync
 
+import "github.com/LiskHQ/lisk-engine/pkg/p2p"
+
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
 type NodeInfo struct {
 	height            uint32 `fieldNumber:"1"`
 	maxHeightPrevoted uint32 `fieldNumber:"2"`
 	blockVersion      uint32 `fieldNumber:"3"`
 	lastBlockID       []byte `fieldNumber:"4"`
-	PeerID            string
+	PeerID            p2p.PeerID
 }
 
 func NewNodeInfo(
