@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 	"testing"
-	"time"
 	"unsafe"
 
 	"github.com/libp2p/go-libp2p"
@@ -287,18 +286,7 @@ func TestGossipSub_BelowMinimumNumberOfConnections(t *testing.T) {
 	assert.Equal(0, len(gs.peer.ConnectedPeers()))
 
 	// From now on, gossipsub should try to connect to the peers we have in the known peers list
-	for {
-		if len(gs.peer.ConnectedPeers()) == 2 {
-			break
-		}
-
-		select {
-		case <-time.After(testTimeout):
-			t.Fatalf("timeout occurs, unable to connect to all wanted peers")
-		case <-time.After(time.Millisecond * 100):
-			// check if we have connected to all peers
-		}
-	}
+	waitForTestCondition(t, func() int { return len(gs.peer.ConnectedPeers()) }, 2)
 
 	// Check if the number of connected peers is two as we should have been connected to two peers
 	assert.Equal(2, len(gs.peer.ConnectedPeers()))
