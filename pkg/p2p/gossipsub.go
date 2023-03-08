@@ -174,6 +174,10 @@ func (gs *GossipSub) start(ctx context.Context,
 	// We want to enable peer exchange for all peers and not only for seed peers.
 	options = append(options, pubsub.WithPeerExchange(true))
 
+	// We want to provide a custom discovery mechanism.
+	d := Discovery{peer: p}
+	options = append(options, pubsub.WithDiscovery(d))
+
 	gossipSub, err := pubsub.NewGossipSub(ctx, p.host, options...)
 	if err != nil {
 		return err
