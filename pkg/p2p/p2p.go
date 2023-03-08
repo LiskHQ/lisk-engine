@@ -12,7 +12,6 @@ import (
 	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
@@ -149,8 +148,8 @@ func (conn *Connection) Stop() error {
 
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
-func (conn *Connection) ApplyPenalty(pid string, score int) {
-	if err := conn.addPenalty(peer.ID(pid), score); err != nil {
+func (conn *Connection) ApplyPenalty(pid PeerID, score int) {
+	if err := conn.addPenalty(pid, score); err != nil {
 		conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
 	}
 }
