@@ -244,7 +244,7 @@ func TestGossipSub_BelowMinimumNumberOfConnections(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{}
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()

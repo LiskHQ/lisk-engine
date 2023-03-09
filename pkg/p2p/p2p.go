@@ -13,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/network"
 
+	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -204,14 +205,11 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 			// Remove fixed peers connections from the list.
 			conns := make([]network.Conn, 0)
 			for _, c := range allConns {
-				isFixedPeerConn := false
-				for _, p := range conn.cfg.FixedPeers {
-					if c.RemoteMultiaddr().String()+"/p2p/"+c.RemotePeer().String() == p {
-						isFixedPeerConn = true
-						break
-					}
-				}
-				if !isFixedPeerConn {
+				index := collection.FindIndex(conn.cfg.FixedPeers, func(peer string) bool {
+					return peer == c.RemoteMultiaddr().String()+"/p2p/"+c.RemotePeer().String()
+				})
+
+				if index == -1 {
 					conns = append(conns, c)
 				}
 			}

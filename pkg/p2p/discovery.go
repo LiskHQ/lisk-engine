@@ -19,6 +19,26 @@ func (d Discovery) Advertise(ctx context.Context, ns string, opts ...discovery.O
 	return time.Hour * 24, nil // Set next advertisement to 24 hours from now.
 }
 
+func (d Discovery) nextValidPeer(peers []peer.AddrInfo, index int) int {
+	// Skip providing unnecessary peers.
+	for index--; index >= -1; index-- {
+		if index == -1 {
+			return -1
+		}
+		// Skip ourselves.
+		if peers[index].ID == d.peer.host.ID() {
+			continue
+		}
+		// Skip peers we are already connected to.
+		if d.peer.host.Network().Connectedness(peers[index].ID) == network.Connected {
+			continue
+		}
+		break
+	}
+
+	return index
+}
+
 func (d Discovery) FindPeers(ctx context.Context, ns string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
 	ch := make(chan peer.AddrInfo, 1)
 
@@ -31,48 +51,17 @@ func (d Discovery) FindPeers(ctx context.Context, ns string, opts ...discovery.O
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(peers), func(i, j int) { peers[i], peers[j] = peers[j], peers[i] })
 
-		numPeers := len(peers)
-
-		// Skip providing unnecessary peers.
-		for i := 0; i < numPeers; i++ {
-			// Skip ourselves.
-			if peers[i].ID == d.peer.host.ID() {
-				numPeers--
-				continue
-			}
-			// Skip peers we are already connected to.
-			if d.peer.host.Network().Connectedness(peers[i].ID) == network.Connected {
-				numPeers--
-				continue
-			}
-			break
-		}
-
-		if numPeers == 0 {
+		peerIndex := len(peers)
+		peerIndex = d.nextValidPeer(peers, peerIndex)
+		if peerIndex == -1 {
 			return
 		}
 
 		for {
 			select {
-			case ch <- peers[numPeers-1]:
-				numPeers--
-
-				// Skip providing unnecessary peers.
-				for i := 0; i < numPeers; i++ {
-					// Skip ourselves.
-					if peers[i].ID == d.peer.host.ID() {
-						numPeers--
-						continue
-					}
-					// Skip peers we are already connected to.
-					if d.peer.host.Network().Connectedness(peers[i].ID) == network.Connected {
-						numPeers--
-						continue
-					}
-					break
-				}
-
-				if numPeers == 0 {
+			case ch <- peers[peerIndex]:
+				peerIndex = d.nextValidPeer(peers, peerIndex)
+				if peerIndex == -1 {
 					return
 				}
 			case <-ctx.Done():
