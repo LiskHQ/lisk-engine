@@ -11,7 +11,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-func TestDiscovery_nextValidPeer(t *testing.T) {
+func TestDiscovery_NextValidPeer(t *testing.T) {
 	assert := assert.New(t)
 
 	peer1, err := AddrInfoFromMultiAddr("/ip4/127.0.0.1/tcp/46371/p2p/12D3KooWJG7D1qKgQFB6J36hyBqUmjFQL3JV7GWbV5WWcaFSdtr2")
@@ -51,7 +51,7 @@ func TestDiscovery_nextValidPeer(t *testing.T) {
 	assert.Equal(-1, peerIndex)
 }
 
-func TestDiscovery_nextValidPeer_skipOurself(t *testing.T) {
+func TestDiscovery_NextValidPeer_SkipOurself(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create a new peer
@@ -97,7 +97,7 @@ func TestDiscovery_nextValidPeer_skipOurself(t *testing.T) {
 	assert.Equal(-1, peerIndex)
 }
 
-func TestDiscovery_nextValidPeer_connectedPeers(t *testing.T) {
+func TestDiscovery_NextValidPeer_ConnectedPeers(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -184,7 +184,7 @@ func TestP2P_Stop(t *testing.T) {
 	}
 }
 
-func TestP2P_connectionsHandler_DropRandomPeer(t *testing.T) {
+func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -223,7 +223,7 @@ func TestP2P_connectionsHandler_DropRandomPeer(t *testing.T) {
 	assert.Equal(1, len(p2p.ConnectedPeers()))
 }
 
-func TestP2P_connectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
+func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
