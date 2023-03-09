@@ -96,12 +96,14 @@ func TestConnGater_ExpireTime(t *testing.T) {
 	pidD := peer.ID("D")
 	cg.addPenalty(pidD, MaxPenaltyScore)
 
-	time.Sleep(time.Second * 3)
+	waitForTestCondition(t, func() int { return len(cg.listBlockedPeers()) }, 4)
 	assert.Equal(4, len(cg.listBlockedPeers()))
-	time.Sleep(time.Second * 2)
+
+	waitForTestCondition(t, func() int { return len(cg.listBlockedPeers()) }, 1)
 	assert.Equal(1, len(cg.listBlockedPeers()))
 	assert.Equal(pidD, cg.listBlockedPeers()[0])
-	time.Sleep(time.Second)
+
+	waitForTestCondition(t, func() int { return len(cg.listBlockedPeers()) }, 0)
 	assert.Equal(0, len(cg.listBlockedPeers()))
 }
 
@@ -164,7 +166,7 @@ func TestConneGater(t *testing.T) {
 	// undo the blocks to ensure that we can unblock stuff
 	cg.unblockAddr(ip1)
 	// peers should be remove after expire time
-	time.Sleep(time.Millisecond * 3100)
+	waitForTestCondition(t, func() int { return len(cg.listBlockedPeers()) }, 0)
 	assert.Equal(0, len(cg.listBlockedPeers()))
 
 	assert.Truef(cg.InterceptPeerDial(pidA), "expected gater to allow peer A")
@@ -228,7 +230,7 @@ func TestConnGater_Score(t *testing.T) {
 	allow = cg.InterceptSecured(network.DirInbound, pidB, &mockConnMultiaddrs{local: nil, remote: nil})
 	assert.Truef(allow, "expected gater to allow peer B")
 
-	time.Sleep(time.Millisecond * 3100)
+	waitForTestCondition(t, func() int { return len(cg.listBlockedPeers()) }, 0)
 	assert.Equal(0, len(cg.listBlockedPeers()))
 	assert.Truef(cg.InterceptPeerDial(pidA), "expected gater to deny peer A")
 	allow = cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: nil})

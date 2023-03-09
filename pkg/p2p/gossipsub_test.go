@@ -235,3 +235,59 @@ func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	err := gs.Publish(context.Background(), testTopic1, testMessageData)
 	assert.Equal(err, ErrTopicNotFound)
 }
+
+func TestGossipSub_BelowMinimumNumberOfConnections(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	wg := &sync.WaitGroup{}
+	logger, _ := log.NewDefaultProductionLogger()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
+	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
+	sk := newScoreKeeper()
+
+	gs := newGossipSub(testChainID, testVersion)
+	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, testMV)
+
+	gs.start(ctx, wg, logger, p, sk, cfg)
+
+	// Create two new peers
+	cfg1 := Config{
+		AllowIncomingConnections: true,
+		Addresses:                []string{testIPv4TCP, testIPv4UDP},
+	}
+	_ = cfg1.insertDefault()
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, &cfg1)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, &cfg1)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
+
+	// Connect to the peers
+	err := gs.peer.Connect(ctx, *p1AddrInfo)
+	assert.Nil(err)
+	err = gs.peer.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+
+	// Check if the number of connected peers is the same as the one we have connected to
+	assert.Equal(2, len(gs.peer.ConnectedPeers()))
+
+	// And disconnect from both of them
+	err = gs.peer.Disconnect(p1.ID())
+	assert.Nil(err)
+	err = gs.peer.Disconnect(p2.ID())
+	assert.Nil(err)
+
+	// Check if the number of connected peers is zero as we have disconnected from all peers
+	assert.Equal(0, len(gs.peer.ConnectedPeers()))
+
+	// From now on, gossipsub should try to connect to the peers we have in the known peers list
+	waitForTestCondition(t, func() int { return len(gs.peer.ConnectedPeers()) }, 2)
+
+	// Check if the number of connected peers is two as we should have been connected to two peers
+	assert.Equal(2, len(gs.peer.ConnectedPeers()))
+}

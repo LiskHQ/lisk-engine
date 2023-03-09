@@ -15,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
+	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
@@ -49,6 +50,11 @@ type Peer struct {
 	host      host.Host
 	peerbook  *peerbook
 	connGater *connectionGater
+}
+
+var connMgrOptions = []connmgr.Option{
+	connmgr.WithGracePeriod(time.Minute),
+	connmgr.WithSilencePeriod(10 * time.Second),
 }
 
 var autoRelayOptions = []autorelay.Option{
@@ -136,6 +142,17 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 	default:
 		opts = append(opts, libp2p.NoSecurity)
 	}
+
+	// Configure connection manager to prevent too many connections.
+	connMgr, err := connmgr.NewConnManager(
+		cfg.MinNumOfConnections, // Lowwater
+		cfg.MaxNumOfConnections, // HighWater,
+		connMgrOptions...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, libp2p.ConnectionManager(connMgr))
 
 	// Configure peer to provide a service for other peers for determining their reachability status.
 	if cfg.EnableNATService {

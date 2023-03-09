@@ -3,6 +3,7 @@ package p2p
 import (
 	"bytes"
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -45,6 +46,21 @@ var (
 		}
 	}
 )
+
+func waitForTestCondition(t *testing.T, condition func() int, expected int) {
+	for {
+		if condition() == expected {
+			break
+		}
+
+		select {
+		case <-time.After(testTimeout):
+			t.Fatalf("timeout occurs, unable to meet condition")
+		case <-time.After(time.Millisecond * 100):
+			// check if above condition is true
+		}
+	}
+}
 
 type testLogger struct {
 	logger.Logger
@@ -166,4 +182,99 @@ func TestP2P_Stop(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatalf("timeout occurs, P2P stop is not working")
 	}
+}
+
+func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cfg := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
+	p2p := NewConnection(&cfg)
+	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
+	p2p.cfg.MinNumOfConnections = 1
+	logger, _ := logger.NewDefaultProductionLogger()
+	err := p2p.Start(logger, []byte{})
+	assert.Nil(err)
+
+	// Create two new peers and connect them to our p2p node
+	wg := &sync.WaitGroup{}
+	p1, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p2, _ := newPeer(ctx, wg, logger, []byte{}, &cfg)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
+
+	err = p2p.Connect(ctx, *p1AddrInfo)
+	assert.Nil(err)
+	err = p2p.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+
+	// Check if the number of connected peers is the same as the one we have connected
+	assert.Equal(2, len(p2p.ConnectedPeers()))
+
+	// Wait for the connections handler to finish
+	waitForTestCondition(t, func() int { return len(p2p.ConnectedPeers()) }, 1)
+
+	// Check if the number of connected peers is lower than the one we have connected
+	assert.Equal(1, len(p2p.ConnectedPeers()))
+}
+
+func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger, _ := logger.NewDefaultProductionLogger()
+
+	// Create two new peers
+	cfg1 := Config{
+		AllowIncomingConnections: true,
+		Addresses:                []string{testIPv4TCP, testIPv4UDP},
+	}
+	_ = cfg1.insertDefault()
+
+	wg := &sync.WaitGroup{}
+	p1, _ := newPeer(ctx, wg, logger, []byte{1, 2, 3}, &cfg1)
+	p2, _ := newPeer(ctx, wg, logger, []byte{4, 5, 6}, &cfg1)
+	p1Addrs, _ := p1.MultiAddress()
+	p1AddrInfo, _ := AddrInfoFromMultiAddr(p1Addrs[0])
+	p2Addrs, _ := p2.MultiAddress()
+	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
+
+	// Create a p2p node with fixed peers
+	cfg2 := Config{
+		AllowIncomingConnections: true,
+		Addresses:                []string{testIPv4TCP, testIPv4UDP},
+		FixedPeers:               []string{p1Addrs[0], p1Addrs[1]},
+	}
+
+	_ = cfg2.insertDefault()
+	p2p := NewConnection(&cfg2)
+	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
+	p2p.cfg.MinNumOfConnections = 1
+
+	err := p2p.Start(logger, []byte{})
+	assert.Nil(err)
+
+	// Connect to our p2p node the two peers we created
+	err = p2p.Connect(ctx, *p1AddrInfo)
+	assert.Nil(err)
+	err = p2p.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+
+	// Check if the number of connected peers is the same as the one we have connected
+	assert.Equal(2, len(p2p.ConnectedPeers()))
+
+	// Wait for the connections handler to finish
+	waitForTestCondition(t, func() int { return len(p2p.ConnectedPeers()) }, 1)
+
+	// Check if the number of connected peers is lower than the one we have connected
+	assert.Equal(1, len(p2p.ConnectedPeers()))
+	// And that the remaining peer is the one we have fixed
+	assert.Equal(p1.ID(), p2p.ConnectedPeers()[0])
 }

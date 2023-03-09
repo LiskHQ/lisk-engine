@@ -174,6 +174,10 @@ func (gs *GossipSub) start(ctx context.Context,
 	// We want to enable peer exchange for all peers and not only for seed peers.
 	options = append(options, pubsub.WithPeerExchange(true))
 
+	// We want to provide a custom discovery mechanism.
+	d := Discovery{peer: p}
+	options = append(options, pubsub.WithDiscovery(d))
+
 	gossipSub, err := pubsub.NewGossipSub(ctx, p.host, options...)
 	if err != nil {
 		return err
@@ -228,6 +232,10 @@ func (gs *GossipSub) createSubscriptionHandlers(ctx context.Context, wg *sync.Wa
 				if err != nil {
 					if errors.Is(err, context.Canceled) {
 						gs.logger.Infof("Topic \"%s\" subscription handler stopped", sub.Topic())
+						return
+					}
+					if errors.Is(err, pubsub.ErrSubscriptionCancelled) {
+						gs.logger.Infof("Subscription for topic \"%s\" cancelled. Handler stopped", sub.Topic())
 						return
 					}
 					gs.logger.Errorf("Error while receiving message: %s", err)
