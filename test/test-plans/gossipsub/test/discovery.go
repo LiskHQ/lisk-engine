@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+
 	"github.com/avast/retry-go"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -252,11 +254,11 @@ func (ps *PeerSubscriber) waitForPeers(ctx context.Context) ([]PeerRegistration,
 	return ps.peers, nil
 }
 
-func NewSyncDiscovery(h host.Host, runenv *runtime.RunEnv, peerSubscriber *PeerSubscriber,
+func NewSyncDiscovery(c p2p.Connection, runenv *runtime.RunEnv, peerSubscriber *PeerSubscriber,
 	topology Topology, nodeType NodeType, nodeTypeSeq int64, nodeIdx int, isPublisher bool) (*SyncDiscovery, error) {
 
 	return &SyncDiscovery{
-		h:              h,
+		h:              c.GetHost(),
 		runenv:         runenv,
 		peerSubscriber: peerSubscriber,
 		topology:       topology,

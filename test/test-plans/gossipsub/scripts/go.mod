@@ -1,8 +1,6 @@
 // This module only exists so that our script can invoke tracestat using `go run` instead of having to
 // install the tracestat binary.
 
-module github.com/libp2p/gossipsub-hardening/scripts
+module github.com/LiskHQ/lisk-engine/test-plans/gossipsub/scripts
 
-go 1.14
-
-require github.com/libp2p/go-libp2p-pubsub-tracer v0.0.0-20200120141315-151ce254cf29 // indirect
+go 1.19

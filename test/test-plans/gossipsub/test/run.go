@@ -11,8 +11,9 @@ import (
 	rt "runtime"
 	"time"
 
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/LiskHQ/lisk-engine/pkg/log"
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
@@ -51,7 +52,7 @@ type testInstance struct {
 	*runtime.RunEnv
 	params testParams
 
-	h              host.Host
+	conn           p2p.Connection
 	seq            int64
 	nodeTypeSeq    int64
 	nodeIdx        int
@@ -68,34 +69,33 @@ type Message struct {
 	Time int64
 }
 
-// Create a new libp2p host
-func createHost(ctx context.Context) (host.Host, error) {
-	priv, _, err := crypto.GenerateKeyPair(crypto.Ed25519, 256)
-	if err != nil {
-		return nil, err
-	}
-
-	// Don't listen yet, we need to set up networking first
-	return libp2p.New(libp2p.Identity(priv), libp2p.NoListenAddrs)
-}
-
 func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtime.RunEnv, params testParams) error {
 	client := sync.MustBoundClient(ctx, runenv)
 	defer client.Close()
 
-	// Create the hosts, but don't listen yet (we need to set up the data
+	// Create the connections, but don't listen yet (we need to set up the data
 	// network before listening)
-	hosts := make([]host.Host, params.nodesPerContainer)
+	conns := make([]p2p.Connection, params.nodesPerContainer)
 	for i := 0; i < params.nodesPerContainer; i++ {
-		h, err := createHost(ctx)
-		if err != nil {
-			return err
+		cfg := p2p.Config{
+			Version: "2.0",
+			ChainID: []byte{0x04, 0x00, 0x01, 0x02},
 		}
-		hosts[i] = h
+
+		// Don't listen yet, we need to set up networking first
+		conn := *p2p.NewConnection(&cfg)
+		logger, err := log.NewDefaultProductionLogger()
+		if err != nil {
+			panic(err)
+		}
+		if err := conn.Start(logger, nil); err != nil {
+			panic(err)
+		}
+		conns[i] = conn
 	}
 
 	// Get sequence number within a node type (eg honest-1, honest-2, etc)
-	nodeTypeSeq, err := getNodeTypeSeqNum(ctx, client, hosts[0], params.nodeType)
+	nodeTypeSeq, err := getNodeTypeSeqNum(ctx, client, conns[0], params.nodeType)
 	if err != nil {
 		return fmt.Errorf("failed to get node type sequence number: %w", err)
 	}
@@ -109,7 +109,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 	peers := sync.NewTopic("nodes", &peer.AddrInfo{})
 	seqs := make([]int64, params.nodesPerContainer)
 	for nodeIdx := 0; nodeIdx < params.nodesPerContainer; nodeIdx++ {
-		seq, err := client.Publish(ctx, peers, host.InfoFromHost(hosts[nodeIdx]))
+		seq, err := client.Publish(ctx, peers, host.InfoFromHost(conns[nodeIdx].GetHost()))
 		if err != nil {
 			return fmt.Errorf("failed to write peer subtree in sync service: %w", err)
 		}
@@ -154,7 +154,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 		errgrp.Go(func() (err error) {
 			t := testInstance{
 				RunEnv:         runenv,
-				h:              hosts[nodeIdx],
+				conn:           conns[nodeIdx],
 				seq:            seqs[nodeIdx],
 				nodeTypeSeq:    nodeTypeSeq,
 				nodeIdx:        nodeIdx,
@@ -176,13 +176,13 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 			// Listen for incoming connections
 			laddr := listenAddrs(netclient)
 			runenv.RecordMessage("listening on %s", laddr)
-			if err = t.h.Network().Listen(laddr...); err != nil {
+			if err = t.conn.GetHost().Network().Listen(laddr...); err != nil {
 				return nil
 			}
 
-			id := host.InfoFromHost(t.h).ID.Pretty()
+			id := host.InfoFromHost(t.conn.GetHost()).ID.Pretty()
 			runenv.RecordMessage("Host peer ID: %s, seq %d, node type: %s, node type seq: %d, node index: %d / %d, addrs: %v",
-				id, t.seq, params.nodeType, nodeTypeSeq, nodeIdx, params.nodesPerContainer, t.h.Addrs())
+				id, t.seq, params.nodeType, nodeTypeSeq, nodeIdx, params.nodesPerContainer, t.conn.GetHost().Addrs())
 
 			switch params.nodeType {
 			case NodeTypeSybil:
@@ -198,9 +198,9 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 	return errgrp.Wait()
 }
 
-func getNodeTypeSeqNum(ctx context.Context, client *sync.DefaultClient, h host.Host, nodeType NodeType) (int64, error) {
+func getNodeTypeSeqNum(ctx context.Context, client *sync.DefaultClient, conn p2p.Connection, nodeType NodeType) (int64, error) {
 	topic := sync.NewTopic("node-type-"+string(nodeType), &peer.AddrInfo{})
-	return client.Publish(ctx, topic, host.InfoFromHost(h))
+	return client.Publish(ctx, topic, host.InfoFromHost(conn.GetHost()))
 }
 
 func (t *testInstance) startHonest(ctx context.Context) error {
@@ -223,7 +223,7 @@ func (t *testInstance) startHonest(ctx context.Context) error {
 		topics = t.params.topics
 	}
 
-	tracer, err := NewTestTracer(tracerOut, t.h.ID(), t.params.fullTraces)
+	tracer, err := NewTestTracer(tracerOut, t.conn.ID(), t.params.fullTraces)
 	if err != nil {
 		return fmt.Errorf("error making test tracer: %s", err)
 	}
@@ -253,7 +253,7 @@ func (t *testInstance) startHonest(ctx context.Context) error {
 			}
 			e := entry{
 				Timestamp: ts,
-				PeerID:    t.h.ID().Pretty(),
+				PeerID:    t.conn.ID().Pretty(),
 				Scores:    pretty,
 			}
 			err := enc.Encode(e)
@@ -280,7 +280,7 @@ func (t *testInstance) startHonest(ctx context.Context) error {
 		OpportunisticGraftTicks: t.params.opportunisticGraftTicks,
 	}
 
-	n, err := NewPubsubNode(t.RunEnv, ctx, t.h, cfg)
+	n, err := NewPubsubNode(t.RunEnv, ctx, t.conn, cfg)
 	if err != nil {
 		return err
 	}
@@ -311,7 +311,7 @@ func (t *testInstance) startHonest(ctx context.Context) error {
 func (t *testInstance) startSybil(ctx context.Context) error {
 	t.RecordMessage("starting sybil attack node")
 
-	bb, err := NewBadBoy(ctx, t.RunEnv, t.h, t.nodeTypeSeq, t.params.sybilParams)
+	bb, err := NewBadBoy(ctx, t.RunEnv, t.conn, t.nodeTypeSeq, t.params.sybilParams)
 	if err != nil {
 		return err
 	}
@@ -376,7 +376,7 @@ func (t *testInstance) setupDiscovery(ctx context.Context) (*SyncDiscovery, erro
 	}
 
 	// Register this node and get node information for all peers
-	discovery, err := NewSyncDiscovery(t.h, t.RunEnv, t.peerSubscriber, topology,
+	discovery, err := NewSyncDiscovery(t.conn, t.RunEnv, t.peerSubscriber, topology,
 		t.params.nodeType, t.nodeTypeSeq, t.nodeIdx, t.params.publisher)
 	if err != nil {
 		return nil, fmt.Errorf("error creating discovery service: %s", err)
@@ -477,7 +477,7 @@ func loadConnections(connsDef map[string]*ConnectionsDef, nodeType NodeType, nod
 	nodeKey := fmt.Sprintf("%s-%d-%d", nodeType, nodeTypeSeq, nodeIdx)
 	def, ok := connsDef[nodeKey]
 	if !ok {
-		return nil, fmt.Errorf("Topology file '%s' has no entry for '%s'")
+		return nil, fmt.Errorf("Topology file '%s' has no entry for '%s'", nodeType, nodeKey)
 	}
 	return def, nil
 }

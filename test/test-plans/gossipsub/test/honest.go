@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/testground/sdk-go/runtime"
@@ -91,7 +93,7 @@ type PubsubNode struct {
 
 // NewPubsubNode prepares the given Host to act as an honest pubsub node using the provided HonestNodeConfig.
 // The returned PubsubNode will not start immediately; call Run to begin the test behavior.
-func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, h host.Host, cfg HonestNodeConfig) (*PubsubNode, error) {
+func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, c p2p.Connection, cfg HonestNodeConfig) (*PubsubNode, error) {
 	opts, err := pubsubOptions(cfg)
 	if err != nil {
 		return nil, err
@@ -101,7 +103,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, h host.Host, cfg
 	pubsub.GossipSubHeartbeatInitialDelay = cfg.Heartbeat.InitialDelay
 	pubsub.GossipSubHeartbeatInterval = cfg.Heartbeat.Interval
 
-	ps, err := pubsub.NewGossipSub(ctx, h, opts...)
+	ps, err := pubsub.NewGossipSub(ctx, c.GetHost(), opts...)
 
 	if err != nil {
 		return nil, fmt.Errorf("error making new gossipsub: %s", err)
@@ -113,7 +115,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, h host.Host, cfg
 		ctx:      ctx,
 		shutdown: cancel,
 		runenv:   runenv,
-		h:        h,
+		h:        c.GetHost(),
 		ps:       ps,
 		topics:   make(map[string]*topicState),
 	}

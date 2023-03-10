@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+
 	ggio "github.com/gogo/protobuf/io"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -53,10 +55,10 @@ var (
 	BadBoySeenCacheDuration = 120 * time.Second
 )
 
-func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, h host.Host, seq int64, params SybilParams) (*BadBoy, error) {
+func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, c p2p.Connection, seq int64, params SybilParams) (*BadBoy, error) {
 	bb := &BadBoy{
 		ctx:    ctx,
-		h:      h,
+		h:      c.GetHost(),
 		runenv: runenv,
 		seq:    seq,
 		params: params,
@@ -69,7 +71,7 @@ func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, h host.Host, seq int
 		attacking: params.attackDelay == 0,
 	}
 
-	h.SetStreamHandler(gossipSubID, bb.handleIncoming)
+	c.GetHost().SetStreamHandler(gossipSubID, bb.handleIncoming)
 	return bb, nil
 }
 
