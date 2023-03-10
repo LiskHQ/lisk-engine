@@ -11,6 +11,7 @@ import (
 
 	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	ma "github.com/multiformats/go-multiaddr"
 
@@ -46,6 +47,11 @@ func NewConnection(cfg *Config) *Connection {
 		MessageProtocol: newMessageProtocol(cfg.ChainID, cfg.Version),
 		GossipSub:       newGossipSub(cfg.ChainID, cfg.Version),
 	}
+}
+
+// TODO GetHost should be remove
+func (conn *Connection) GetHost() host.Host {
+	return conn.Peer.host
 }
 
 // Version returns network version set for the protocol.
