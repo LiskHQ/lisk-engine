@@ -54,8 +54,8 @@ func (a *EndpointRequest) LastBlockHeader() blockchain.SealedBlockHeader {
 	return a.lastBlockHeader.Readonly()
 }
 
-func (a *EndpointRequest) GetStore(moduleID uint32, prefix uint16) Store {
-	return a.diffStore.WithPrefix(ModuleStorePrefix(moduleID, prefix))
+func (a *EndpointRequest) GetStore(storePrefix, substorePrefix []byte) Store {
+	return a.diffStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }
 
 func (a *EndpointRequest) Immutable() ImmutableAPIContext {

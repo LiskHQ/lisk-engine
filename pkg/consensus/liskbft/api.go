@@ -131,10 +131,10 @@ func (a *API) SetBFTParameters(
 		aggregateBFTWeight += validator.bftWeight
 	}
 	if aggregateBFTWeight/3+1 > precommitThreshold || precommitThreshold > aggregateBFTWeight {
-		return fmt.Errorf("invalid precommit threshold %d against aggregate BGT weight %d", precommitThreshold, aggregateBFTWeight)
+		return fmt.Errorf("invalid precommit threshold %d against aggregate BFT weight %d", precommitThreshold, aggregateBFTWeight)
 	}
 	if aggregateBFTWeight/3+1 > certificateThreshold || certificateThreshold > aggregateBFTWeight {
-		return fmt.Errorf("invalid precommit threshold %d against aggregate BGT weight %d", precommitThreshold, aggregateBFTWeight)
+		return fmt.Errorf("invalid precommit threshold %d against aggregate BFT weight %d", precommitThreshold, aggregateBFTWeight)
 	}
 
 	validators.Sort()

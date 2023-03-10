@@ -18,7 +18,7 @@ func (c *sampleCommand) Name() string {
 }
 
 func (c *sampleCommand) Verify(ctx *TransactionVerifyContext) VerifyResult {
-	store := ctx.GetStore(3, 0)
+	store := ctx.GetStore([]byte{0, 0, 0, 3}, []byte{0, 0})
 	errorKeyexist, _ := store.Has([]byte("error-key"))
 	if ctx.Transaction().Nonce() == 32 && errorKeyexist {
 		return NewVerifyResultError(errors.New("error key"))

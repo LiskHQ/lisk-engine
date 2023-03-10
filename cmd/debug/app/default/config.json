@@ -1,0 +1,34 @@
+{
+	"system": {
+		"dataPath": "./"
+	},
+	"rpc": {
+		"modes": ["http"]
+	},
+	"genesis": {
+		"block": {
+			"fromFile": "./genesis_block.blob"
+		},
+		"blockTime": 10,
+		"bftBatchSize": 103,
+		"communityIdentifier": "sdk",
+		"maxTransactionsSize": 15360,
+		"minFeePerByte": 1000
+	},
+	"generator": {
+		"keys": {
+			"fromFile": "./dev-validators.json"
+		}
+	},
+	"network": {
+		"addresses": ["/ip4/0.0.0.0/tcp/7666"],
+		"seedPeers": []
+	},
+	"transactionPool": {
+		"maxTransactions": 4096,
+		"maxTransactionsPerAccount": 64,
+		"transactionExpiryTime": 10800000,
+		"minEntranceFeePriority": "0",
+		"minReplacementFeeDifference": "10"
+	}
+}

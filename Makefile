@@ -4,10 +4,6 @@ PKGS=$(shell go list ./... | grep -v "/vendor/")
 
 .PHONY: test
 
-glisk:
-	go install ./cmd/glisk
-	@echo "glisk installed"
-
 lengine:
 	go install ./cmd/lengine
 	@echo "lengine installed"
