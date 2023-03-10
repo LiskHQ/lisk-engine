@@ -192,6 +192,7 @@ def run_composition(comp_filepath, output_dir, k8s=False):
     return outpath
 
 
+# TODO this function should change based on engine/pubsub branch or commit
 def pubsub_commit(ref_str):
     # if the input looks like a git commit already, just return it as-is
     if re.match(r'\b([a-f0-9]{40})\b', ref_str):
@@ -217,7 +218,8 @@ def run():
     branch = None
     if args.branch:
         branch = args.branch
-        params['GS_VERSION'] = pubsub_commit(args.branch)
+        # TODO GS_VERSION should use pubsub_commit function
+        params['GS_VERSION'] = '829f9026a3dcf12b268efad6a140dd99446cf17b'
     if args.commit:
         params['GS_VERSION'] = args.commit
     if branch is None and args.commit is None:

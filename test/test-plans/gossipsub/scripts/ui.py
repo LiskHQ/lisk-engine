@@ -438,7 +438,8 @@ class ConfigPanel(object):
         else:
             p['BUILD_SELECTORS'] = []
 
-        p['GS_VERSION'] = run_helpers.pubsub_commit(w.pubsub.branch.value)
+        # TODO GS_VERSION should use pubsub_commit function
+        p['GS_VERSION'] = '829f9026a3dcf12b268efad6a140dd99446cf17b'
 
         run_config = ['log_level="{}"'.format(w.testground.log_level.value)]
 

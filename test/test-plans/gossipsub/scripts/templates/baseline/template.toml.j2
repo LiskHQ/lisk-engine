@@ -3,10 +3,10 @@
 ##
 [metadata]
 name    = "pubsub-{{ COMPOSITION_NAME }}"
-author  = "yusefnapora"
+author  = "lisk"
 
 [global]
-plan    = "gossipsub-hardening/test"
+plan    = "gossipsub/test"
 case    = "evaluate"
 builder = "{{ TEST_BUILDER | default('docker:go') }}"
 runner  = "{{ TEST_RUNNER | default('local:docker') }}"

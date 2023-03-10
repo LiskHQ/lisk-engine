@@ -8,17 +8,14 @@ builder = "exec:go"
 runner = "local:exec"
 
 [builders."docker:go"]
-enabled = true
-# go_version = "1.19"
-module_path = "github.com/protocol/testground-fork/plans/pubsub"
-exec_pkg = "."
-go_ipfs_version = "0.5.0"
-go_version             = "1.19"
-build_base_image       = "golang:1.19-buster"
+enabled          = true
+exec_pkg         = "."
+go_ipfs_version  = "0.5.0"
+go_version       = "1.19"
+build_base_image = "golang:1.19-buster"
 
 [builders."exec:go"]
 enabled = true
-module_path = "github.com/protocol/testground-fork/plans/pubsub"
 exec_pkg = "."
 
 [runners."local:docker"]
