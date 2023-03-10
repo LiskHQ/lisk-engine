@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/LiskHQ/lisk-engine/pkg/engine/config"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
@@ -39,23 +38,16 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	initCtx.MustWaitAllInstancesInitialized(ctx)
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
-	cfgNet := config.NetworkConfig{
+	cfg := p2p.Config{
 		AllowIncomingConnections: true,
 		ConnectionSecurity:       secureChannel,
 		Addresses:                []string{fmt.Sprintf("/ip4/%s/tcp/0", ip)},
 		Version:                  "2.0",
 		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
 	}
-	err := cfgNet.InsertDefault()
-	if err != nil {
-		panic(err)
-	}
-	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
 
-	host := p2p.NewConnection(&cfgNet)
-	if err != nil {
-		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
-	}
+	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
+	host := p2p.NewConnection(&cfg)
 	// init a logger to use it for Host
 	logger, err := log.NewDefaultProductionLogger()
 	if err != nil {
