@@ -54,6 +54,11 @@ func (conn *Connection) GetHost() host.Host {
 	return conn.Peer.host
 }
 
+// TODO Info should be remove or refactor
+func (conn *Connection) Info() *AddrInfo {
+	return host.InfoFromHost(conn.Peer.host)
+}
+
 // Version returns network version set for the protocol.
 func (conn *Connection) Version() string {
 	return conn.cfg.Version
