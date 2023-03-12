@@ -14,7 +14,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -109,7 +108,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 	peers := sync.NewTopic("nodes", &peer.AddrInfo{})
 	seqs := make([]int64, params.nodesPerContainer)
 	for nodeIdx := 0; nodeIdx < params.nodesPerContainer; nodeIdx++ {
-		seq, err := client.Publish(ctx, peers, host.InfoFromHost(conns[nodeIdx].GetHost()))
+		seq, err := client.Publish(ctx, peers, conns[nodeIdx].Info())
 		if err != nil {
 			return fmt.Errorf("failed to write peer subtree in sync service: %w", err)
 		}
@@ -180,8 +179,8 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 				return nil
 			}
 
-			id := host.InfoFromHost(t.conn.GetHost()).ID.Pretty()
-			runenv.RecordMessage("Host peer ID: %s, seq %d, node type: %s, node type seq: %d, node index: %d / %d, addrs: %v",
+			id := t.conn.ID().Pretty()
+			runenv.RecordMessage("Connection peer ID: %s, seq %d, node type: %s, node type seq: %d, node index: %d / %d, addrs: %v",
 				id, t.seq, params.nodeType, nodeTypeSeq, nodeIdx, params.nodesPerContainer, t.conn.GetHost().Addrs())
 
 			switch params.nodeType {
@@ -200,7 +199,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 
 func getNodeTypeSeqNum(ctx context.Context, client *sync.DefaultClient, conn p2p.Connection, nodeType NodeType) (int64, error) {
 	topic := sync.NewTopic("node-type-"+string(nodeType), &peer.AddrInfo{})
-	return client.Publish(ctx, topic, host.InfoFromHost(conn.GetHost()))
+	return client.Publish(ctx, topic, conn.Info())
 }
 
 func (t *testInstance) startHonest(ctx context.Context) error {
