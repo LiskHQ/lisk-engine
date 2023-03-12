@@ -59,6 +59,11 @@ func (conn *Connection) Info() *AddrInfo {
 	return host.InfoFromHost(conn.Peer.host)
 }
 
+// TODO Listen should be remove or refactor
+func (conn *Connection) Listen(addrs []ma.Multiaddr) error {
+	return conn.Peer.host.Network().Listen(addrs...)
+}
+
 // Version returns network version set for the protocol.
 func (conn *Connection) Version() string {
 	return conn.cfg.Version
