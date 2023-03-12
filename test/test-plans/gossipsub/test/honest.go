@@ -10,7 +10,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/testground/sdk-go/runtime"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -62,7 +61,7 @@ type HonestNodeConfig struct {
 
 type InspectParams struct {
 	// The callback function that is called with the peer scores
-	Inspect func(map[peer.ID]float64)
+	Inspect func(map[p2p.PeerID]float64)
 	// The interval between calling Inspect (defaults to zero: dont inspect).
 	Period time.Duration
 }

@@ -12,7 +12,6 @@ import (
 	ggio "github.com/gogo/protobuf/io"
 
 	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 
 	pb "github.com/libp2p/go-libp2p-pubsub/pb"
@@ -31,9 +30,9 @@ type BadBoy struct {
 
 	mx        sync.Mutex
 	attacking bool
-	censor    map[peer.ID]struct{}
-	mesh      map[string]map[peer.ID]struct{}
-	out       map[peer.ID]chan *pb.RPC
+	censor    map[p2p.PeerID]struct{}
+	mesh      map[string]map[p2p.PeerID]struct{}
+	out       map[p2p.PeerID]chan *pb.RPC
 	seen      *timecache.TimeCache
 }
 
@@ -61,15 +60,16 @@ func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, c p2p.Connection, se
 		runenv: runenv,
 		seq:    seq,
 		params: params,
-		censor: make(map[peer.ID]struct{}),
-		mesh:   make(map[string]map[peer.ID]struct{}),
-		out:    make(map[peer.ID]chan *pb.RPC),
+		censor: make(map[p2p.PeerID]struct{}),
+		mesh:   make(map[string]map[p2p.PeerID]struct{}),
+		out:    make(map[p2p.PeerID]chan *pb.RPC),
 		seen:   timecache.NewTimeCache(params.seenCacheDuration),
 		// If there's a delay, don't start attacking until after the delay
 		// has passed: see OnReady()
 		attacking: params.attackDelay == 0,
 	}
 
+	// TODO remove SetStreamHandler and use p2p
 	c.GetHost().SetStreamHandler(gossipSubID, bb.handleIncoming)
 	return bb, nil
 }
@@ -90,7 +90,7 @@ func (bb *BadBoy) OnReady() {
 	}()
 }
 
-func (bb *BadBoy) Censor(p peer.ID) {
+func (bb *BadBoy) Censor(p p2p.PeerID) {
 	bb.mx.Lock()
 	defer bb.mx.Unlock()
 
@@ -158,7 +158,7 @@ func (bb *BadBoy) handleIncoming(s network.Stream) {
 			}
 
 			// censor: drop messages from censored peers
-			if bb.isCensored(peer.ID(msg.GetFrom())) {
+			if bb.isCensored(p2p.PeerID(msg.GetFrom())) {
 				continue
 			}
 
@@ -177,7 +177,7 @@ func (bb *BadBoy) handleIncoming(s network.Stream) {
 	}
 }
 
-func (bb *BadBoy) handleControl(p peer.ID, rpc *pb.RPC) {
+func (bb *BadBoy) handleControl(p p2p.PeerID, rpc *pb.RPC) {
 	// subscibe and GRAFT to all topics the peer is announcing
 	var subs []*pb.RPC_SubOpts
 	var graft []*pb.ControlGraft
@@ -217,7 +217,7 @@ func (bb *BadBoy) handleControl(p peer.ID, rpc *pb.RPC) {
 	}
 }
 
-func (bb *BadBoy) regraft(p peer.ID, topic string) {
+func (bb *BadBoy) regraft(p p2p.PeerID, topic string) {
 	delay := bb.params.regraftBackoff + time.Duration(rand.Float64()*float64(bb.params.regraftDelay))
 
 	select {
@@ -233,20 +233,20 @@ func (bb *BadBoy) regraft(p peer.ID, topic string) {
 	}
 }
 
-func (bb *BadBoy) graft(p peer.ID, topic string) {
+func (bb *BadBoy) graft(p p2p.PeerID, topic string) {
 	bb.mx.Lock()
 	defer bb.mx.Unlock()
 
 	mesh, ok := bb.mesh[topic]
 	if !ok {
-		mesh = make(map[peer.ID]struct{})
+		mesh = make(map[p2p.PeerID]struct{})
 		bb.mesh[topic] = mesh
 	}
 
 	mesh[p] = struct{}{}
 }
 
-func (bb *BadBoy) prune(p peer.ID, topic string) {
+func (bb *BadBoy) prune(p p2p.PeerID, topic string) {
 	bb.mx.Lock()
 	defer bb.mx.Unlock()
 
@@ -281,7 +281,8 @@ func (bb *BadBoy) handleOutgoing(s network.Stream, ch chan *pb.RPC) {
 	}
 }
 
-func (bb *BadBoy) openOutputStream(p peer.ID) error {
+func (bb *BadBoy) openOutputStream(p p2p.PeerID) error {
+	// TODO NewStream should remove and use p2p.Connection
 	s, err := bb.conn.GetHost().NewStream(bb.ctx, p, gossipSubID)
 	if err != nil {
 		return err
@@ -296,7 +297,7 @@ func (bb *BadBoy) openOutputStream(p peer.ID) error {
 	return nil
 }
 
-func (bb *BadBoy) isCensored(p peer.ID) bool {
+func (bb *BadBoy) isCensored(p p2p.PeerID) bool {
 	bb.mx.Lock()
 	defer bb.mx.Unlock()
 
@@ -318,7 +319,7 @@ func (bb *BadBoy) startAttacking() {
 	bb.attacking = true
 }
 
-func (bb *BadBoy) sendCtl(p peer.ID, rpc *pb.RPC) bool {
+func (bb *BadBoy) sendCtl(p p2p.PeerID, rpc *pb.RPC) bool {
 	bb.mx.Lock()
 	out, ok := bb.out[p]
 	bb.mx.Unlock()
@@ -330,13 +331,13 @@ func (bb *BadBoy) sendCtl(p peer.ID, rpc *pb.RPC) bool {
 	return ok
 }
 
-func (bb *BadBoy) forward(topic string, msg *pb.Message, from peer.ID) {
+func (bb *BadBoy) forward(topic string, msg *pb.Message, from p2p.PeerID) {
 	bb.mx.Lock()
 	defer bb.mx.Unlock()
 
 	rpc := &pb.RPC{Publish: []*pb.Message{msg}}
 	for p := range bb.mesh[topic] {
-		if p != from && p != peer.ID(msg.From) {
+		if p != from && p != p2p.PeerID(msg.From) {
 			out, ok := bb.out[p]
 			if ok {
 				select {

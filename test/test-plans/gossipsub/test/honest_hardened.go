@@ -6,8 +6,9 @@ package main
 import (
 	"fmt"
 
+	"github.com/LiskHQ/lisk-engine/pkg/p2p"
+
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 func pubsubOptions(cfg HonestNodeConfig) ([]pubsub.Option, error) {
@@ -61,7 +62,7 @@ func pubsubOptions(cfg HonestNodeConfig) ([]pubsub.Option, error) {
 }
 
 // TODO: implement app-specific scoring
-func applicationScore(id peer.ID) float64 {
+func applicationScore(id p2p.PeerID) float64 {
 	return 1.0
 }
 

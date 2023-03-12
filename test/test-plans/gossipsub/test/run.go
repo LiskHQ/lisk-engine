@@ -14,7 +14,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	"golang.org/x/sync/errgroup"
@@ -105,7 +104,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 	runenv.RecordMessage("%s container %d num cpus: %d", params.nodeType, nodeTypeSeq, rt.NumCPU())
 
 	// Get the sequence number of each node in the container
-	peers := sync.NewTopic("nodes", &peer.AddrInfo{})
+	peers := sync.NewTopic("nodes", &p2p.AddrInfo{})
 	seqs := make([]int64, params.nodesPerContainer)
 	for nodeIdx := 0; nodeIdx < params.nodesPerContainer; nodeIdx++ {
 		seq, err := client.Publish(ctx, peers, conns[nodeIdx].Info())
@@ -198,7 +197,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 }
 
 func getNodeTypeSeqNum(ctx context.Context, client *sync.DefaultClient, conn p2p.Connection, nodeType NodeType) (int64, error) {
-	topic := sync.NewTopic("node-type-"+string(nodeType), &peer.AddrInfo{})
+	topic := sync.NewTopic("node-type-"+string(nodeType), &p2p.AddrInfo{})
 	return client.Publish(ctx, topic, conn.Info())
 }
 
@@ -244,7 +243,7 @@ func (t *testInstance) startHonest(ctx context.Context) error {
 			PeerID    string
 			Scores    map[string]float64
 		}
-		scoreInspectParams.Inspect = func(scores map[peer.ID]float64) {
+		scoreInspectParams.Inspect = func(scores map[p2p.PeerID]float64) {
 			ts := time.Now().UnixNano()
 			pretty := make(map[string]float64, len(scores))
 			for p, s := range scores {

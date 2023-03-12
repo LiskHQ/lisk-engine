@@ -12,7 +12,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
 	"github.com/avast/retry-go"
-	"github.com/libp2p/go-libp2p/core/peer"
 	swarm "github.com/libp2p/go-libp2p/p2p/net/swarm"
 	"golang.org/x/sync/errgroup"
 
@@ -28,7 +27,7 @@ const (
 // PeerRegistration contains the addresses, sequence numbers and node type (honest / sybil / etc)
 // for each peer in the test. It is shared with every other peer using the sync service.
 type PeerRegistration struct {
-	Info        peer.AddrInfo
+	Info        p2p.AddrInfo
 	NType       NodeType
 	NodeTypeSeq int64
 	NodeIdx     int
@@ -54,12 +53,12 @@ type SyncDiscovery struct {
 
 	// The peers that this node connects to
 	connectedLk sync.RWMutex
-	connected   map[peer.ID]PeerRegistration
+	connected   map[p2p.PeerID]PeerRegistration
 }
 
 // A Topology filters the set of all nodes
 type Topology interface {
-	SelectPeers(local peer.ID, remote []PeerRegistration) []PeerRegistration
+	SelectPeers(local p2p.PeerID, remote []PeerRegistration) []PeerRegistration
 }
 
 // RandomTopology selects a subset of the total nodes at random
@@ -68,7 +67,7 @@ type RandomTopology struct {
 	Count int
 }
 
-func (t RandomTopology) SelectPeers(local peer.ID, remote []PeerRegistration) []PeerRegistration {
+func (t RandomTopology) SelectPeers(local p2p.PeerID, remote []PeerRegistration) []PeerRegistration {
 	if len(remote) == 0 || t.Count == 0 {
 		return []PeerRegistration{}
 	}
@@ -95,17 +94,17 @@ type RandomHonestTopology struct {
 	PublishersOnly bool
 }
 
-func (t RandomHonestTopology) SelectPeers(local peer.ID, remote []PeerRegistration) []PeerRegistration {
+func (t RandomHonestTopology) SelectPeers(local p2p.PeerID, remote []PeerRegistration) []PeerRegistration {
 	if len(remote) == 0 {
 		return []PeerRegistration{}
 	}
 
 	filtered := make([]PeerRegistration, 0, len(remote))
-	for _, peer := range remote {
+	for _, p := range remote {
 		// Only connect to honest nodes.
 		// If PublishersOnly is true, only connect to Publishers
-		if peer.NType == NodeTypeHonest && (!t.PublishersOnly || peer.IsPublisher) {
-			filtered = append(filtered, peer)
+		if p.NType == NodeTypeHonest && (!t.PublishersOnly || p.IsPublisher) {
+			filtered = append(filtered, p)
 		}
 	}
 
@@ -116,7 +115,7 @@ func (t RandomHonestTopology) SelectPeers(local peer.ID, remote []PeerRegistrati
 type SinglePublisherTopology struct {
 }
 
-func (t SinglePublisherTopology) SelectPeers(local peer.ID, remote []PeerRegistration) []PeerRegistration {
+func (t SinglePublisherTopology) SelectPeers(local p2p.PeerID, remote []PeerRegistration) []PeerRegistration {
 	publisher := selectSinglePublisher(remote)
 	if publisher != nil {
 		return []PeerRegistration{*publisher}
@@ -149,7 +148,7 @@ type FixedTopology struct {
 	def *ConnectionsDef
 }
 
-func (t FixedTopology) SelectPeers(local peer.ID, remote []PeerRegistration) []PeerRegistration {
+func (t FixedTopology) SelectPeers(local p2p.PeerID, remote []PeerRegistration) []PeerRegistration {
 	if len(remote) == 0 {
 		return []PeerRegistration{}
 	}
@@ -265,7 +264,7 @@ func NewSyncDiscovery(c p2p.Connection, runenv *runtime.RunEnv, peerSubscriber *
 		nodeTypeSeq:    nodeTypeSeq,
 		nodeIdx:        nodeIdx,
 		isPublisher:    isPublisher,
-		connected:      make(map[peer.ID]PeerRegistration),
+		connected:      make(map[p2p.PeerID]PeerRegistration),
 	}, nil
 }
 
@@ -330,6 +329,7 @@ func (s *SyncDiscovery) ConnectTopology(ctx context.Context, delay time.Duration
 				if err != nil {
 					s.runenv.RecordMessage("error connecting libp2p host: %s", err)
 				}
+				// TODO remove GetHost to use p2p.Connection
 				conns := s.conn.GetHost().Network().ConnsToPeer(p.Info.ID)
 				for _, conn := range conns {
 					s.runenv.RecordMessage("%s-%d-%d connected to %s-%d-%d. local addr: %s remote addr: %s\n",
@@ -346,7 +346,7 @@ func (s *SyncDiscovery) ConnectTopology(ctx context.Context, delay time.Duration
 	return errgrp.Wait()
 }
 
-func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p peer.AddrInfo) error {
+func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p p2p.AddrInfo) error {
 	return retry.Do(
 		func() error {
 			// add a random delay to each connection attempt to spread the network load
