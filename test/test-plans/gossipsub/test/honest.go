@@ -10,7 +10,6 @@ import (
 
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/testground/sdk-go/runtime"
 
@@ -82,7 +81,7 @@ type PubsubNode struct {
 	ctx      context.Context
 	shutdown func()
 	runenv   *runtime.RunEnv
-	h        host.Host
+	conn     p2p.Connection
 	ps       *pubsub.PubSub
 
 	lk     sync.RWMutex
@@ -115,7 +114,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, c p2p.Connection
 		ctx:      ctx,
 		shutdown: cancel,
 		runenv:   runenv,
-		h:        c.GetHost(),
+		conn:     c,
 		ps:       ps,
 		topics:   make(map[string]*topicState),
 	}
@@ -124,7 +123,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, c p2p.Connection
 }
 
 func (p *PubsubNode) log(msg string, args ...interface{}) {
-	id := p.h.ID().Pretty()
+	id := p.conn.ID().Pretty()
 	idSuffix := id[len(id)-8:]
 	prefix := fmt.Sprintf("[honest %d %s] ", p.cfg.Seq, idSuffix)
 	p.runenv.RecordMessage(prefix+msg, args...)
@@ -161,7 +160,7 @@ func (p *PubsubNode) Run(runtime time.Duration, waitForReadyStateThenConnectAsyn
 	}
 
 	// ensure we have at least enough peers to fill a mesh after warmup period
-	npeers := len(p.h.Network().Peers())
+	npeers := len(p.conn.GetHost().Network().Peers())
 	if npeers < pubsub.GossipSubD {
 		panic(fmt.Errorf("not enough peers after warmup period. Need at least D=%d, have %d", pubsub.GossipSubD, npeers))
 	}
@@ -267,7 +266,7 @@ func (p *PubsubNode) makeMessage(seq int64, size uint64) ([]byte, error) {
 	}
 	data := make([]byte, size)
 	rand.Read(data)
-	m := msg{sender: p.h.ID().Pretty(), seq: seq, data: data}
+	m := msg{sender: p.conn.ID().Pretty(), seq: seq, data: data}
 	return json.Marshal(m)
 }
 

@@ -12,7 +12,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
 	"github.com/avast/retry-go"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	swarm "github.com/libp2p/go-libp2p/p2p/net/swarm"
 	"golang.org/x/sync/errgroup"
@@ -41,7 +40,7 @@ type PeerRegistration struct {
 // you to connect the local peers to a subset of the test peers, using a Topology
 // to control the peer selection.
 type SyncDiscovery struct {
-	h              host.Host
+	conn           p2p.Connection
 	runenv         *runtime.RunEnv
 	peerSubscriber *PeerSubscriber
 	topology       Topology
@@ -258,7 +257,7 @@ func NewSyncDiscovery(c p2p.Connection, runenv *runtime.RunEnv, peerSubscriber *
 	topology Topology, nodeType NodeType, nodeTypeSeq int64, nodeIdx int, isPublisher bool) (*SyncDiscovery, error) {
 
 	return &SyncDiscovery{
-		h:              c.GetHost(),
+		conn:           c,
 		runenv:         runenv,
 		peerSubscriber: peerSubscriber,
 		topology:       topology,
@@ -273,7 +272,7 @@ func NewSyncDiscovery(c p2p.Connection, runenv *runtime.RunEnv, peerSubscriber *
 // Registers node and waits to collect all other nodes' registrations.
 func (s *SyncDiscovery) registerAndWait(ctx context.Context) error {
 	// Register this node's information
-	localPeer := *host.InfoFromHost(s.h)
+	localPeer := *s.conn.Info()
 	entry := PeerRegistration{
 		Info:        localPeer,
 		NType:       s.nodeType,
@@ -313,7 +312,7 @@ func (s *SyncDiscovery) ConnectTopology(ctx context.Context, delay time.Duration
 		s.runenv.RecordMessage("connecting to peers after %s", delay)
 	}
 
-	selected := s.topology.SelectPeers(s.h.ID(), s.allPeers)
+	selected := s.topology.SelectPeers(s.conn.ID(), s.allPeers)
 	if len(selected) == 0 {
 		panic("topology selected zero peers. so lonely!!!")
 	}
@@ -331,7 +330,7 @@ func (s *SyncDiscovery) ConnectTopology(ctx context.Context, delay time.Duration
 				if err != nil {
 					s.runenv.RecordMessage("error connecting libp2p host: %s", err)
 				}
-				conns := s.h.Network().ConnsToPeer(p.Info.ID)
+				conns := s.conn.GetHost().Network().ConnsToPeer(p.Info.ID)
 				for _, conn := range conns {
 					s.runenv.RecordMessage("%s-%d-%d connected to %s-%d-%d. local addr: %s remote addr: %s\n",
 						s.nodeType, s.nodeTypeSeq, s.nodeIdx, p.NType, p.NodeTypeSeq, p.NodeIdx,
@@ -356,7 +355,7 @@ func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p peer.AddrInfo) e
 
 			boundedCtx, cancel := context.WithTimeout(ctx, PeerConnectTimeout)
 			defer cancel()
-			return s.h.Connect(boundedCtx, p)
+			return s.conn.Connect(boundedCtx, p)
 		},
 		retry.Attempts(MaxConnectRetries),
 		retry.OnRetry(func(n uint, err error) {
@@ -364,7 +363,7 @@ func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p peer.AddrInfo) e
 
 			// clear the libp2p dial backoff for this peer, otherwise the swarm will ignore our
 			// dial attempt and immediately return a "dial backoff" error
-			if sw, ok := s.h.Network().(*swarm.Swarm); ok {
+			if sw, ok := s.conn.GetHost().Network().(*swarm.Swarm); ok {
 				s.runenv.RecordMessage("clearing swarm dial backoff for peer %s", p.ID.Pretty())
 				sw.Backoff().Clear(p.ID)
 			}

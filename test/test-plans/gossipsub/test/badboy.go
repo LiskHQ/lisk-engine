@@ -11,7 +11,6 @@ import (
 
 	ggio "github.com/gogo/protobuf/io"
 
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
@@ -25,7 +24,7 @@ import (
 
 type BadBoy struct {
 	ctx    context.Context
-	h      host.Host
+	conn   p2p.Connection
 	runenv *runtime.RunEnv
 	seq    int64
 	params SybilParams
@@ -58,7 +57,7 @@ var (
 func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, c p2p.Connection, seq int64, params SybilParams) (*BadBoy, error) {
 	bb := &BadBoy{
 		ctx:    ctx,
-		h:      c.GetHost(),
+		conn:   c,
 		runenv: runenv,
 		seq:    seq,
 		params: params,
@@ -99,7 +98,7 @@ func (bb *BadBoy) Censor(p peer.ID) {
 }
 
 func (bb *BadBoy) log(msg string, args ...interface{}) {
-	id := bb.h.ID().Pretty()
+	id := bb.conn.ID().Pretty()
 	idSuffix := id[len(id)-8:]
 	prefix := fmt.Sprintf("[sybil %d %s] ", bb.seq, idSuffix)
 	bb.runenv.RecordMessage(prefix+msg, args...)
@@ -283,7 +282,7 @@ func (bb *BadBoy) handleOutgoing(s network.Stream, ch chan *pb.RPC) {
 }
 
 func (bb *BadBoy) openOutputStream(p peer.ID) error {
-	s, err := bb.h.NewStream(bb.ctx, p, gossipSubID)
+	s, err := bb.conn.GetHost().NewStream(bb.ctx, p, gossipSubID)
 	if err != nil {
 		return err
 	}
