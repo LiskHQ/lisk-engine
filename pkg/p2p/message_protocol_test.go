@@ -102,7 +102,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *Request) {
 				mp.logger.Debugf("Request received")
 				w.Write([]byte(testResponseData))
-			}, &RateLimit{Limit: 10, Penalty: 10})
+			})
 			mp.start(ctx, &loggerTest, p)
 
 			stream := testStream{}
@@ -134,7 +134,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
 	testHandler := func(w ResponseWriter, req *Request) {}
-	err := mp.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
 	mp.start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
@@ -174,7 +174,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
 	testHandler := func(w ResponseWriter, req *Request) {}
-	mp.RegisterRPCHandler(testProcedure, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	mp.RegisterRPCHandler(testProcedure, testHandler)
 	mp.start(ctx, &loggerTest, p)
 	// There is no channel for the request ID "testReqMsgID"
 
@@ -195,7 +195,7 @@ func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
 	}
 
 	mp := newMessageProtocol(testChainID, testVersion)
-	err := mp.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
 
 	assert.NotNil(mp.rpcHandlers[testRPC])
@@ -225,7 +225,7 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, logger, p)
 
-	err := mp.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.NotNil(err)
 	assert.Equal("cannot register RPC handler after MessageProtocol is started", err.Error())
 
@@ -241,12 +241,12 @@ func TestMessageProtocol_RegisterRPCHandlerAlreadyRegistered(t *testing.T) {
 
 	mp := newMessageProtocol(testChainID, testVersion)
 
-	err := mp.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.Nil(err)
 	_, exist := mp.rpcHandlers[testRPC]
 	assert.True(exist)
 
-	err = mp.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	err = mp.RegisterRPCHandler(testRPC, testHandler)
 	assert.NotNil(err)
 	assert.Equal("rpcHandler testRPC is already registered", err.Error())
 }
@@ -265,13 +265,13 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	testHandler := func(w ResponseWriter, req *Request) {}
-	mp1.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	mp1.RegisterRPCHandler(testRPC, testHandler)
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
-	}, &RateLimit{Limit: 10, Penalty: 10})
+	})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -326,13 +326,13 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	testHandler := func(w ResponseWriter, req *Request) {}
-	mp1.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	mp1.RegisterRPCHandler(testRPC, testHandler)
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Error(errors.New("Test RPC handler error!"))
-	}, &RateLimit{Limit: 10, Penalty: 10})
+	})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -370,7 +370,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
-	}, &RateLimit{Limit: 10, Penalty: 10})
+	})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -397,11 +397,11 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
 	testHandler := func(w ResponseWriter, req *Request) {}
-	mp1.RegisterRPCHandler(testProcedure, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	mp1.RegisterRPCHandler(testProcedure, testHandler)
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
-	mp2.RegisterRPCHandler(testProcedure, testHandler, &RateLimit{Limit: 10, Penalty: 10})
+	mp2.RegisterRPCHandler(testProcedure, testHandler)
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -518,7 +518,7 @@ func TestMessageProtocol_RateLimiter(t *testing.T) {
 
 	node1 := NewConnection(cfg)
 	testHandler := func(w ResponseWriter, req *Request) {}
-	node1.RegisterRPCHandler(testRPC, testHandler, &RateLimit{Limit: 5, Penalty: 25})
+	node1.RegisterRPCHandler(testRPC, testHandler, WithRateLimit(5, 25))
 	node1.MessageProtocol.rateLimiterInterval = time.Millisecond * 100 // Decrease the interval to speed up the test
 	err := node1.Start(logger, []byte{})
 	assert.Nil(err)
@@ -530,7 +530,7 @@ func TestMessageProtocol_RateLimiter(t *testing.T) {
 	node2 := NewConnection(cfg)
 	node2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
-	}, &RateLimit{Limit: 5, Penalty: 25})
+	}, WithRateLimit(5, 25))
 	err = node2.Start(logger, []byte{})
 	assert.Nil(err)
 	node2Addrs, _ := node2.MultiAddress()

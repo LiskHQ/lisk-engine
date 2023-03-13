@@ -32,7 +32,7 @@ const maxTransactionResponse = 100
 
 type p2pConnection interface {
 	Broadcast(ctx context.Context, event string, data []byte) error
-	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler, rateLimit *p2p.RateLimit) error
+	RegisterRPCHandler(endpoint string, handler p2p.RPCHandler, opts ...p2p.RPCOption) error
 	RegisterEventHandler(name string, handler p2p.EventHandler, validator p2p.Validator) error
 	ApplyPenalty(pid p2p.PeerID, score int)
 	RequestFrom(ctx context.Context, peerID p2p.PeerID, procedure string, data []byte) p2p.Response
@@ -118,7 +118,7 @@ func (t *TransactionPool) Init(
 	t.conn = conn
 	t.abi = abi
 	t.ticker = time.NewTicker(500 * time.Millisecond)
-	if err := t.conn.RegisterRPCHandler(RPCEndpointGetTransactions, t.HandleRPCEndpointGetTransaction, &p2p.RateLimit{Limit: 10, Penalty: 10}); err != nil {
+	if err := t.conn.RegisterRPCHandler(RPCEndpointGetTransactions, t.HandleRPCEndpointGetTransaction); err != nil {
 		return err
 	}
 	if err := t.conn.RegisterEventHandler(RPCEventPostTransactionAnnouncement, t.onTransactionAnnoucement, t.transactionValidator); err != nil {

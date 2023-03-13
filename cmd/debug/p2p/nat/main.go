@@ -77,7 +77,7 @@ func main() {
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
 
 		w.Write([]byte(fmt.Sprintf("Average RTT with you: %v", avg)))
-	}, &p2p.RateLimit{Limit: 10, Penalty: 10})
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +85,7 @@ func main() {
 	err = conn.RegisterRPCHandler("knownPeers", func(w p2p.ResponseWriter, req *p2p.Request) {
 		peers := conn.ConnectedPeers()
 		w.Write([]byte(fmt.Sprintf("All known peers: %v", peers)))
-	}, &p2p.RateLimit{Limit: 10, Penalty: 10})
+	})
 	if err != nil {
 		panic(err)
 	}

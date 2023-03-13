@@ -19,6 +19,8 @@ import (
 const messageResponseTimeout = 3 * time.Second     // Time to wait for a response message before returning an error
 const messageMaxRetries = 3                        // Maximum number of retries for a request message
 const rateLimiterHandleInterval = 10 * time.Second // Interval to handle messages rate limiting
+const defaultRateLimit = 100                       // Default maximum allowed number of received messages
+const defaultRateLimitPenalty = 10                 // Default rate limit penalty for received messages
 
 var errTimeout = errors.New("timeout")
 
@@ -30,11 +32,21 @@ func messageProtocolResID(chainID []byte, version string) protocol.ID {
 	return protocol.ID(fmt.Sprintf("/lisk/message/res/%s/%s", codec.Hex(chainID).String(), version))
 }
 
+type RPCOption func(*MessageProtocol, string) error
+
+// WithRateLimit sets a rate limit for a specific RPC message.
+func WithRateLimit(limit, penalty int) RPCOption {
+	return func(mp *MessageProtocol, name string) error {
+		mp.rateLimits[name] = &RateLimit{limit: limit, penalty: penalty, peers: make(map[PeerID]int)}
+		return nil
+	}
+}
+
 // RateLimit type for rate limiting messages.
 type RateLimit struct {
 	mu      sync.Mutex
-	Limit   int
-	Penalty int
+	limit   int
+	penalty int
 	peers   map[PeerID]int
 }
 
@@ -67,7 +79,7 @@ func newMessageProtocol(chainID []byte, version string) *MessageProtocol {
 }
 
 // RegisterRPCHandler registers a new RPC handler function.
-func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, rateLimit *RateLimit) error {
+func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, opts ...RPCOption) error {
 	if mp.peer != nil {
 		return errors.New("cannot register RPC handler after MessageProtocol is started")
 	}
@@ -75,8 +87,15 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, r
 		return fmt.Errorf("rpcHandler %s is already registered", name)
 	}
 	mp.rpcHandlers[name] = handler
-	rateLimit.peers = make(map[PeerID]int)
-	mp.rateLimits[name] = rateLimit
+	mp.rateLimits[name] = &RateLimit{limit: defaultRateLimit, penalty: defaultRateLimitPenalty, peers: make(map[PeerID]int)}
+
+	for _, opt := range opts {
+		err := opt(mp, name)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -319,9 +338,9 @@ func rateLimiterHandler(ctx context.Context, wg *sync.WaitGroup, mp *MessageProt
 			for rpcHandler, rateLimiter := range mp.rateLimits {
 				rateLimiter.mu.Lock()
 				for peerID, count := range rateLimiter.peers {
-					if count > rateLimiter.Limit {
+					if count > rateLimiter.limit {
 						mp.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", peerID, rpcHandler)
-						if err := mp.peer.addPenalty(peerID, rateLimiter.Penalty); err != nil {
+						if err := mp.peer.addPenalty(peerID, rateLimiter.penalty); err != nil {
 							mp.logger.Errorf("Failed to apply penalty to peer %s: %v", peerID, err)
 						}
 					}
