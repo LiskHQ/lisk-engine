@@ -44,7 +44,7 @@ func main() {
 		avg := time.Duration(float64(sum) / float64(len(rtt)))
 
 		w.Write([]byte(fmt.Sprintf("Average RTT with you: %v", avg)))
-	}); err != nil {
+	}, p2p.RateLimit{Limit: 10, Penalty: 10}); err != nil {
 		panic(err)
 	}
 

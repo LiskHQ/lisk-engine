@@ -47,14 +47,16 @@ var (
 	}
 )
 
-func waitForTestCondition(t *testing.T, condition func() int, expected int) {
+func waitForTestCondition(t *testing.T, condition func() int, expected int, timeout time.Duration) {
+	timeoutCondition := time.After(timeout)
+
 	for {
 		if condition() == expected {
 			break
 		}
 
 		select {
-		case <-time.After(testTimeout):
+		case <-timeoutCondition:
 			t.Fatalf("timeout occurs, unable to meet condition")
 		case <-time.After(time.Millisecond * 100):
 			// check if above condition is true
@@ -217,7 +219,7 @@ func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
 	assert.Equal(2, len(p2p.ConnectedPeers()))
 
 	// Wait for the connections handler to finish
-	waitForTestCondition(t, func() int { return len(p2p.ConnectedPeers()) }, 1)
+	waitForTestCondition(t, func() int { return len(p2p.ConnectedPeers()) }, 1, testTimeout)
 
 	// Check if the number of connected peers is lower than the one we have connected
 	assert.Equal(1, len(p2p.ConnectedPeers()))
@@ -271,7 +273,7 @@ func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	assert.Equal(2, len(p2p.ConnectedPeers()))
 
 	// Wait for the connections handler to finish
-	waitForTestCondition(t, func() int { return len(p2p.ConnectedPeers()) }, 1)
+	waitForTestCondition(t, func() int { return len(p2p.ConnectedPeers()) }, 1, testTimeout)
 
 	// Check if the number of connected peers is lower than the one we have connected
 	assert.Equal(1, len(p2p.ConnectedPeers()))

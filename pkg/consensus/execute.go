@@ -119,13 +119,13 @@ func (c *Executer) Init(param *ExecuterInitParam) error {
 	c.blockSlot = validator.NewBlockSlot(param.GenesisBlock.Header.Timestamp, c.blockTime)
 	c.syncer = sync.NewSyncer(c.chain, c.blockSlot, c.conn, c.logger.With("module", "syncer"), c.processValidated, c.deleteBlock)
 	// register handler for p2p
-	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetLastBlock, c.syncer.HandleRPCEndpointGetLastBlock()); err != nil {
+	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetLastBlock, c.syncer.HandleRPCEndpointGetLastBlock(), p2p.RateLimit{Limit: 10, Penalty: 10}); err != nil {
 		return err
 	}
-	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetHighestCommonBlock, c.syncer.HandleRPCEndpointGetHighestCommonBlock()); err != nil {
+	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetHighestCommonBlock, c.syncer.HandleRPCEndpointGetHighestCommonBlock(), p2p.RateLimit{Limit: 10, Penalty: 10}); err != nil {
 		return err
 	}
-	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetBlocksFromID, c.syncer.HandleRPCEndpointGetBlocksFromID()); err != nil {
+	if err := c.conn.RegisterRPCHandler(sync.RPCEndpointGetBlocksFromID, c.syncer.HandleRPCEndpointGetBlocksFromID(), p2p.RateLimit{Limit: 10, Penalty: 10}); err != nil {
 		return err
 	}
 	if err := c.conn.RegisterEventHandler(P2PEventPostBlock, c.onBlockReceived, c.blockValidator); err != nil {

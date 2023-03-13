@@ -102,7 +102,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 			mp.RegisterRPCHandler(tt.procedure, func(w ResponseWriter, req *Request) {
 				mp.logger.Debugf("Request received")
 				w.Write([]byte(testResponseData))
-			})
+			}, RateLimit{Limit: 10, Penalty: 10})
 			mp.start(ctx, &loggerTest, p)
 
 			stream := testStream{}
@@ -133,12 +133,15 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	err := mp.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
+	assert.Nil(err)
 	mp.start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
 	mp.resCh[testReqMsgID] = ch
 
 	stream := testStream{}
-	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
+	reqMsg := newResponseMessage(testReqMsgID, testRPC, []byte(testResponseData), errors.New(testError))
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
@@ -170,11 +173,13 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp.RegisterRPCHandler(testProcedure, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	mp.start(ctx, &loggerTest, p)
 	// There is no channel for the request ID "testReqMsgID"
 
 	stream := testStream{}
-	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), nil)
+	reqMsg := newResponseMessage(testReqMsgID, testProcedure, []byte(testResponseData), nil)
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
@@ -190,10 +195,11 @@ func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
 	}
 
 	mp := newMessageProtocol(testChainID, testVersion)
-	err := mp.RegisterRPCHandler(testRPC, testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	assert.Nil(err)
 
 	assert.NotNil(mp.rpcHandlers[testRPC])
+	assert.NotNil(mp.rateLimits[testRPC])
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
 	handler := mp.rpcHandlers[testRPC]
@@ -219,7 +225,7 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 	mp := newMessageProtocol(testChainID, testVersion)
 	mp.start(ctx, logger, p)
 
-	err := mp.RegisterRPCHandler(testRPC, testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	assert.NotNil(err)
 	assert.Equal("cannot register RPC handler after MessageProtocol is started", err.Error())
 
@@ -235,12 +241,12 @@ func TestMessageProtocol_RegisterRPCHandlerAlreadyRegistered(t *testing.T) {
 
 	mp := newMessageProtocol(testChainID, testVersion)
 
-	err := mp.RegisterRPCHandler(testRPC, testHandler)
+	err := mp.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	assert.Nil(err)
 	_, exist := mp.rpcHandlers[testRPC]
 	assert.True(exist)
 
-	err = mp.RegisterRPCHandler(testRPC, testHandler)
+	err = mp.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	assert.NotNil(err)
 	assert.Equal("rpcHandler testRPC is already registered", err.Error())
 }
@@ -258,12 +264,14 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp1.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
-	})
+	}, RateLimit{Limit: 10, Penalty: 10})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -317,12 +325,14 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp1.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Error(errors.New("Test RPC handler error!"))
-	})
+	}, RateLimit{Limit: 10, Penalty: 10})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -360,7 +370,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	mp2 := newMessageProtocol(testChainID, testVersion)
 	mp2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
-	})
+	}, RateLimit{Limit: 10, Penalty: 10})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -386,9 +396,12 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp1.RegisterRPCHandler(testProcedure, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
+	mp2.RegisterRPCHandler(testProcedure, testHandler, RateLimit{Limit: 10, Penalty: 10})
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -397,7 +410,7 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	assert.Nil(err)
 	ch := make(chan *Response, 1)
 	mp2.resCh[testReqMsgID] = ch
-	err = mp1.respond(ctx, p2.ID(), testReqMsgID, []byte(testResponseData), errors.New(testError))
+	err = mp1.respond(ctx, p2.ID(), testReqMsgID, testProcedure, []byte(testResponseData), errors.New(testError))
 	assert.Nil(err)
 
 	select {
@@ -491,4 +504,61 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
 	err := mp.send(ctx, p2.ID(), messageProtocolReqID(testChainID, testVersion), msg)
 	assert.ErrorContains(err, "protocol not supported")
+}
+
+func TestMessageProtocol_RateLimiter(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger, _ := log.NewDefaultProductionLogger()
+	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	_ = cfg.insertDefault()
+
+	node1 := NewConnection(cfg)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	node1.RegisterRPCHandler(testRPC, testHandler, RateLimit{Limit: 5, Penalty: 25})
+	node1.MessageProtocol.rateLimiterInterval = time.Millisecond * 100 // Decrease the interval to speed up the test
+	err := node1.Start(logger, []byte{})
+	assert.Nil(err)
+	node1Addrs, _ := node1.MultiAddress()
+	node1AddrInfo, _ := AddrInfoFromMultiAddr(node1Addrs[0])
+	node1.connGater.intervalCheck = time.Millisecond * 50 // Decrease the interval to speed up the test
+
+	node2 := NewConnection(cfg)
+	node2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
+		w.Write([]byte("Average RTT with you:"))
+	}, RateLimit{Limit: 5, Penalty: 25})
+	err = node2.Start(logger, []byte{})
+	assert.Nil(err)
+	node2Addrs, _ := node2.MultiAddress()
+	node2AddrInfo, _ := AddrInfoFromMultiAddr(node2Addrs[0])
+
+	err = node1.Connect(ctx, *node2AddrInfo)
+	assert.NoError(err)
+
+	// Wait 4 times for the rate limiter to apply the penalty to node2 (4 * 25 = 100)
+	for i := 0; i < 4; i++ {
+		// Send 6 requests to node2 (1 too many) that a penalty will be applied
+		for j := 0; j < 6; j++ {
+			_, err := node1.request(ctx, node2.ID(), testRPC, []byte(testRequestData))
+			assert.Nil(err)
+		}
+		time.Sleep(time.Millisecond * 130) // Wait for the rate limiter to apply the penalty
+	}
+
+	// Wait for the rate limiter to ban the peer
+	waitForTestCondition(t, func() int { return len(node1.ConnectedPeers()) }, 0, testTimeout)
+
+	// Check that a peer is banned
+	assert.Equal(0, len(node1.ConnectedPeers()))
+
+	// Try to connect node1 with node2 (it should not be possible because node2 is banned)
+	err = node1.Connect(ctx, *node2AddrInfo)
+	assert.NotNil(err)
+
+	// Try to connect node2 with node1 (it should not be possible because node2 is banned)
+	err = node2.Connect(ctx, *node1AddrInfo)
+	assert.NotNil(err)
 }

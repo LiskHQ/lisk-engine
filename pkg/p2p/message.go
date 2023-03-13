@@ -20,11 +20,12 @@ type Request struct {
 
 // responseMsg is a response message type received from a peer in response to a request message.
 type responseMsg struct {
-	ID        string `fieldNumber:"1" json:"id"`    // Message ID. It is the same as the ID of the requested message.
-	Timestamp int64  `json:"timestamp"`             // Unix time when the message was received.
-	PeerID    string `json:"peerID"`                // ID of peer that created the response message.
-	Data      []byte `fieldNumber:"2" json:"data"`  // Response data.
-	Error     string `fieldNumber:"3" json:"error"` // Error message in case of an error.
+	ID        string `fieldNumber:"1" json:"id"`        // Message ID. It is the same as the ID of the requested message.
+	Procedure string `fieldNumber:"2" json:"procedure"` // Procedure that was called.
+	Timestamp int64  `json:"timestamp"`                 // Unix time when the message was received.
+	PeerID    string `json:"peerID"`                    // ID of peer that created the response message.
+	Data      []byte `fieldNumber:"3" json:"data"`      // Response data.
+	Error     string `fieldNumber:"4" json:"error"`     // Error message in case of an error.
 }
 
 // Message is a message type sent to other peers in the network over GossipSub.
@@ -45,7 +46,7 @@ func newRequestMessage(peerID peer.ID, procedure string, data []byte) *Request {
 }
 
 // newResponseMessage creates a new response message.
-func newResponseMessage(reqMsgID string, data []byte, err error) *responseMsg {
+func newResponseMessage(reqMsgID string, procedure string, data []byte, err error) *responseMsg {
 	errString := ""
 	if err != nil {
 		errString = err.Error()
@@ -53,6 +54,7 @@ func newResponseMessage(reqMsgID string, data []byte, err error) *responseMsg {
 
 	return &responseMsg{
 		ID:        reqMsgID,
+		Procedure: procedure,
 		Timestamp: time.Now().Unix(),
 		Data:      data,
 		Error:     errString,

@@ -16,8 +16,9 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-const messageResponseTimeout = 3 * time.Second // Time to wait for a response message before returning an error
-const messageMaxRetries = 3                    // Maximum number of retries for a request message
+const messageResponseTimeout = 3 * time.Second     // Time to wait for a response message before returning an error
+const messageMaxRetries = 3                        // Maximum number of retries for a request message
+const rateLimiterHandleInterval = 10 * time.Second // Interval to handle messages rate limiting
 
 var errTimeout = errors.New("timeout")
 
@@ -29,32 +30,44 @@ func messageProtocolResID(chainID []byte, version string) protocol.ID {
 	return protocol.ID(fmt.Sprintf("/lisk/message/res/%s/%s", codec.Hex(chainID).String(), version))
 }
 
+// RateLimit type for rate limiting messages.
+type RateLimit struct {
+	mu      sync.Mutex
+	Limit   int
+	Penalty int
+	peers   map[PeerID]int
+}
+
 // MessageProtocol type.
 type MessageProtocol struct {
-	logger      log.Logger
-	peer        *Peer
-	resMu       sync.Mutex
-	resCh       map[string]chan<- *Response
-	timeout     time.Duration
-	rpcHandlers map[string]RPCHandler
-	chainID     []byte
-	version     string
+	logger              log.Logger
+	peer                *Peer
+	resMu               sync.Mutex
+	resCh               map[string]chan<- *Response
+	timeout             time.Duration
+	rpcHandlers         map[string]RPCHandler
+	rateLimits          map[string]*RateLimit
+	rateLimiterInterval time.Duration
+	chainID             []byte
+	version             string
 }
 
 // newMessageProtocol creates a new message protocol.
 func newMessageProtocol(chainID []byte, version string) *MessageProtocol {
 	mp := &MessageProtocol{
-		resCh:       make(map[string]chan<- *Response),
-		timeout:     messageResponseTimeout,
-		rpcHandlers: make(map[string]RPCHandler),
-		chainID:     chainID,
-		version:     version,
+		resCh:               make(map[string]chan<- *Response),
+		timeout:             messageResponseTimeout,
+		rpcHandlers:         make(map[string]RPCHandler),
+		rateLimits:          make(map[string]*RateLimit),
+		rateLimiterInterval: rateLimiterHandleInterval,
+		chainID:             chainID,
+		version:             version,
 	}
 	return mp
 }
 
 // RegisterRPCHandler registers a new RPC handler function.
-func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) error {
+func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, rateLimit RateLimit) error {
 	if mp.peer != nil {
 		return errors.New("cannot register RPC handler after MessageProtocol is started")
 	}
@@ -62,6 +75,7 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) e
 		return fmt.Errorf("rpcHandler %s is already registered", name)
 	}
 	mp.rpcHandlers[name] = handler
+	mp.rateLimits[name] = &RateLimit{Limit: rateLimit.Limit, Penalty: rateLimit.Penalty, peers: make(map[PeerID]int)}
 	return nil
 }
 
@@ -129,9 +143,16 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 		return
 	}
 	mp.logger.Debugf("%s request received", newMsg.Procedure)
+
+	// Rate limiting
+	rateLimit := mp.rateLimits[newMsg.Procedure]
+	rateLimit.mu.Lock()
+	rateLimit.peers[remoteID]++
+	rateLimit.mu.Unlock()
+
 	w := &responseWriter{}
 	handler(w, newMsg)
-	err = mp.respond(ctx, s.Conn().RemotePeer(), newMsg.ID, w.data, w.err)
+	err = mp.respond(ctx, s.Conn().RemotePeer(), newMsg.ID, newMsg.Procedure, w.data, w.err)
 	if err != nil {
 		mp.logger.Errorf("Error sending response message: %v", err)
 		return
@@ -149,9 +170,9 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	newMsg := newResponseMessage("", nil, nil)
+	remoteID := s.Conn().RemotePeer()
+	newMsg := newResponseMessage("", "", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
-		remoteID := s.Conn().RemotePeer()
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		err = mp.peer.blockPeer(remoteID)
 		if err != nil {
@@ -160,6 +181,22 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 		return
 	}
 	mp.logger.Debugf("Response message received: %+v", newMsg)
+
+	_, exist := mp.rpcHandlers[newMsg.Procedure]
+	if !exist {
+		mp.logger.Errorf("rpcHandler %s for received message is not registered", newMsg.Procedure)
+		err = mp.peer.blockPeer(remoteID)
+		if err != nil {
+			mp.logger.Errorf("BlockPeer error: %v", err)
+		}
+		return
+	}
+
+	// Rate limiting
+	rateLimit := mp.rateLimits[newMsg.Procedure]
+	rateLimit.mu.Lock()
+	rateLimit.peers[remoteID]++
+	rateLimit.mu.Unlock()
 
 	mp.resMu.Lock()
 	defer mp.resMu.Unlock()
@@ -238,8 +275,8 @@ func (mp *MessageProtocol) sendRequestMessage(ctx context.Context, id peer.ID, p
 }
 
 // respond a message to a peer using a message protocol.
-func (mp *MessageProtocol) respond(ctx context.Context, id peer.ID, reqMsgID string, data []byte, err error) error {
-	resMsg := newResponseMessage(reqMsgID, data, err)
+func (mp *MessageProtocol) respond(ctx context.Context, id peer.ID, reqMsgID string, procedure string, data []byte, err error) error {
+	resMsg := newResponseMessage(reqMsgID, procedure, data, err)
 	return mp.send(ctx, id, messageProtocolResID(mp.chainID, mp.version), resMsg)
 }
 
@@ -265,4 +302,36 @@ func (mp *MessageProtocol) send(ctx context.Context, id peer.ID, pId protocol.ID
 	}
 
 	return nil
+}
+
+// rateLimiterHandler handles the messages rate limiting and banning peers that send too many messages.
+func rateLimiterHandler(ctx context.Context, wg *sync.WaitGroup, mp *MessageProtocol) {
+	defer wg.Done()
+	mp.logger.Infof("Rate limiter handler started")
+
+	t := time.NewTicker(mp.rateLimiterInterval)
+
+	for {
+		select {
+		case <-t.C:
+			// Iterate over the rate limiter map and remove the expired entries.
+			for rpcHandler, rateLimiter := range mp.rateLimits {
+				rateLimiter.mu.Lock()
+				for peerID, count := range rateLimiter.peers {
+					if count > rateLimiter.Limit {
+						mp.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", peerID, rpcHandler)
+						if err := mp.peer.addPenalty(peerID, rateLimiter.Penalty); err != nil {
+							mp.logger.Errorf("Failed to apply penalty to peer %s: %v", peerID, err)
+						}
+					}
+				}
+				rateLimiter.peers = make(map[PeerID]int) // Reset the map to reset the rate limit counters.
+				rateLimiter.mu.Unlock()
+			}
+			t.Reset(mp.rateLimiterInterval)
+		case <-ctx.Done():
+			mp.logger.Infof("Rate limiter handler stopped")
+			return
+		}
+	}
 }

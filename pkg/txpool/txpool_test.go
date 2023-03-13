@@ -44,8 +44,10 @@ type connMock struct {
 	txs map[string]*blockchain.Transaction
 }
 
-func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) error   { return nil }
-func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler) error { return nil }
+func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) error { return nil }
+func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler, rateLimit p2p.RateLimit) error {
+	return nil
+}
 func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler, validator p2p.Validator) error {
 	return nil
 }
