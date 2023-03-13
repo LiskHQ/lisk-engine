@@ -67,7 +67,7 @@ func newMessageProtocol(chainID []byte, version string) *MessageProtocol {
 }
 
 // RegisterRPCHandler registers a new RPC handler function.
-func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, rateLimit RateLimit) error {
+func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, rateLimit *RateLimit) error {
 	if mp.peer != nil {
 		return errors.New("cannot register RPC handler after MessageProtocol is started")
 	}
@@ -75,7 +75,8 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, r
 		return fmt.Errorf("rpcHandler %s is already registered", name)
 	}
 	mp.rpcHandlers[name] = handler
-	mp.rateLimits[name] = &RateLimit{Limit: rateLimit.Limit, Penalty: rateLimit.Penalty, peers: make(map[PeerID]int)}
+	rateLimit.peers = make(map[PeerID]int)
+	mp.rateLimits[name] = rateLimit
 	return nil
 }
 

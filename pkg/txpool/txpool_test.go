@@ -45,7 +45,7 @@ type connMock struct {
 }
 
 func (c *connMock) Broadcast(ctx context.Context, event string, data []byte) error { return nil }
-func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler, rateLimit p2p.RateLimit) error {
+func (c *connMock) RegisterRPCHandler(endpoint string, handler p2p.RPCHandler, rateLimit *p2p.RateLimit) error {
 	return nil
 }
 func (c *connMock) RegisterEventHandler(name string, handler p2p.EventHandler, validator p2p.Validator) error {
