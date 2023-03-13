@@ -9,6 +9,7 @@
 		"block": {
 			"fromFile": "./genesis_block.blob"
 		},
+		"chainID": "00000000",
 		"blockTime": 10,
 		"bftBatchSize": 103,
 		"communityIdentifier": "sdk",
@@ -21,8 +22,12 @@
 		}
 	},
 	"network": {
-		"addresses": ["/ip4/0.0.0.0/tcp/7666"],
-		"seedPeers": []
+		"addresses": [
+			"/ip4/0.0.0.0/tcp/7667"
+		],
+		"seedPeers": [],
+		"allowIncomingConnections": true,
+		"isSeedPeer": false 
 	},
 	"transactionPool": {
 		"maxTransactions": 4096,
