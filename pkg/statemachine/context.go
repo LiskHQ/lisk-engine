@@ -11,8 +11,8 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
-func ModuleStorePrefix(moduleID uint32, storePrifx uint16) []byte {
-	return bytes.Join(bytes.FromUint32(moduleID), bytes.FromUint16(storePrifx))
+func ModuleStorePrefix(storePrefix, substorePrefix []byte) []byte {
+	return bytes.Join(storePrefix, substorePrefix)
 }
 
 type commonProcessingContext struct {
@@ -27,15 +27,15 @@ func (c *commonProcessingContext) ChainID() []byte          { return c.chainID }
 
 type StateAccessContext interface {
 	APIContext() ImmutableAPIContext
-	GetStore(moduleID uint32, bucketID uint16) ImmutableStore
+	GetStore(storePrefix, substorePrefix []byte) ImmutableStore
 }
 
 type stateAccessContext struct {
 	diffStore *diffdb.Database
 }
 
-func (c *stateAccessContext) GetStore(moduleID uint32, bucketID uint16) ImmutableStore {
-	return c.diffStore.WithPrefix(ModuleStorePrefix(moduleID, bucketID))
+func (c *stateAccessContext) GetStore(storePrefix, substorePrefix []byte) ImmutableStore {
+	return c.diffStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }
 
 func (c *stateAccessContext) APIContext() ImmutableAPIContext {
@@ -59,8 +59,8 @@ func (c *stateChangeContext) RestoreSnapshot(snapshotID int) error {
 	return c.diffStore.RestoreSnapshot(snapshotID)
 }
 
-func (c *stateChangeContext) GetStore(moduleID uint32, bucketID uint16) Store {
-	return c.diffStore.WithPrefix(ModuleStorePrefix(moduleID, bucketID))
+func (c *stateChangeContext) GetStore(storePrefix, substorePrefix []byte) Store {
+	return c.diffStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }
 
 func (c *stateChangeContext) APIContext() APIContext {
@@ -140,14 +140,14 @@ func (c *InsertAssetsContext) BlockAssets() blockchain.WritableBlockAssets {
 func (c *InsertAssetsContext) SetAsset(module string, data []byte) {
 	c.blockAssets.SetAsset(module, data)
 }
-func (c *InsertAssetsContext) GetGeneratorStore(moduleID uint32, storePrefix uint16) Store {
-	return c.generatorStore.WithPrefix(ModuleStorePrefix(moduleID, storePrefix))
+func (c *InsertAssetsContext) GetGeneratorStore(storePrefix, substorePrefix []byte) Store {
+	return c.generatorStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }
 func (c *InsertAssetsContext) APIContext() ImmutableAPIContext {
 	return NewAPIContext(c.diffStore).Immutable()
 }
-func (c *InsertAssetsContext) GetStore(moduleID uint32, bucketID uint16) ImmutableStore {
-	return c.diffStore.WithPrefix(ModuleStorePrefix(moduleID, bucketID))
+func (c *InsertAssetsContext) GetStore(storePrefix, substorePrefix []byte) ImmutableStore {
+	return c.diffStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }
 func (c *InsertAssetsContext) FinalizedHeight() uint32 {
 	return c.finazliedHeight
@@ -439,7 +439,7 @@ func NewGenesisBlockProcessingContext(
 }
 
 type ImmutableAPIContext interface {
-	GetStore(id uint32, bucketrID uint16) ImmutableStore
+	GetStore(storePrefix, substorePrefix []byte) ImmutableStore
 }
 
 type EventAdder interface {
@@ -448,7 +448,7 @@ type EventAdder interface {
 }
 
 type APIContext interface {
-	GetStore(id uint32, bucketrID uint16) Store
+	GetStore(storePrefix, substorePrefix []byte) Store
 	Immutable() ImmutableAPIContext
 }
 
@@ -462,8 +462,8 @@ type apiContext struct {
 	diffStore *diffdb.Database
 }
 
-func (c *apiContext) GetStore(moduleID uint32, bucketID uint16) Store {
-	return c.diffStore.WithPrefix(ModuleStorePrefix(moduleID, bucketID))
+func (c *apiContext) GetStore(storePrefix, substorePrefix []byte) Store {
+	return c.diffStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }
 
 func (c *apiContext) Immutable() ImmutableAPIContext {
@@ -474,6 +474,6 @@ type immutableAPIContext struct {
 	diffStore *diffdb.Database
 }
 
-func (c *immutableAPIContext) GetStore(moduleID uint32, bucketID uint16) ImmutableStore {
-	return c.diffStore.WithPrefix(ModuleStorePrefix(moduleID, bucketID))
+func (c *immutableAPIContext) GetStore(storePrefix, substorePrefix []byte) ImmutableStore {
+	return c.diffStore.WithPrefix(ModuleStorePrefix(storePrefix, substorePrefix))
 }

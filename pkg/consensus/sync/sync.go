@@ -231,7 +231,7 @@ func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
-		if len(req.ID) != 32 {
+		if len(req.ID) != blockchain.IDLength {
 			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return

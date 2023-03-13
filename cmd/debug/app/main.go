@@ -5,17 +5,15 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v2"
-
-	"github.com/LiskHQ/lisk-engine/pkg/client"
 )
 
 func main() {
 	app := cli.App{
 		Usage: "Lisk Golang SDK CLI tool",
 		Commands: []*cli.Command{
-			client.GetStartCommand(&starter{}),
-			client.GetGenesisCommand(&starter{}),
-			client.GetKeysCommand(),
+			GetStartCommand(&starter{}),
+			GetGenesisCommand(&starter{}),
+			GetKeysCommand(),
 		},
 	}
 	err := app.Run(os.Args)

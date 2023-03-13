@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 )
 
@@ -22,7 +23,7 @@ func NewGenesisBlock(height, timestamp uint32, previoudBlockID codec.Hex, assets
 			PreviousBlockID:    previoudBlockID,
 			Height:             height,
 			Timestamp:          timestamp,
-			GeneratorAddress:   []byte{},
+			GeneratorAddress:   bytes.Repeat([]byte{0}, AddressLength),
 			MaxHeightGenerated: 0,
 			MaxHeightPrevoted:  height,
 			Signature:          []byte{},

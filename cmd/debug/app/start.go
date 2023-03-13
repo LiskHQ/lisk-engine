@@ -1,27 +1,21 @@
-package client
+package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
+	"path"
 	"syscall"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
-	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/framework"
 	"github.com/LiskHQ/lisk-engine/pkg/framework/config"
 )
 
-type Application interface {
-	Start() error
-	Stop() error
-	GenerateGenesisBlock(height, timestamp uint32, previoudBlockID codec.Hex, assets blockchain.BlockAssets) (*blockchain.Block, error)
-}
-
 type Starter interface {
-	GetApplication(config *config.ApplicationConfig) (Application, error)
+	GetApplication(config *config.ApplicationConfig) (*framework.Application, error)
 }
 
 type CommandInput struct {
@@ -29,25 +23,14 @@ type CommandInput struct {
 }
 
 func GetStartCommand(starter Starter) *cli.Command {
-	homedir, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
 	return &cli.Command{
 		Name:  "start",
 		Usage: "Start blockchain application",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:        "data-path",
-				Aliases:     []string{"d"},
-				Usage:       "Datapath to store blockchain data",
-				DefaultText: filepath.Join(homedir, ".lisk", "default"),
-			},
-			&cli.StringFlag{
-				Name:        "network",
-				Aliases:     []string{"n"},
-				Usage:       "Datapath to store blockchain data",
-				DefaultText: "default",
+				Name:    "data-path",
+				Aliases: []string{"d"},
+				Usage:   "Datapath to store blockchain data",
 			},
 			&cli.StringFlag{
 				Name:        "rpc",
@@ -58,7 +41,14 @@ func GetStartCommand(starter Starter) *cli.Command {
 		},
 		Action: func(c *cli.Context) error {
 			dataPath := c.String("data-path")
+			configFile, err := os.ReadFile(path.Join(dataPath, "./config.json"))
+			if err != nil {
+				return err
+			}
 			config := &config.ApplicationConfig{}
+			if err := json.Unmarshal(configFile, config); err != nil {
+				return err
+			}
 			if err := config.InsertDefault(); err != nil {
 				return err
 			}

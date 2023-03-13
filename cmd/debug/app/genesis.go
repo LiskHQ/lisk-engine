@@ -1,53 +1,34 @@
-package client
+package main
 
 import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/LiskHQ/lisk-engine/cmd/debug/app/modules/mock"
 	"github.com/LiskHQ/lisk-engine/pkg/blockchain"
-	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/framework/config"
-	"github.com/LiskHQ/lisk-engine/pkg/framework/preset"
 )
 
-type generator struct {
-	Address             codec.Lisk32 `json:"address"`
-	EncryptedPassphrase string       `json:"encryptedPassphrase"`
-}
-
-type hashOnion struct {
-	Address codec.Lisk32 `json:"address"`
-}
-
-type AccountJSON struct {
-	Accounts   []*keys      `json:"accounts"`
-	Generators []*generator `json:"generators"`
-	HashOnions []*hashOnion `json:"hashOnions"`
-}
-
-func getDefaultGenesisBlock() (*blockchain.Block, error) {
-	// Generate genesis block
-	config := &config.ApplicationConfig{}
-	if err := config.InsertDefault(); err != nil {
-		return nil, err
+func resolvePath(output string) (string, error) {
+	if filepath.IsAbs(output) {
+		return output, nil
 	}
-	presetApp := preset.NewPresetApplication(config)
-	genesisBlock, err := presetApp.App.GenerateGenesisBlock(0, uint32(time.Now().Unix()), []byte{}, blockchain.BlockAssets{})
-	if err != nil {
-		return nil, err
-	}
-	// Create additional files
-
-	return genesisBlock, nil
+	return filepath.Abs(output)
 }
 
 type assetJSON struct {
-	Assets blockchain.BlockAssets `json:"assets"`
+	Module string          `fieldNumber:"1" json:"module"`
+	Data   json.RawMessage `fieldNumber:"2" json:"data"`
+}
+
+type assetsJSON struct {
+	Assets []*assetJSON `json:"assets"`
 }
 
 func GetGenesisCommand(starter Starter) *cli.Command {
@@ -68,9 +49,8 @@ func GetGenesisCommand(starter Starter) *cli.Command {
 				Required: true,
 			},
 			&cli.IntFlag{
-				Name:    "height",
-				Aliases: []string{"h"},
-				Usage:   "Height of the genesis block",
+				Name:  "height",
+				Usage: "Height of the genesis block",
 			},
 			&cli.IntFlag{
 				Name:    "timestamp",
@@ -111,7 +91,7 @@ func GetGenesisCommand(starter Starter) *cli.Command {
 			if err != nil {
 				return err
 			}
-			assets := &assetJSON{}
+			assets := &assetsJSON{}
 			if err := json.Unmarshal(assetsFile, assets); err != nil {
 				return err
 			}
@@ -131,8 +111,21 @@ func GetGenesisCommand(starter Starter) *cli.Command {
 					return err
 				}
 			}
+			blockAssets := blockchain.BlockAssets{}
+			// specific to mock implementation
+			if len(assets.Assets) > 0 && assets.Assets[0].Module == "mock" {
+				data := &mock.ValidatorsData{}
+				if err := json.Unmarshal(assets.Assets[0].Data, data); err != nil {
+					return err
+				}
+				mockAsset := blockchain.BlockAsset{
+					Module: "mock",
+					Data:   data.MustEncode(),
+				}
+				blockAssets = append(blockAssets, &mockAsset)
+			}
 
-			genesis, err := app.GenerateGenesisBlock(uint32(c.Int("height")), timestamp, previousBlockID, assets.Assets)
+			genesis, err := app.GenerateGenesisBlock(uint32(c.Int("height")), timestamp, previousBlockID, blockAssets)
 			if err != nil {
 				return err
 			}
@@ -143,7 +136,7 @@ func GetGenesisCommand(starter Starter) *cli.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Println(genesisJSON)
+				fmt.Println(string(genesisJSON))
 				return nil
 			}
 			encodedGenesis, err := genesis.Encode()
