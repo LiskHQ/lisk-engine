@@ -168,6 +168,15 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	rateLimit := mp.rateLimits[newMsg.Procedure]
 	rateLimit.mu.Lock()
 	rateLimit.peers[remoteID]++
+	if rateLimit.peers[remoteID] > rateLimit.limit {
+		mp.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", remoteID, newMsg.Procedure)
+		if err := mp.peer.addPenalty(remoteID, rateLimit.penalty); err != nil {
+			mp.logger.Errorf("Failed to apply penalty to peer %s: %v", remoteID, err)
+			rateLimit.mu.Unlock()
+			return
+		}
+		rateLimit.peers = make(map[PeerID]int)
+	}
 	rateLimit.mu.Unlock()
 
 	w := &responseWriter{}
@@ -216,6 +225,15 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	rateLimit := mp.rateLimits[newMsg.Procedure]
 	rateLimit.mu.Lock()
 	rateLimit.peers[remoteID]++
+	if rateLimit.peers[remoteID] > rateLimit.limit {
+		mp.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", remoteID, newMsg.Procedure)
+		if err := mp.peer.addPenalty(remoteID, rateLimit.penalty); err != nil {
+			mp.logger.Errorf("Failed to apply penalty to peer %s: %v", remoteID, err)
+			rateLimit.mu.Unlock()
+			return
+		}
+		rateLimit.peers = make(map[PeerID]int)
+	}
 	rateLimit.mu.Unlock()
 
 	mp.resMu.Lock()
@@ -334,18 +352,10 @@ func rateLimiterHandler(ctx context.Context, wg *sync.WaitGroup, mp *MessageProt
 	for {
 		select {
 		case <-t.C:
-			// Iterate over the rate limiter map and remove the expired entries.
-			for rpcHandler, rateLimiter := range mp.rateLimits {
+			// Iterate over the rate limits map and reset the rate limiters counters.
+			for _, rateLimiter := range mp.rateLimits {
 				rateLimiter.mu.Lock()
-				for peerID, count := range rateLimiter.peers {
-					if count > rateLimiter.limit {
-						mp.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", peerID, rpcHandler)
-						if err := mp.peer.addPenalty(peerID, rateLimiter.penalty); err != nil {
-							mp.logger.Errorf("Failed to apply penalty to peer %s: %v", peerID, err)
-						}
-					}
-				}
-				rateLimiter.peers = make(map[PeerID]int) // Reset the map to reset the rate limit counters.
+				rateLimiter.peers = make(map[PeerID]int)
 				rateLimiter.mu.Unlock()
 			}
 			t.Reset(mp.rateLimiterInterval)

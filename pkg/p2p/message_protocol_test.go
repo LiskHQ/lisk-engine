@@ -520,12 +520,13 @@ func TestMessageProtocol_RateLimiter(t *testing.T) {
 	testHandler := func(w ResponseWriter, req *Request) {}
 	node1.RegisterRPCHandler(testRPC, testHandler, WithRateLimit(5, 25))
 	node1.MessageProtocol.rateLimiterInterval = time.Millisecond * 100 // Decrease the interval to speed up the test
+	node1.MessageProtocol.timeout = time.Millisecond * 10              // Decrease the interval to speed up the test
 	err := node1.Start(logger, []byte{})
 	assert.Nil(err)
 	// TODO - uncomment this when GH #97 is done
 	// node1Addrs, _ := node1.MultiAddress()
 	// node1AddrInfo, _ := AddrInfoFromMultiAddr(node1Addrs[0])
-	node1.connGater.intervalCheck = time.Millisecond * 50 // Decrease the interval to speed up the test
+	node1.connGater.intervalCheck = time.Millisecond * 25 // Decrease the interval to speed up the test
 
 	node2 := NewConnection(cfg)
 	node2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
@@ -541,16 +542,17 @@ func TestMessageProtocol_RateLimiter(t *testing.T) {
 
 	// Wait 4 times for the rate limiter to apply the penalty to node2 (4 * 25 = 100)
 	for i := 0; i < 4; i++ {
-		// Send 6 requests to node2 (1 too many) that a penalty will be applied
+		// Send 6 requests to node1 (1 too many) that a penalty will be applied
 		for j := 0; j < 6; j++ {
-			_, err := node1.request(ctx, node2.ID(), testRPC, []byte(testRequestData))
-			assert.Nil(err)
+			_, err := node2.request(ctx, node1.ID(), testRPC, []byte(testRequestData))
+			// Last 24 request should fail because of the penalty reaches 100 and a peer is banned
+			if i == 3 && j == 5 {
+				assert.NotNil(err)
+			} else {
+				assert.Nil(err)
+			}
 		}
-		time.Sleep(time.Millisecond * 130) // Wait for the rate limiter to apply the penalty
 	}
-
-	// Wait for the rate limiter to ban the peer
-	waitForTestCondition(t, func() int { return len(node1.ConnectedPeers()) }, 0, testTimeout)
 
 	// Check that a peer is banned
 	assert.Equal(0, len(node1.ConnectedPeers()))
