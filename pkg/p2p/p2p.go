@@ -101,7 +101,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.wg.Add(1)
 	go connectionsHandler(ctx, &conn.wg, conn)
 
-	logger.Infof("P2P connection successfully started")
+	logger.Infof("P2P connection successfully started with ID %s", peer.ID())
 	return nil
 }
 

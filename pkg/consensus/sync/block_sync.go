@@ -25,7 +25,7 @@ type blockSyncer struct {
 func (s *blockSyncer) Sync(ctx *SyncContext) (bool, error) {
 	peers := s.conn.ConnectedPeers()
 
-	nodeInfos := make([]*NodeInfo, len(peers))
+	nodeInfos := make([]*NodeInfo, 0, len(peers))
 	wg := sync.WaitGroup{}
 
 	// Get last block header from all peers and create node info for each peer.
