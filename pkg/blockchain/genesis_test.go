@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 )
 
@@ -29,7 +30,7 @@ func TestGenesisBlock(t *testing.T) {
 	assert.Equal(t, uint32(123), genesis.Header.MaxHeightPrevoted)
 	assert.Equal(t, uint32(0), genesis.Header.MaxHeightGenerated)
 	assert.Equal(t, codec.Hex{}, genesis.Header.Signature)
-	assert.Equal(t, codec.Lisk32{}, genesis.Header.GeneratorAddress)
+	assert.Equal(t, codec.Lisk32(bytes.Repeat([]byte{0}, AddressLength)), genesis.Header.GeneratorAddress)
 	assert.Equal(t, codec.Hex(emptyHash), genesis.Header.TransactionRoot)
 	assert.Equal(t, uint32(0), genesis.Header.AggregateCommit.Height)
 	assert.Equal(t, codec.Hex{}, genesis.Header.AggregateCommit.AggregationBits)
