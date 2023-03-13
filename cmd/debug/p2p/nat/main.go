@@ -95,12 +95,6 @@ func main() {
 		panic(err)
 	}
 
-	addrs, err := conn.MultiAddress()
-	if err != nil {
-		panic(err)
-	}
-	logger.Infof("libp2p node addresses: %v", addrs)
-
 	// if a remote peer has been passed on the command line, connect to it
 	// and send ping request message, otherwise wait for a signal to stop
 	if len(os.Args) > 1 {
