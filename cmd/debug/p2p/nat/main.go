@@ -85,7 +85,7 @@ func main() {
 	err = conn.RegisterRPCHandler("knownPeers", func(w p2p.ResponseWriter, req *p2p.Request) {
 		peers := conn.ConnectedPeers()
 		w.Write([]byte(fmt.Sprintf("All known peers: %v", peers)))
-	})
+	}, p2p.WithRPCMessageCounter(50, 20))
 	if err != nil {
 		panic(err)
 	}
