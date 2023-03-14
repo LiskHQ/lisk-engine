@@ -23,7 +23,7 @@ func TestReader(t *testing.T) {
 
 	for _, dbi := range interfaces {
 		for _, kv := range testData {
-			err = dbi.Set(kv.Key, kv.Value)
+			dbi.Set(kv.Key, kv.Value)
 			assert.NoError(t, err)
 		}
 
@@ -35,13 +35,13 @@ func TestReader(t *testing.T) {
 		updated := crypto.RandomBytes(32)
 		dbi.Set(testData[0].Key, updated)
 
-		val1, err := reader1.Get(testData[0].Key)
-		assert.NoError(t, err)
-		val2, err := reader2.Get(testData[0].Key)
-		assert.NoError(t, err)
+		val1, exist := reader1.Get(testData[0].Key)
+		assert.True(t, exist)
+		val2, exist := reader2.Get(testData[0].Key)
+		assert.True(t, exist)
 
-		valMain, err := dbi.Get(testData[0].Key)
-		assert.NoError(t, err)
+		valMain, exist := dbi.Get(testData[0].Key)
+		assert.True(t, exist)
 
 		assert.Equal(t, val1, val2)
 		assert.NotEqual(t, val1, valMain)

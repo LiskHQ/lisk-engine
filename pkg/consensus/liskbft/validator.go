@@ -345,10 +345,8 @@ func (k *KV) Value() []byte { return k.value }
 func (c *bftParamsCache) cache(from, to uint32) error {
 	start := bytes.FromUint32(from)
 	end := bytes.FromUint32(to)
-	kv, err := c.paramsStore.Range(start, end, -1, true)
-	if err != nil {
-		return err
-	}
+	kv := c.paramsStore.Range(start, end, -1, true)
+
 	if from > 0 {
 		nextLowest, err := getBFTParams(c.paramsStore, from)
 		if err != nil {

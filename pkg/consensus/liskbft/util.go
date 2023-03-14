@@ -15,10 +15,8 @@ var (
 func getBFTParams(paramsStore statemachine.ImmutableStore, height uint32) (*BFTParams, error) {
 	start := bytes.FromUint32(0)
 	end := bytes.FromUint32(height)
-	kv, err := paramsStore.Range(start, end, 1, true)
-	if err != nil {
-		return nil, err
-	}
+	kv := paramsStore.Range(start, end, 1, true)
+
 	if len(kv) != 1 {
 		return nil, ErrBFTParamsNotFound
 	}
@@ -32,10 +30,8 @@ func getBFTParams(paramsStore statemachine.ImmutableStore, height uint32) (*BFTP
 func getGeneratorKeys(keysStore statemachine.ImmutableStore, height uint32) (*GeneratorKeys, error) {
 	start := bytes.FromUint32(0)
 	end := bytes.FromUint32(height)
-	kv, err := keysStore.Range(start, end, 1, true)
-	if err != nil {
-		return nil, err
-	}
+	kv := keysStore.Range(start, end, 1, true)
+
 	if len(kv) != 1 {
 		return nil, ErrGeneratorKeysNotFound
 	}
@@ -49,17 +45,13 @@ func getGeneratorKeys(keysStore statemachine.ImmutableStore, height uint32) (*Ge
 func deleteBFTParams(paramsStore statemachine.Store, height uint32) error {
 	start := bytes.FromUint32(0)
 	end := bytes.FromUint32(height)
-	kv, err := paramsStore.Range(start, end, -1, false)
-	if err != nil {
-		return err
-	}
+	kv := paramsStore.Range(start, end, -1, false)
+
 	if len(kv) <= 1 {
 		return nil
 	}
 	for i := 0; i < len(kv)-1; i++ {
-		if err := paramsStore.Del(kv[i].Key()); err != nil {
-			return err
-		}
+		paramsStore.Del(kv[i].Key())
 	}
 	return nil
 }
@@ -67,17 +59,13 @@ func deleteBFTParams(paramsStore statemachine.Store, height uint32) error {
 func deleteGeneratorKeys(keysStore statemachine.Store, height uint32) error {
 	start := bytes.FromUint32(0)
 	end := bytes.FromUint32(height)
-	kv, err := keysStore.Range(start, end, -1, false)
-	if err != nil {
-		return err
-	}
+	kv := keysStore.Range(start, end, -1, false)
+
 	if len(kv) <= 1 {
 		return nil
 	}
 	for i := 0; i < len(kv)-1; i++ {
-		if err := keysStore.Del(kv[i].Key()); err != nil {
-			return err
-		}
+		keysStore.Del(kv[i].Key())
 	}
 	return nil
 }

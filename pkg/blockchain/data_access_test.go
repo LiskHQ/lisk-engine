@@ -70,8 +70,7 @@ func TestDataAccessGetBlockHeaders(t *testing.T) {
 		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		assert.NoError(t, err)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	fetched, err := dataAccess.GetBlockHeaders([][]byte{blocks[0].Header.ID})
 	assert.NoError(t, err)
@@ -121,8 +120,7 @@ func TestDataAccessGetBlockHeadersByHeights(t *testing.T) {
 		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		assert.NoError(t, err)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	fetched, err := dataAccess.GetBlockHeadersByHeights([]uint32{1})
 	assert.NoError(t, err)
@@ -150,8 +148,7 @@ func TestDataAccessGetBlockHeaderByHeight(t *testing.T) {
 		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		assert.NoError(t, err)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	dataAccess.Cache(blocks[0])
 
@@ -177,8 +174,7 @@ func TestDataAccessGetLastBlockHeader(t *testing.T) {
 		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		assert.NoError(t, err)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	fetched, err := dataAccess.GetLastBlockHeader()
 	assert.NoError(t, err)
@@ -199,8 +195,7 @@ func TestDataAccessGetLastBlock(t *testing.T) {
 		assert.NoError(t, err)
 		dataAccess.Cache(b)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	fetched, err := dataAccess.GetLastBlock()
 	assert.NoError(t, err)
@@ -220,8 +215,7 @@ func TestDataAccessGetTransaction(t *testing.T) {
 		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		assert.NoError(t, err)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 	dataAccess.Cache(blocks[0])
 
 	fetched, err := dataAccess.getTransaction(blocks[1].Transactions[0].ID)
@@ -247,8 +241,7 @@ func TestDataAccessGetTransactions(t *testing.T) {
 		assert.NoError(t, err)
 		dataAccess.Cache(b)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	fetched, err := dataAccess.GetTransactions([][]byte{blocks[0].Transactions[0].ID})
 	assert.NoError(t, err)
@@ -278,8 +271,7 @@ func TestDataAccessGetEvents(t *testing.T) {
 		assert.NoError(t, err)
 		dataAccess.Cache(b)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	events, err := dataAccess.GetEvents(2)
 	assert.NoError(t, err)
@@ -305,16 +297,12 @@ func TestDataAccessTempBlocks(t *testing.T) {
 		assert.NoError(t, err)
 		dataAccess.Cache(b)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	batch = ctx.database.NewBatch()
-	err = dataAccess.removeBlock(batch, blocks[3], true)
-	assert.NoError(t, err)
-	err = dataAccess.removeBlock(batch, blocks[2], true)
-	assert.NoError(t, err)
-	err = ctx.database.Write(batch)
-	assert.NoError(t, err)
+	dataAccess.removeBlock(batch, blocks[3], true)
+	dataAccess.removeBlock(batch, blocks[2], true)
+	ctx.database.Write(batch)
 
 	tempBlocks, err := dataAccess.GetTempBlocks()
 	assert.NoError(t, err)
@@ -322,8 +310,7 @@ func TestDataAccessTempBlocks(t *testing.T) {
 	assert.Equal(t, blocks[3], tempBlocks[0])
 	assert.Equal(t, blocks[2], tempBlocks[1])
 
-	err = dataAccess.ClearTempBlocks()
-	assert.NoError(t, err)
+	dataAccess.ClearTempBlocks()
 
 	tempBlocks, err = dataAccess.GetTempBlocks()
 	assert.NoError(t, err)
@@ -342,8 +329,7 @@ func TestDataAccessSaveBlock(t *testing.T) {
 		batch := ctx.database.NewBatch()
 		err := dataAccess.saveBlock(batch, block, events, 0, false)
 		assert.NoError(t, err)
-		err = ctx.database.Write(batch)
-		assert.NoError(t, err)
+		ctx.database.Write(batch)
 	}
 
 	fetched, err := dataAccess.getBlock(block.Header.ID)
@@ -360,8 +346,7 @@ func TestDataAccessSaveBlock(t *testing.T) {
 		batch := ctx.database.NewBatch()
 		err = dataAccess.saveBlock(batch, block, events, 1, true)
 		assert.NoError(t, err)
-		err = ctx.database.Write(batch)
-		assert.NoError(t, err)
+		ctx.database.Write(batch)
 	}
 
 	block = createRandomBlock(3)
@@ -369,8 +354,7 @@ func TestDataAccessSaveBlock(t *testing.T) {
 		batch := ctx.database.NewBatch()
 		err = dataAccess.saveBlock(batch, block, events, 1, true)
 		assert.NoError(t, err)
-		err = ctx.database.Write(batch)
-		assert.NoError(t, err)
+		ctx.database.Write(batch)
 	}
 	_, err = dataAccess.GetEvents(1)
 	assert.EqualError(t, err, "data was not found")
@@ -392,24 +376,20 @@ func TestDataAccessRemoveBlock(t *testing.T) {
 		assert.NoError(t, err)
 		dataAccess.Cache(b)
 	}
-	err := ctx.database.Write(batch)
-	assert.NoError(t, err)
+	ctx.database.Write(batch)
 
 	batch = ctx.database.NewBatch()
-	err = dataAccess.removeBlock(batch, blocks[3], true)
-	assert.NoError(t, err)
-	err = dataAccess.removeBlock(batch, blocks[2], true)
-	assert.NoError(t, err)
-	err = ctx.database.Write(batch)
-	assert.NoError(t, err)
+	dataAccess.removeBlock(batch, blocks[3], true)
+	dataAccess.removeBlock(batch, blocks[2], true)
+	ctx.database.Write(batch)
 
-	_, err = dataAccess.getTransaction(blocks[3].Transactions[1].ID)
+	_, err := dataAccess.getTransaction(blocks[3].Transactions[1].ID)
 	assert.EqualError(t, err, "data was not found")
 	_, err = dataAccess.getTransaction(blocks[3].Transactions[0].ID)
 	assert.EqualError(t, err, "data was not found")
 	_, err = dataAccess.getBlockHeader(blocks[3].Header.ID)
 	assert.EqualError(t, err, "data was not found")
 
-	_, err = ctx.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), blocks[3].Header.ID))
-	assert.EqualError(t, err, "data was not found")
+	_, exist := ctx.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), blocks[3].Header.ID))
+	assert.False(t, exist)
 }

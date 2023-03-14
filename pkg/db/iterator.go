@@ -6,7 +6,7 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 )
 
-func iterateRange(iter *pebble.Iterator, start, end []byte, limit int, reverse bool) ([]KeyValue, error) {
+func iterateRange(iter *pebble.Iterator, start, end []byte, limit int, reverse bool) []KeyValue {
 	var data []KeyValue
 	count := 0
 	if !reverse {
@@ -42,10 +42,10 @@ func iterateRange(iter *pebble.Iterator, start, end []byte, limit int, reverse b
 			}
 		}
 	}
-	return data, nil
+	return data
 }
 
-func iteratePrefix(iter *pebble.Iterator, prefix []byte, limit int, reverse bool) ([]KeyValue, error) {
+func iteratePrefix(iter *pebble.Iterator, prefix []byte, limit int, reverse bool) []KeyValue {
 	var data []KeyValue
 	count := 0
 	if !reverse {
@@ -75,12 +75,13 @@ func iteratePrefix(iter *pebble.Iterator, prefix []byte, limit int, reverse bool
 	}
 
 	if err := iter.Close(); err != nil {
-		return nil, err
+		// iter.Close should never fail. if it fails here, there is a problem in underlying DB which cannot be recovered.
+		panic(err)
 	}
-	return data, nil
+	return data
 }
 
-func iterateKeyPrefix(iter *pebble.Iterator, prefix []byte, limit int, reverse bool) ([][]byte, error) {
+func iterateKeyPrefix(iter *pebble.Iterator, prefix []byte, limit int, reverse bool) [][]byte {
 	var data [][]byte
 	count := 0
 	if !reverse {
@@ -104,7 +105,8 @@ func iterateKeyPrefix(iter *pebble.Iterator, prefix []byte, limit int, reverse b
 	}
 
 	if err := iter.Close(); err != nil {
-		return nil, err
+		// iter.Close should never fail. if it fails here, there is a problem in underlying DB which cannot be recovered.
+		panic(err)
 	}
-	return data, nil
+	return data
 }

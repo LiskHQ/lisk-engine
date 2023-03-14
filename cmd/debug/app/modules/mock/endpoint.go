@@ -28,8 +28,5 @@ func (e *Endpoint) HandleGetValidators(w rpc.EndpointResponseWriter, r *statemac
 		w.Error(err)
 		return
 	}
-	if err := w.Write(validatorsData); err != nil {
-		w.Error(err)
-		return
-	}
+	w.Write(validatorsData)
 }

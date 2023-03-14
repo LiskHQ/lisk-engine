@@ -58,9 +58,7 @@ func BenchmarkSMTBatchUpdate(b *testing.B) {
 		if _, err := tree.Update(batchDB, keys, values); err != nil {
 			panic(err)
 		}
-		if err := database.Write(batch); err != nil {
-			panic(err)
-		}
+		database.Write(batch)
 
 		count += dataSize
 	}

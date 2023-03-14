@@ -5,7 +5,9 @@ package rmt
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
 	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 )
@@ -32,9 +34,9 @@ var (
 
 // Database represens interface to access the data.
 type Database interface {
-	Get(key []byte) ([]byte, error)
-	Del(key []byte) error
-	Set(key, val []byte) error
+	Get(key []byte) ([]byte, bool)
+	Del(key []byte)
+	Set(key, val []byte)
 }
 
 // RegularMerkleTree holds lisk markle tree.
@@ -89,9 +91,7 @@ func (d *RegularMerkleTree) Append(value []byte) error {
 		nodeIndex:  d.size,
 		layerIndex: 0,
 	}
-	if err := d.saveNode(newLeafHash, nodeLoc); err != nil {
-		return err
-	}
+	d.saveNode(newLeafHash, nodeLoc)
 	if d.size == 0 {
 		d.appendPath = append(d.appendPath, currentHash)
 		d.root = currentHash
@@ -121,9 +121,7 @@ func (d *RegularMerkleTree) Append(value []byte) error {
 				}
 			} else {
 				// set node.hash = hash, where node is the rightmost node in the layer above
-				if err := d.saveNode(currentHash, nextLoc); err != nil {
-					return err
-				}
+				d.saveNode(currentHash, nextLoc)
 			}
 			count++
 		}
@@ -197,10 +195,11 @@ func (d *RegularMerkleTree) GenerateRightWitness(nodeIndex uint64) ([][]byte, er
 		if !exist {
 			break
 		}
-		siblingHash, err := d.getHash(siblingLoc)
-		if err != nil {
-			return nil, err
+		siblingHash, exist := d.getHash(siblingLoc)
+		if !exist {
+			return nil, fmt.Errorf("sibling at %s does not exist", codec.Hex(siblingHash))
 		}
+
 		rightWitness = append(rightWitness, siblingHash)
 		incrementalIdx += 1 << layerIdx
 	}
@@ -231,9 +230,7 @@ func (d *RegularMerkleTree) Update(idxs []uint64, updateData [][]byte) error {
 		if err != nil {
 			return err
 		}
-		if err := d.saveNode(hashedData, loc); err != nil {
-			return err
-		}
+		d.saveNode(hashedData, loc)
 	}
 	nextRoot, exist := calculatedTree[rootIndex]
 	if !exist {
@@ -246,43 +243,37 @@ func (d *RegularMerkleTree) Update(idxs []uint64, updateData [][]byte) error {
 	return nil
 }
 
-func (d *RegularMerkleTree) getHash(loc *nodeLocation) ([]byte, error) {
+func (d *RegularMerkleTree) getHash(loc *nodeLocation) ([]byte, bool) {
 	return d.db.Get(append([]byte{storePrefixHashToLoc}, loc.key()...))
 }
 
 func (d *RegularMerkleTree) getLocation(hash []byte) (*nodeLocation, error) {
-	locKey, err := d.db.Get(append([]byte{storePrefixHashToLoc}, hash...))
-	if err != nil {
-		return nil, err
+	locKey, exist := d.db.Get(append([]byte{storePrefixHashToLoc}, hash...))
+	if !exist {
+		return nil, fmt.Errorf("location for hash %s does not exist", codec.Hex(hash))
 	}
 	return newNodeLocationFromKey(locKey), nil
 }
 
 func (d *RegularMerkleTree) replaceNode(hash []byte, loc *nodeLocation) error {
-	prevValue, err := d.getHash(loc)
-	if err != nil {
-		return err
+	prevValue, exist := d.getHash(loc)
+	if !exist {
+		return fmt.Errorf("hash %s does not exist", codec.Hex(hash))
 	}
-	if err := d.db.Del(prevValue); err != nil {
-		return err
-	}
-	return d.saveNode(hash, loc)
-}
-
-func (d *RegularMerkleTree) saveNode(hash []byte, loc *nodeLocation) error {
-	if err := d.db.Set(append([]byte{storePrefixHashToLoc}, hash...), loc.key()); err != nil {
-		return err
-	}
-	if err := d.db.Set(append([]byte{storePrefixHashToLoc}, loc.key()...), hash); err != nil {
-		return err
-	}
+	d.db.Del(prevValue)
+	d.saveNode(hash, loc)
 	return nil
 }
 
+func (d *RegularMerkleTree) saveNode(hash []byte, loc *nodeLocation) {
+	d.db.Set(append([]byte{storePrefixHashToLoc}, hash...), loc.key())
+	d.db.Set(append([]byte{storePrefixHashToLoc}, loc.key()...), hash)
+}
+
 func (d *RegularMerkleTree) loadInfo() error {
-	infoByte, err := d.db.Get([]byte{storePrefixInfo})
-	if err != nil {
-		return err
+	infoByte, exist := d.db.Get([]byte{storePrefixInfo})
+	if !exist {
+		return fmt.Errorf("tree information does not exist")
 	}
 	info := &info{}
 	if err := info.Decode(infoByte); err != nil {
@@ -304,7 +295,8 @@ func (d *RegularMerkleTree) saveInfo() error {
 	if err != nil {
 		return err
 	}
-	return d.db.Set([]byte{storePrefixInfo}, infoByte)
+	d.db.Set([]byte{storePrefixInfo}, infoByte)
+	return nil
 }
 
 func (d *RegularMerkleTree) getIndexes(queryHashes [][]byte) ([]uint64, error) {
@@ -371,9 +363,9 @@ func (d *RegularMerkleTree) getSiblingHashes(idxs []uint64) ([][]byte, error) {
 				sortedIdxs.insert(parentIdx)
 				continue
 			}
-			siblingHash, err := d.getHash(siblingLoc)
-			if err != nil {
-				return nil, err
+			siblingHash, exist := d.getHash(siblingLoc)
+			if !exist {
+				return nil, fmt.Errorf("sibling at %s does not exist", codec.Hex(siblingHash))
 			}
 			siblingHashes = append(siblingHashes, siblingHash)
 		}

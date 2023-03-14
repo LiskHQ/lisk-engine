@@ -2,7 +2,6 @@ package framework
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -74,13 +73,11 @@ type executionContext struct {
 
 func (a *ABIHandler) Init(req *labi.InitRequest) (*labi.InitResponse, error) {
 	a.chainID = req.ChainID
-	currentState, err := a.stateDB.Get(bytes.Join(StateDBPrefixTreeState, emptyBytes))
-	if err != nil {
-		if !errors.Is(err, db.ErrDataNotFound) {
-			return nil, err
-		}
+	currentState, exist := a.stateDB.Get(bytes.Join(StateDBPrefixTreeState, emptyBytes))
+	if !exist {
 		currentState = bytes.Join(bytes.FromUint32(0), emptyHash)
 	}
+
 	currentHeight := bytes.ToUint32(currentState[:4])
 	currentRoot := currentState[4:]
 
@@ -313,14 +310,9 @@ func (a *ABIHandler) Commit(req *labi.CommitRequest) (*labi.CommitResponse, erro
 	}
 	batch := a.stateDB.NewBatch()
 	stateBatch := newStateBatch(batch)
-	diff, err := a.executionContext.diffStore.Commit(stateBatch)
-	if err != nil {
-		return nil, err
-	}
+	diff := a.executionContext.diffStore.Commit(stateBatch)
 	encodedDiff := diff.MustEncode()
-	if err := batch.Set(bytes.Join(StateDBPrefixDiff, bytes.FromUint32(a.executionContext.header.Height)), encodedDiff); err != nil {
-		return nil, err
-	}
+	batch.Set(bytes.Join(StateDBPrefixDiff, bytes.FromUint32(a.executionContext.header.Height)), encodedDiff)
 	smtDB := batchdb.NewWithPrefix(a.stateDB, batch, StateDBPrefixTree)
 	tree := smt.NewTrie(req.StateRoot, stateTreeKeySize)
 	root, err := tree.Update(smtDB, stateBatch.keys, stateBatch.values)
@@ -337,13 +329,9 @@ func (a *ABIHandler) Commit(req *labi.CommitRequest) (*labi.CommitResponse, erro
 	}
 	currentStateDB := batchdb.NewWithPrefix(a.stateDB, batch, StateDBPrefixTreeState)
 	currentState := bytes.Join(bytes.FromUint32(a.executionContext.header.Height), root)
-	if err := currentStateDB.Set([]byte{}, currentState); err != nil {
-		return nil, err
-	}
+	currentStateDB.Set([]byte{}, currentState)
 
-	if err := a.stateDB.Write(batch); err != nil {
-		return nil, err
-	}
+	a.stateDB.Write(batch)
 	return &labi.CommitResponse{
 		StateRoot: root,
 	}, nil
@@ -367,22 +355,16 @@ func (a *ABIHandler) Finalize(req *labi.FinalizeRequest) (*labi.FinalizeResponse
 		return &labi.FinalizeResponse{}, nil
 	}
 	batch := a.stateDB.NewBatch()
-	keys, err := a.stateDB.IterateKey(StateDBPrefixDiff, -1, false)
-	if err != nil {
-		return nil, err
-	}
+	keys := a.stateDB.IterateKey(StateDBPrefixDiff, -1, false)
+
 	for _, key := range keys {
 		heightByte := key[len(StateDBPrefixDiff):]
 		height := bytes.ToUint32(heightByte)
 		if height < req.FinalizedHeight {
-			if err := batch.Del(key); err != nil {
-				return nil, err
-			}
+			batch.Del(key)
 		}
 	}
-	if err := a.stateDB.Write(batch); err != nil {
-		return nil, err
-	}
+	a.stateDB.Write(batch)
 	return &labi.FinalizeResponse{}, nil
 }
 
@@ -449,9 +431,9 @@ func (a *ABIHandler) checkState(id codec.Hex) error {
 }
 
 func (a *ABIHandler) revert(height uint32, stateRoot, expectedStateRoot codec.Hex) ([]byte, error) {
-	encodedDiff, err := a.stateDB.Get(bytes.Join(StateDBPrefixDiff, bytes.FromUint32(height)))
-	if err != nil {
-		return nil, err
+	encodedDiff, exist := a.stateDB.Get(bytes.Join(StateDBPrefixDiff, bytes.FromUint32(height)))
+	if !exist {
+		return nil, fmt.Errorf("diff at height %d does not exist", height)
 	}
 	diff := &diffdb.Diff{}
 	if err := diff.Decode(encodedDiff); err != nil {
@@ -460,9 +442,7 @@ func (a *ABIHandler) revert(height uint32, stateRoot, expectedStateRoot codec.He
 	batch := a.stateDB.NewBatch()
 	stateBatch := newStateBatch(batch)
 	diffStore := diffdb.New(a.stateDB, StateDBPrefixState)
-	if err := diffStore.RevertDiff(stateBatch, diff); err != nil {
-		return nil, err
-	}
+	diffStore.RevertDiff(stateBatch, diff)
 	tree := smt.NewTrie(stateRoot, stateTreeKeySize)
 	smtDB := batchdb.NewWithPrefix(a.stateDB, batch, StateDBPrefixTree)
 	root, err := tree.Update(smtDB, stateBatch.keys, stateBatch.values)
@@ -474,11 +454,7 @@ func (a *ABIHandler) revert(height uint32, stateRoot, expectedStateRoot codec.He
 	}
 	currentStateDB := batchdb.NewWithPrefix(a.stateDB, batch, StateDBPrefixTreeState)
 	currentState := bytes.Join(bytes.FromUint32(a.executionContext.header.Height-1), root)
-	if err := currentStateDB.Set(emptyBytes, currentState); err != nil {
-		return nil, err
-	}
-	if err := a.stateDB.Write(batch); err != nil {
-		return nil, err
-	}
+	currentStateDB.Set(emptyBytes, currentState)
+	a.stateDB.Write(batch)
 	return root, nil
 }

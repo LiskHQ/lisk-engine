@@ -62,8 +62,5 @@ func (a *networkEndpoint) HandleGetConnectedPeers(w router.EndpointResponseWrite
 	resp := &GetConnectedPeersResponse{
 		Peers: resultPeers,
 	}
-	if err := w.Write(resp); err != nil {
-		w.Error(err)
-		return
-	}
+	w.Write(resp)
 }

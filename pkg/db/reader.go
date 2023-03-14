@@ -11,33 +11,29 @@ type Reader struct {
 	snapshot *pebble.Snapshot
 }
 
-func (r *Reader) Get(key []byte) ([]byte, error) {
+func (r *Reader) Get(key []byte) ([]byte, bool) {
 	data, closer, err := r.snapshot.Get(key)
 	if err != nil {
 		if errors.Is(err, pebble.ErrNotFound) {
-			return nil, ErrDataNotFound
+			return nil, false
 		}
-		return nil, err
+		// unknown error. if this fails, there is a problem in underlying DB which cannot be recovered.
+		panic(err)
 	}
 	copied := bytes.Copy(data)
 	if err := closer.Close(); err != nil {
-		return nil, err
+		// if this fails, application should crash otherwise, memory will likely to leak.
+		panic(err)
 	}
-	return copied, nil
+	return copied, true
 }
 
-func (r *Reader) Exist(key []byte) (bool, error) {
-	_, err := r.Get(key)
-	if err != nil && !errors.Is(err, ErrDataNotFound) {
-		return false, err
-	}
-	if err != nil {
-		return false, nil
-	}
-	return true, nil
+func (r *Reader) Exist(key []byte) bool {
+	_, exist := r.Get(key)
+	return exist
 }
 
-func (r *Reader) IterateKey(prefix []byte, limit int, reverse bool) ([][]byte, error) {
+func (r *Reader) IterateKey(prefix []byte, limit int, reverse bool) [][]byte {
 	iter := r.snapshot.NewIter(&pebble.IterOptions{
 		LowerBound: prefix,
 		UpperBound: upperBound(prefix),
@@ -45,7 +41,7 @@ func (r *Reader) IterateKey(prefix []byte, limit int, reverse bool) ([][]byte, e
 	return iterateKeyPrefix(iter, prefix, limit, reverse)
 }
 
-func (r *Reader) Iterate(prefix []byte, limit int, reverse bool) ([]KeyValue, error) {
+func (r *Reader) Iterate(prefix []byte, limit int, reverse bool) []KeyValue {
 	iter := r.snapshot.NewIter(&pebble.IterOptions{
 		LowerBound: prefix,
 		UpperBound: upperBound(prefix),
@@ -53,7 +49,7 @@ func (r *Reader) Iterate(prefix []byte, limit int, reverse bool) ([]KeyValue, er
 	return iteratePrefix(iter, prefix, limit, reverse)
 }
 
-func (r *Reader) IterateRange(start, end []byte, limit int, reverse bool) ([]KeyValue, error) {
+func (r *Reader) IterateRange(start, end []byte, limit int, reverse bool) []KeyValue {
 	iter := r.snapshot.NewIter(nil)
 	return iterateRange(iter, start, end, limit, reverse)
 }

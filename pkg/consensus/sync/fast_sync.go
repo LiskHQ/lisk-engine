@@ -66,9 +66,7 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 		}
 	}
 	// clear temp block
-	if err := s.chain.DataAccess().ClearTempBlocks(); err != nil {
-		s.logger.Errorf("Fail to clear temp blocks with %v", err)
-	}
+	s.chain.DataAccess().ClearTempBlocks()
 	return true, nil
 }
 

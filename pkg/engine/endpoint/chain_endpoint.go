@@ -52,9 +52,7 @@ func (a *chainEndpoint) HandleGetLastBlock(w router.EndpointResponseWriter, r *r
 		w.Error(err)
 		return
 	}
-	if err := w.Write(block); err != nil {
-		w.Error(err)
-	}
+	w.Write(block)
 }
 
 type GetBlockByIDRequest struct {
@@ -72,9 +70,7 @@ func (a *chainEndpoint) HandleGetBlockByID(w router.EndpointResponseWriter, r *r
 		w.Error(err)
 		return
 	}
-	if err := w.Write(block); err != nil {
-		w.Error(err)
-	}
+	w.Write(block)
 }
 
 type GetBlockByHeightRequest struct {
@@ -92,9 +88,7 @@ func (a *chainEndpoint) HandleGetBlockByHeight(w router.EndpointResponseWriter, 
 		w.Error(err)
 		return
 	}
-	if err := w.Write(block); err != nil {
-		w.Error(err)
-	}
+	w.Write(block)
 }
 
 type GetTransactionByIDRequest struct {
@@ -112,9 +106,7 @@ func (a *chainEndpoint) HandleGetTransactionByID(w router.EndpointResponseWriter
 		w.Error(err)
 		return
 	}
-	if err := w.Write(tx); err != nil {
-		w.Error(err)
-	}
+	w.Write(tx)
 }
 
 type PostBlockRequest struct {
@@ -139,7 +131,5 @@ func (a *chainEndpoint) HandlePostBlock(w router.EndpointResponseWriter, r *rout
 	resp := &PostBlockResponse{
 		BlockID: req.Block.Header.ID,
 	}
-	if err := w.Write(resp); err != nil {
-		w.Error(err)
-	}
+	w.Write(resp)
 }

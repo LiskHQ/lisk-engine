@@ -6,7 +6,7 @@ import (
 )
 
 type EndpointResponseWriter interface {
-	Write(interface{}) error
+	Write(interface{})
 	Error(error)
 }
 
@@ -24,14 +24,13 @@ func (a *endpointResponseWriter) Error(err error) {
 	a.err = err
 }
 
-func (a *endpointResponseWriter) Write(data interface{}) error {
+func (a *endpointResponseWriter) Write(data interface{}) {
 	if a.written {
-		return fmt.Errorf("data has already been written once")
+		panic(fmt.Errorf("data has already been written once"))
 	}
 
 	a.data = data
 	a.written = true
-	return nil
 }
 
 func (a *endpointResponseWriter) Result() EndpointResponse {

@@ -19,22 +19,18 @@ func TestBatch(t *testing.T) {
 	key2 := crypto.RandomBytes(38)
 	val2 := crypto.RandomBytes(100)
 
-	err = batch.Set(key1, val1)
-	assert.NoError(t, err)
+	batch.Set(key1, val1)
 
-	err = batch.Set(key2, val2)
-	assert.NoError(t, err)
+	batch.Set(key2, val2)
 
-	err = batch.Del(key1)
-	assert.NoError(t, err)
+	batch.Del(key1)
 
-	err = db.Write(batch)
-	assert.NoError(t, err)
+	db.Write(batch)
 
-	_, err = db.Get(key1)
-	assert.EqualError(t, err, "data was not found")
+	_, exist := db.Get(key1)
+	assert.False(t, exist)
 
-	val, err := db.Get(key2)
-	assert.NoError(t, err)
+	val, exist := db.Get(key2)
+	assert.True(t, exist)
 	assert.Equal(t, val2, val)
 }

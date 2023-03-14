@@ -21,30 +21,27 @@ var (
 func TestStateStoreGet(t *testing.T) {
 	data, _ := db.NewInMemoryDB()
 	store := New(data, statePrefix)
-	_, err := store.Get([]byte("random key"))
-	if assert.Error(t, err) {
-		assert.Equal(t, ErrNotFound, err)
-	}
+	_, exist := store.Get([]byte("random key"))
+	assert.False(t, exist)
+
 	// Data exists in DB
 	expectedKey := []byte("address")
 	expectedValue := []byte("somedata")
 	data.Set(bytes.Join(statePrefix, bytes.FromUint32(testModulePrefix), bytes.FromUint16(testStorePrefix), expectedKey), expectedValue)
 	childStore := store.WithPrefix(testPrefix)
-	actualValue, err := childStore.Get(expectedKey)
-	assert.Nil(t, err)
+	actualValue, exist := childStore.Get(expectedKey)
+	assert.True(t, exist)
 	assert.Equal(t, expectedValue, actualValue)
 
 	// Reading again
-	actualValue, err = childStore.Get(expectedKey)
-	assert.Nil(t, err)
+	actualValue, exist = childStore.Get(expectedKey)
+	assert.True(t, exist)
 	assert.Equal(t, expectedValue, actualValue)
 
 	// Data deleted
 	childStore.Del(expectedKey)
-	_, err = childStore.Get(expectedKey)
-	if assert.Error(t, err) {
-		assert.Equal(t, ErrNotFound, err)
-	}
+	_, exist = childStore.Get(expectedKey)
+	assert.False(t, exist)
 }
 
 func TestStateStoreSet(t *testing.T) {
@@ -58,14 +55,13 @@ func TestStateStoreSet(t *testing.T) {
 	randomKey := []byte("random key")
 	randomValue := []byte("random key")
 	store.Set(randomKey, randomValue)
-	val, err := store.Get(randomKey)
-	assert.Nil(t, err)
+	val, exist := store.Get(randomKey)
+	assert.True(t, exist)
 	assert.Equal(t, randomValue, val)
 
 	// Set existing data, but not in cache
 	childStore := store.WithPrefix(testPrefix)
-	err = childStore.Set(expectedKey, []byte("new data"))
-	assert.Nil(t, err)
+	childStore.Set(expectedKey, []byte("new data"))
 	actual, exist, deleted := childStore.cache.get(bytes.Join(statePrefix, bytes.FromUint32(testModulePrefix), bytes.FromUint16(testStorePrefix), expectedKey))
 	assert.Equal(t, []byte("new data"), actual)
 	assert.True(t, exist)
@@ -73,21 +69,18 @@ func TestStateStoreSet(t *testing.T) {
 
 	// delete the new data
 	childStore.Del(expectedKey)
-	_, err = childStore.Get(expectedKey)
-	if assert.Error(t, err) {
-		assert.Equal(t, ErrNotFound, err)
-	}
+	_, exist = childStore.Get(expectedKey)
+	assert.False(t, exist)
+
 	// Set to deleted key again
-	err = childStore.Set(expectedKey, []byte("more new data"))
-	assert.Nil(t, err)
+	childStore.Set(expectedKey, []byte("more new data"))
 	actual, exist, deleted = childStore.cache.get(bytes.Join(statePrefix, bytes.FromUint32(testModulePrefix), bytes.FromUint16(testStorePrefix), expectedKey))
 	assert.Equal(t, []byte("more new data"), actual)
 	assert.True(t, exist)
 	assert.False(t, deleted)
 
 	// Update existing cache data
-	err = childStore.Set(expectedKey, []byte("even more new data"))
-	assert.Nil(t, err)
+	childStore.Set(expectedKey, []byte("even more new data"))
 	actual, exist, deleted = childStore.cache.get(bytes.Join(statePrefix, bytes.FromUint32(testModulePrefix), bytes.FromUint16(testStorePrefix), expectedKey))
 	assert.Equal(t, []byte("even more new data"), actual)
 	assert.True(t, exist)
@@ -120,12 +113,10 @@ func TestStateStoreHas(t *testing.T) {
 	store := New(data, statePrefix)
 	childStore := store.WithPrefix(testPrefix)
 
-	exist, err := childStore.Has(expectedKey)
-	assert.NoError(t, err)
+	exist := childStore.Has(expectedKey)
 	assert.True(t, exist)
 
-	exist, err = childStore.Has(crypto.RandomBytes(20))
-	assert.NoError(t, err)
+	exist = childStore.Has(crypto.RandomBytes(20))
 	assert.False(t, exist)
 }
 
@@ -160,26 +151,21 @@ func TestStateStoreRange(t *testing.T) {
 	store := New(data, statePrefix)
 	childStore := store.WithPrefix(testPrefix)
 
-	res, err := childStore.Range([]byte{0, 0}, []byte{0, 99}, 2, false)
-	assert.NoError(t, err)
+	res := childStore.Range([]byte{0, 0}, []byte{0, 99}, 2, false)
 	assert.Len(t, res, 2)
 	assert.Equal(t, []byte{0, 0}, res[0].Key())
-	res, err = childStore.Range([]byte{0, 0}, []byte{0, 99}, 1, true)
-	assert.NoError(t, err)
+	res = childStore.Range([]byte{0, 0}, []byte{0, 99}, 1, true)
 	assert.Len(t, res, 1)
 	assert.Equal(t, []byte{0, 1}, res[0].Key())
 
-	res, err = childStore.Iterate([]byte{0}, -1, false)
-	assert.NoError(t, err)
+	res = childStore.Iterate([]byte{0}, -1, false)
 	assert.Len(t, res, 2)
 	assert.Equal(t, []byte{0, 0}, res[0].Key())
-	res, err = childStore.Iterate([]byte{0}, 1, true)
-	assert.NoError(t, err)
+	res = childStore.Iterate([]byte{0}, 1, true)
 	assert.Len(t, res, 1)
 	assert.Equal(t, []byte{0, 1}, res[0].Key())
 
-	res, err = childStore.Iterate([]byte{3}, 2, false)
-	assert.NoError(t, err)
+	res = childStore.Iterate([]byte{3}, 2, false)
 	assert.Len(t, res, 0)
 }
 
@@ -195,12 +181,12 @@ func TestStateStoreSnapshot(t *testing.T) {
 	childStore.Set(expectedKey, []byte("random value"))
 	snapID := childStore.Snapshot()
 	childStore.Set(expectedKey, []byte("more random value"))
-	val, err := childStore.Get(expectedKey)
-	assert.Nil(t, err)
+	val, exist := childStore.Get(expectedKey)
+	assert.True(t, exist)
 	assert.Equal(t, []byte("more random value"), val)
 	childStore.RestoreSnapshot(snapID)
-	val, err = childStore.Get(expectedKey)
-	assert.Nil(t, err)
+	val, exist = childStore.Get(expectedKey)
+	assert.True(t, exist)
 	assert.Equal(t, []byte("random value"), val)
 	assert.Equal(t, 0, len(childStore.snapshots))
 }
@@ -227,10 +213,8 @@ func TestStateStoreCommit(t *testing.T) {
 	childStore.Del(deletingKey)
 	childStore.Set(addKey, addValue)
 
-	diff, err := store.Commit(data)
-	assert.Nil(t, err)
+	diff := store.Commit(data)
 	// Check Diff
-	assert.Nil(t, err)
 	assert.Equal(t, 1, len(diff.Deleted))
 	assert.Equal(t, 1, len(diff.Updated))
 	assert.Equal(t, 1, len(diff.Added))
@@ -240,13 +224,13 @@ func TestStateStoreCommit(t *testing.T) {
 	assert.Equal(t, deletingValue, diff.Deleted[0].Value, "Value should be original value")
 
 	// Check DB
-	updated, err := data.Get(key1)
-	assert.Nil(t, err)
+	updated, exist := data.Get(key1)
+	assert.True(t, exist)
 	assert.Equal(t, expectedUpdatedValue, updated, "Value should be updated value")
 	// deleted data should not exist
-	keyExist, _ := data.Exist(key2)
+	keyExist := data.Exist(key2)
 	assert.False(t, keyExist, "Deleted data should not exist")
-	keyExist, _ = data.Exist(key3)
+	keyExist = data.Exist(key3)
 	assert.True(t, keyExist, "Added data should exist")
 }
 
@@ -274,22 +258,17 @@ func TestStateStoreRevert(t *testing.T) {
 			},
 		},
 	}
-	err := data.Set(diffKey, diff.MustEncode())
-	assert.NoError(t, err)
+	data.Set(diffKey, diff.MustEncode())
 	for _, key := range diff.Added {
-		err := data.Set(key, crypto.RandomBytes(100))
-		assert.NoError(t, err)
+		data.Set(key, crypto.RandomBytes(100))
 	}
 	for _, kv := range diff.Updated {
-		err := data.Set(kv.Key, crypto.RandomBytes(100))
-		assert.NoError(t, err)
+		data.Set(kv.Key, crypto.RandomBytes(100))
 	}
 
 	store := New(data, []byte{0})
 
 	batch := data.NewBatch()
-	err = store.RevertDiff(batch, diff)
-	assert.NoError(t, err)
-	err = data.Write(batch)
-	assert.NoError(t, err)
+	store.RevertDiff(batch, diff)
+	data.Write(batch)
 }

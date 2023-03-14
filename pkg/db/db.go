@@ -66,41 +66,45 @@ func (db *DB) Close() error {
 	return db.pebbleDB.Close()
 }
 
-func (db *DB) Get(key []byte) ([]byte, error) {
+func (db *DB) Get(key []byte) ([]byte, bool) {
 	data, closer, err := db.pebbleDB.Get(key)
 	if err != nil {
 		if errors.Is(err, pebble.ErrNotFound) {
-			return nil, ErrDataNotFound
+			return nil, false
 		}
-		return nil, err
+		// unknown error. if this fails, there is a problem in underlying DB which cannot be recovered.
+		// Also, the pebble.Get only returns ErrNotFound, so this should never happen.
+		panic(err)
 	}
 	copied := bytes.Copy(data)
 	if err := closer.Close(); err != nil {
-		return nil, err
+		// if this fails, application should crash otherwise, memory will likely to leak.
+		// Another option is to ignore the erorr close, and have manually run GC.
+		panic(err)
 	}
-	return copied, nil
+	return copied, true
 }
 
-func (db *DB) Exist(key []byte) (bool, error) {
-	_, err := db.Get(key)
-	if err != nil && !errors.Is(err, ErrDataNotFound) {
-		return false, err
+func (db *DB) Exist(key []byte) bool {
+	_, exist := db.Get(key)
+	return exist
+}
+
+func (db *DB) Set(key, value []byte) {
+	if err := db.pebbleDB.Set(key, value, pebble.Sync); err != nil {
+		// if it fails here, there is a problem in underlying DB which cannot be recovered.
+		panic(err)
 	}
-	if err != nil {
-		return false, nil
+}
+
+func (db *DB) Del(key []byte) {
+	if err := db.pebbleDB.Delete(key, pebble.Sync); err != nil {
+		// if it fails here, there is a problem in underlying DB which cannot be recovered.
+		panic(err)
 	}
-	return true, nil
 }
 
-func (db *DB) Set(key, value []byte) error {
-	return db.pebbleDB.Set(key, value, pebble.Sync)
-}
-
-func (db *DB) Del(key []byte) error {
-	return db.pebbleDB.Delete(key, pebble.Sync)
-}
-
-func (db *DB) IterateKey(prefix []byte, limit int, reverse bool) ([][]byte, error) {
+func (db *DB) IterateKey(prefix []byte, limit int, reverse bool) [][]byte {
 	iter := db.pebbleDB.NewIter(&pebble.IterOptions{
 		LowerBound: prefix,
 		UpperBound: upperBound(prefix),
@@ -108,7 +112,7 @@ func (db *DB) IterateKey(prefix []byte, limit int, reverse bool) ([][]byte, erro
 	return iterateKeyPrefix(iter, prefix, limit, reverse)
 }
 
-func (db *DB) Iterate(prefix []byte, limit int, reverse bool) ([]KeyValue, error) {
+func (db *DB) Iterate(prefix []byte, limit int, reverse bool) []KeyValue {
 	iter := db.pebbleDB.NewIter(&pebble.IterOptions{
 		LowerBound: prefix,
 		UpperBound: upperBound(prefix),
@@ -116,7 +120,7 @@ func (db *DB) Iterate(prefix []byte, limit int, reverse bool) ([]KeyValue, error
 	return iteratePrefix(iter, prefix, limit, reverse)
 }
 
-func (db *DB) IterateRange(start, end []byte, limit int, reverse bool) ([]KeyValue, error) {
+func (db *DB) IterateRange(start, end []byte, limit int, reverse bool) []KeyValue {
 	iter := db.pebbleDB.NewIter(nil)
 	return iterateRange(iter, start, end, limit, reverse)
 }
@@ -135,10 +139,17 @@ func (db *DB) NewReader() *Reader {
 	}
 }
 
-func (db *DB) Write(batch *Batch) error {
-	return db.pebbleDB.Apply(batch.inner, pebble.Sync)
+func (db *DB) Write(batch *Batch) {
+	if err := db.pebbleDB.Apply(batch.inner, pebble.Sync); err != nil {
+		// Apply returns error on Readonly mode, WAL disabled or errNoSplit which are configuration issues.
+		// At this point, it will be better to panic.
+		panic(err)
+	}
 }
 
-func (db *DB) DropAll() error {
-	return db.pebbleDB.DeleteRange([]byte{0}, []byte{255}, pebble.NoSync)
+func (db *DB) DropAll() {
+	if err := db.pebbleDB.DeleteRange([]byte{0}, []byte{255}, pebble.NoSync); err != nil {
+		// DeleteRange internally calls Apply, and with the same reason as above Write it will be better to panic.
+		panic(err)
+	}
 }

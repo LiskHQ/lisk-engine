@@ -162,7 +162,7 @@ func (c *cacheDB) copy() *cacheDB {
 		data: copied,
 	}
 }
-func (c *cacheDB) commit(writer DatabaseWriter) (*Diff, error) {
+func (c *cacheDB) commit(writer DatabaseWriter) *Diff {
 	result := &Diff{}
 	added := [][]byte{}
 	updated := []*KV{}
@@ -171,9 +171,7 @@ func (c *cacheDB) commit(writer DatabaseWriter) (*Diff, error) {
 		keyBytes := []byte(key)
 		if value.init == nil {
 			added = append(added, keyBytes)
-			if err := writer.Set(keyBytes, value.value); err != nil {
-				return nil, err
-			}
+			writer.Set(keyBytes, value.value)
 			continue
 		}
 		if value.deleted {
@@ -181,9 +179,7 @@ func (c *cacheDB) commit(writer DatabaseWriter) (*Diff, error) {
 				Key:   keyBytes,
 				Value: value.init,
 			})
-			if err := writer.Del(keyBytes); err != nil {
-				return nil, err
-			}
+			writer.Del(keyBytes)
 			continue
 		}
 		if value.dirty {
@@ -191,13 +187,11 @@ func (c *cacheDB) commit(writer DatabaseWriter) (*Diff, error) {
 				Key:   keyBytes,
 				Value: value.init,
 			})
-			if err := writer.Set(keyBytes, value.value); err != nil {
-				return nil, err
-			}
+			writer.Set(keyBytes, value.value)
 		}
 	}
 	result.Added = added
 	result.Updated = updated
 	result.Deleted = deleted
-	return result, nil
+	return result
 }

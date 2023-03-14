@@ -71,10 +71,7 @@ func (a *txpoolEndpoint) HandleGetTransactionsFromPool(w router.EndpointResponse
 	resp := &GetTransactionFromPoolResponse{
 		Transactions: txs,
 	}
-	if err := w.Write(resp); err != nil {
-		w.Error(err)
-		return
-	}
+	w.Write(resp)
 }
 
 type PostTransactionRequest struct {
@@ -116,8 +113,5 @@ func (a *txpoolEndpoint) HandlePostTransaction(w router.EndpointResponseWriter, 
 	resp := &PostTransactionResponse{
 		TransactionID: req.Transaction.ID,
 	}
-	if err := w.Write(resp); err != nil {
-		w.Error(err)
-		return
-	}
+	w.Write(resp)
 }
