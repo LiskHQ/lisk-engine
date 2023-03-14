@@ -87,7 +87,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	cfg := &Config{}
 	err := cfg.insertDefault()
 	assert.Nil(err)
-	p2p := NewConnection(cfg)
+	p2p := NewConnection(logger.DefaultLogger, cfg)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.cfg.Version)
 	assert.Equal([]string{}, p2p.cfg.Addresses)
@@ -109,9 +109,9 @@ func TestP2P_Start(t *testing.T) {
 
 	cfg := &Config{}
 	_ = cfg.insertDefault()
-	p2p := NewConnection(cfg)
 	logger, _ := logger.NewDefaultProductionLogger()
-	err := p2p.Start(logger, []byte{})
+	p2p := NewConnection(logger, cfg)
+	err := p2p.Start([]byte{})
 	assert.Nil(err)
 	assert.Equal(logger, p2p.logger)
 	assert.NotNil(p2p.Peer)
@@ -130,14 +130,14 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
-	node1 := NewConnection(cfg)
-	node2 := NewConnection(cfg)
 	logger, _ := logger.NewDefaultProductionLogger()
+	node1 := NewConnection(logger, cfg)
+	node2 := NewConnection(logger, cfg)
 	node1.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	node2.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
-	err := node1.Start(logger, []byte{})
+	err := node1.Start([]byte{})
 	assert.Nil(err)
-	err = node2.Start(logger, []byte{})
+	err = node2.Start([]byte{})
 	assert.Nil(err)
 
 	err = node2.Publish(ctx, testTopic1, testMessageData)
@@ -202,9 +202,9 @@ func TestP2P_Stop(t *testing.T) {
 
 	cfg := &Config{}
 	_ = cfg.insertDefault()
-	p2p := NewConnection(cfg)
 	logger, _ := logger.NewDefaultProductionLogger()
-	_ = p2p.Start(logger, []byte{})
+	p2p := NewConnection(logger, cfg)
+	_ = p2p.Start([]byte{})
 
 	ch := make(chan struct{})
 	defer close(ch)
@@ -233,11 +233,11 @@ func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
 
 	cfg := Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
-	p2p := NewConnection(&cfg)
+	logger, _ := logger.NewDefaultProductionLogger()
+	p2p := NewConnection(logger, &cfg)
 	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
 	p2p.cfg.MinNumOfConnections = 1
-	logger, _ := logger.NewDefaultProductionLogger()
-	err := p2p.Start(logger, []byte{})
+	err := p2p.Start([]byte{})
 	assert.Nil(err)
 
 	// Create two new peers and connect them to our p2p node
@@ -295,11 +295,11 @@ func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	}
 
 	_ = cfg2.insertDefault()
-	p2p := NewConnection(&cfg2)
+	p2p := NewConnection(logger, &cfg2)
 	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
 	p2p.cfg.MinNumOfConnections = 1
 
-	err := p2p.Start(logger, []byte{})
+	err := p2p.Start([]byte{})
 	assert.Nil(err)
 
 	// Connect to our p2p node the two peers we created

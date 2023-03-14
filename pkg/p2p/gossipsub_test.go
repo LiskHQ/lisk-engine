@@ -33,7 +33,7 @@ func TestGetMessageID(t *testing.T) {
 func TestGossipSub_NewGossipSub(t *testing.T) {
 	assert := assert.New(t)
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(log.DefaultLogger, testChainID, testVersion)
 	assert.NotNil(gs)
 	assert.NotNil(gs.topics)
 	assert.NotNil(gs.subscriptions)
@@ -53,11 +53,11 @@ func TestGossipSub_Start(t *testing.T) {
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(logger, testChainID, testVersion)
 	err := gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	assert.Nil(err)
 
-	err = gs.start(ctx, wg, logger, p, sk, cfg)
+	err = gs.start(ctx, wg, p, sk, cfg)
 	assert.Nil(err)
 
 	assert.NotNil(gs.logger)
@@ -83,8 +83,7 @@ func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	gs := newGossipSub(testChainID, testVersion)
-	gs.logger = logger
+	gs := newGossipSub(logger, testChainID, testVersion)
 
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	gs.RegisterEventHandler(testTopic2, func(event *Event) {}, nil)
@@ -125,7 +124,7 @@ func TestGossipSub_RegisterEventHandler(t *testing.T) {
 		return ValidationAccept
 	}
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(log.DefaultLogger, testChainID, testVersion)
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
 
@@ -161,8 +160,8 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
-	gs := newGossipSub(testChainID, testVersion)
-	gs.start(ctx, wg, logger, p, sk, cfg)
+	gs := newGossipSub(logger, testChainID, testVersion)
+	gs.start(ctx, wg, p, sk, cfg)
 
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.NotNil(err)
@@ -187,7 +186,7 @@ func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
 		return ValidationAccept
 	}
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(log.DefaultLogger, testChainID, testVersion)
 
 	err := gs.RegisterEventHandler(testEvent, testHandler, testValidator)
 	assert.Nil(err)
@@ -216,10 +215,10 @@ func TestGossipSub_Publish(t *testing.T) {
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(logger, testChainID, testVersion)
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, testMV)
 
-	gs.start(ctx, wg, logger, p, sk, cfg)
+	gs.start(ctx, wg, p, sk, cfg)
 
 	err := gs.Publish(ctx, testTopic1, testMessageData)
 	assert.Nil(err)
@@ -236,7 +235,7 @@ func TestGossipSub_Publish(t *testing.T) {
 func TestGossipSub_PublishTopicNotFound(t *testing.T) {
 	assert := assert.New(t)
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(log.DefaultLogger, testChainID, testVersion)
 
 	err := gs.Publish(context.Background(), testTopic1, testMessageData)
 	assert.Equal(err, ErrTopicNotFound)
@@ -255,10 +254,10 @@ func TestGossipSub_BelowMinimumNumberOfConnections(t *testing.T) {
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	sk := newScoreKeeper()
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(logger, testChainID, testVersion)
 	gs.RegisterEventHandler(testTopic1, func(event *Event) {}, testMV)
 
-	gs.start(ctx, wg, logger, p, sk, cfg)
+	gs.start(ctx, wg, p, sk, cfg)
 
 	// Create two new peers
 	cfg1 := Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}

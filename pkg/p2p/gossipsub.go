@@ -40,8 +40,9 @@ type GossipSub struct {
 }
 
 // newGossipSub makes a new GossipSub struct.
-func newGossipSub(chainID []byte, version string) *GossipSub {
+func newGossipSub(logger log.Logger, chainID []byte, version string) *GossipSub {
 	return &GossipSub{
+		logger:            logger,
 		topics:            make(map[string]*pubsub.Topic),
 		subscriptions:     make(map[string]*pubsub.Subscription),
 		eventHandlers:     make(map[string]EventHandler),
@@ -60,7 +61,6 @@ func getMessageID(m *pubsub_pb.Message) string {
 // start starts a GossipSub based on input parameters.
 func (gs *GossipSub) start(ctx context.Context,
 	wg *sync.WaitGroup,
-	logger log.Logger,
 	p *Peer,
 	sk *scoreKeeper,
 	cfg *Config,
@@ -183,7 +183,6 @@ func (gs *GossipSub) start(ctx context.Context,
 		return err
 	}
 
-	gs.logger = logger
 	gs.peer = p
 	gs.ps = gossipSub
 

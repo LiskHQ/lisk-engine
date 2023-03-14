@@ -71,6 +71,11 @@ func (e *Engine) Start() error {
 	e.cancel = cancel
 	defer e.cancel()
 
+	logger, err := log.NewDefaultProductionLogger()
+	if err != nil {
+		return err
+	}
+	e.logger = logger
 	if err := e.init(); err != nil {
 		return err
 	}
@@ -79,11 +84,6 @@ func (e *Engine) Start() error {
 	if err != nil {
 		return err
 	}
-	logger, err := log.NewDefaultProductionLogger()
-	if err != nil {
-		return err
-	}
-	e.logger = logger
 	e.logger.Infof("Starting application with data-path %s", dataPath)
 	blockchainDB, err := db.NewDB(filepath.Join(dataPath, "data", "blockchain.db"))
 	if err != nil {
@@ -174,7 +174,7 @@ func (e *Engine) Start() error {
 	// start P2P
 	go func() {
 		// TODO - Update to use consistent seed in #81
-		if err := e.p2pConn.Start(e.logger, crypto.RandomBytes(16)); err != nil {
+		if err := e.p2pConn.Start(crypto.RandomBytes(16)); err != nil {
 			e.logger.Error("Fail to start connection. stopping")
 			e.Stop()
 		}
@@ -234,7 +234,7 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) init() error {
-	e.p2pConn = p2p.NewConnection(&p2p.Config{
+	e.p2pConn = p2p.NewConnection(e.logger, &p2p.Config{
 		Version:                 NetworkVersion,
 		ChainID:                 e.config.Genesis.ChainID,
 		Addresses:               e.config.Network.Addresses,

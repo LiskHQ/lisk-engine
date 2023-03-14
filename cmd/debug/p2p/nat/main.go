@@ -44,7 +44,7 @@ func main() {
 		ChainID:                 []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
-	conn := p2p.NewConnection(&cfg)
+	conn := p2p.NewConnection(logger, &cfg)
 
 	for _, topic := range Topics {
 		err = conn.RegisterEventHandler(topic, func(event *p2p.Event) {
@@ -93,7 +93,7 @@ func main() {
 		panic(err)
 	}
 
-	err = conn.Start(logger, crypto.RandomBytes(32))
+	err = conn.Start(crypto.RandomBytes(32))
 	if err != nil {
 		panic(err)
 	}
