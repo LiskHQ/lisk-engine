@@ -41,20 +41,14 @@ func newStateBatch(batch *db.Batch) *stateSMTBatch {
 	}
 }
 
-func (b *stateSMTBatch) Set(key, value []byte) error {
-	if err := b.batch.Set(key, value); err != nil {
-		return err
-	}
+func (b *stateSMTBatch) Set(key, value []byte) {
+	b.batch.Set(key, value)
 	b.keys = append(b.keys, getTreeKey(key))
 	b.values = append(b.values, crypto.Hash(value))
-	return nil
 }
 
-func (b *stateSMTBatch) Del(key []byte) error {
-	if err := b.batch.Del(key); err != nil {
-		return err
-	}
+func (b *stateSMTBatch) Del(key []byte) {
+	b.batch.Del(key)
 	b.keys = append(b.keys, getTreeKey(key))
 	b.values = append(b.values, emptyHash)
-	return nil
 }

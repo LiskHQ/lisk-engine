@@ -8,9 +8,9 @@ import (
 )
 
 func GetDecodable(diffStore ImmutableStore, key []byte, value codec.Decodable) error {
-	resultBytes, err := diffStore.Get(key)
-	if err != nil {
-		return err
+	resultBytes, exist := diffStore.Get(key)
+	if !exist {
+		return db.ErrDataNotFound
 	}
 	if err := value.Decode(resultBytes); err != nil {
 		return err
@@ -34,8 +34,6 @@ func SetEncodable(diffStore Store, key []byte, value codec.Encodable) error {
 	if err != nil {
 		return err
 	}
-	if err := diffStore.Set(key, encodedSender); err != nil {
-		return err
-	}
+	diffStore.Set(key, encodedSender)
 	return nil
 }

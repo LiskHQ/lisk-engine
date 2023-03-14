@@ -16,12 +16,12 @@ import (
 )
 
 type DBReader interface {
-	Get(key []byte) ([]byte, error)
+	Get(key []byte) ([]byte, bool)
 }
 
 type DBWriter interface {
-	Set(key, val []byte) error
-	Del(key []byte) error
+	Set(key, val []byte)
+	Del(key []byte)
 }
 
 type DBReadWriter interface {
@@ -155,9 +155,9 @@ func (t *trie) getSubtree(db DBReader, nodeHash []byte) (*subTree, error) {
 	if len(nodeHash) == 0 || bytes.Equal(nodeHash, emptyHash) {
 		return newEmptySubTree(), nil
 	}
-	encodedValue, err := db.Get(nodeHash)
-	if err != nil {
-		return nil, err
+	encodedValue, exist := db.Get(nodeHash)
+	if !exist {
+		return nil, fmt.Errorf("key %s does not exist for sub tree", codec.Hex(nodeHash))
 	}
 	return newSubTree(encodedValue, t.keyLength, t.hasher)
 }
@@ -223,9 +223,7 @@ func (t *trie) updateSubtree(db DBReadWriter, keys, values [][]byte, currentSubt
 	}
 
 	encodedSubtree := newSubtree.encode()
-	if err := db.Set(newSubtree.root, encodedSubtree); err != nil {
-		return nil, err
-	}
+	db.Set(newSubtree.root, encodedSubtree)
 
 	return newSubtree, nil
 }
@@ -303,10 +301,7 @@ func (t *trie) updateNode(db DBReadWriter, keyBins, valueBins [][][]byte, length
 				result <- newErrUpdateNodeResult(subtreeErr)
 				return
 			}
-			if err := db.Del(currentNode.hash); err != nil {
-				result <- newErrUpdateNodeResult(err)
-				return
-			}
+			db.Del(currentNode.hash)
 		case nodeKindEmpty:
 			bottomSubTree, subtreeErr = t.getSubtree(db, currentNode.hash)
 			if subtreeErr != nil {

@@ -20,7 +20,7 @@ import (
 //go:generate go run github.com/LiskHQ/lisk-engine/pkg/codec/gen
 
 type DatabaseReader interface {
-	Get(key []byte) ([]byte, error)
+	Get(key []byte) ([]byte, bool)
 }
 
 const (

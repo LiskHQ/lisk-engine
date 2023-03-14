@@ -97,9 +97,9 @@ func (a *generatorEndpoint) HandleUpdateStatus(w router.EndpointResponseWriter, 
 		return
 	}
 	keysStore := diffdb.New(a.generatorDB, generator.GeneratorDBPrefixKeys)
-	encodedKeys, err := keysStore.Get(req.GeneratorAddress)
-	if err != nil {
-		w.Error(err)
+	encodedKeys, exist := keysStore.Get(req.GeneratorAddress)
+	if !exist {
+		w.Error(fmt.Errorf("generator %s is not stored", req.GeneratorAddress))
 		return
 	}
 	keys := &generator.Keys{}
@@ -132,12 +132,10 @@ func (a *generatorEndpoint) HandleUpdateStatus(w router.EndpointResponseWriter, 
 
 	if !req.Enable {
 		a.generator.DisableGeneration(req.GeneratorAddress)
-		if err := w.Write(&UpdateStatusResponse{
+		w.Write(&UpdateStatusResponse{
 			Address: req.GeneratorAddress,
 			Enabled: false,
-		}); err != nil {
-			w.Error(err)
-		}
+		})
 		return
 	}
 	lastBlock := a.chain.LastBlock()
@@ -156,32 +154,20 @@ func (a *generatorEndpoint) HandleUpdateStatus(w router.EndpointResponseWriter, 
 		return
 	}
 	batch := a.generatorDB.NewBatch()
-	if _, err := geneInfoStore.Commit(batch); err != nil {
-		w.Error(fmt.Errorf("failed to enable block generation with %w", err))
-		return
-	}
-	if err := a.generatorDB.Write(batch); err != nil {
-		w.Error(fmt.Errorf("failed to enable block generation with %w", err))
-		return
-	}
+	geneInfoStore.Commit(batch)
+	a.generatorDB.Write(batch)
 
 	a.generator.EnableGeneration(req.GeneratorAddress, plainKeys)
-	if err := w.Write(&UpdateStatusResponse{
+	w.Write(&UpdateStatusResponse{
 		Address: req.GeneratorAddress,
 		Enabled: true,
-	}); err != nil {
-		w.Error(err)
-		return
-	}
+	})
 }
 
 func (a *generatorEndpoint) HandleGetStatus(w router.EndpointResponseWriter, r *router.EndpointRequest) {
 	generatorInfoStore := diffdb.New(a.generatorDB, generator.GeneratorDBPrefixGeneratedInfo)
-	encodedGeneratorInfoList, err := generatorInfoStore.Iterate([]byte{}, -1, false)
-	if err != nil {
-		w.Error(err)
-		return
-	}
+	encodedGeneratorInfoList := generatorInfoStore.Iterate([]byte{}, -1, false)
+
 	status := make([]*GeneratorStatus, len(encodedGeneratorInfoList))
 	for i, encodedGeneratorInfo := range encodedGeneratorInfoList {
 		generatorInfo := &generator.GeneratorInfo{}
@@ -197,12 +183,9 @@ func (a *generatorEndpoint) HandleGetStatus(w router.EndpointResponseWriter, r *
 			MaxHeightPrevoted:  generatorInfo.MaxHeightPrevoted,
 		}
 	}
-	if err := w.Write(&GetGeneratorsResponse{
+	w.Write(&GetGeneratorsResponse{
 		Status: status,
-	}); err != nil {
-		w.Error(err)
-		return
-	}
+	})
 }
 
 func (a *generatorEndpoint) verifyAndUpdateGeneratorInfo(generatorInfoStore *diffdb.Database, generatorAddress []byte, height, maxHeightPrevoted, maxHeightGenerated uint32) error {
@@ -211,10 +194,8 @@ func (a *generatorEndpoint) verifyAndUpdateGeneratorInfo(generatorInfoStore *dif
 		MaxHeightPrevoted:  maxHeightPrevoted,
 		MaxHeightGenerated: maxHeightGenerated,
 	}
-	encodedInfo, err := generatorInfoStore.Get(generatorAddress)
-	if err != nil && !errors.Is(err, db.ErrDataNotFound) {
-		return err
-	}
+	encodedInfo, _ := generatorInfoStore.Get(generatorAddress)
+
 	if len(encodedInfo) != 0 {
 		previousGeneratorInfo := &generator.GeneratorInfo{}
 		if err := previousGeneratorInfo.Decode(encodedInfo); err != nil {
@@ -230,9 +211,7 @@ func (a *generatorEndpoint) verifyAndUpdateGeneratorInfo(generatorInfoStore *dif
 	if err != nil {
 		return err
 	}
-	if err := generatorInfoStore.Set(generatorAddress, encodedGeneratorInfo); err != nil {
-		return err
-	}
+	generatorInfoStore.Set(generatorAddress, encodedGeneratorInfo)
 	return nil
 }
 
@@ -262,23 +241,11 @@ func (a *generatorEndpoint) HandleSetStatus(w router.EndpointResponseWriter, r *
 		w.Error(err)
 		return
 	}
-	if err := generatorInfoStore.Set(req.Address, encodedGeneratorInfo); err != nil {
-		w.Error(err)
-		return
-	}
+	generatorInfoStore.Set(req.Address, encodedGeneratorInfo)
 	batch := a.generatorDB.NewBatch()
-	if _, err := generatorInfoStore.Commit(batch); err != nil {
-		w.Error(fmt.Errorf("failed to write generator info with %w", err))
-		return
-	}
-	if err := a.generatorDB.Write(batch); err != nil {
-		w.Error(fmt.Errorf("failed to write generator info with %w", err))
-		return
-	}
-	if err := w.Write(&SetStatusResponse{}); err != nil {
-		w.Error(err)
-		return
-	}
+	generatorInfoStore.Commit(batch)
+	a.generatorDB.Write(batch)
+	w.Write(&SetStatusResponse{})
 }
 
 type EstimateSafeStatusRequest struct {
@@ -322,14 +289,11 @@ func (a *generatorEndpoint) HandleEstimateSafeStatus(w router.EndpointResponseWr
 	}
 	missedBlocks := ((finalizedBlock.Timestamp - blockHeaderLastMonth.Timestamp) / a.config.Genesis.BlockTime) - (finalizedBlock.Height - blockHeaderLastMonth.Height)
 	safeGeneratedHeight := finalizedHeight + missedBlocks
-	if err := w.Write(&EstimateSafeStatusResponse{
+	w.Write(&EstimateSafeStatusResponse{
 		Height:             safeGeneratedHeight,
 		MaxHeightPrevoted:  safeGeneratedHeight,
 		MaxHeightGenerated: safeGeneratedHeight,
-	}); err != nil {
-		w.Error(err)
-		return
-	}
+	})
 }
 
 type GetAllKeysResponseKey struct {
@@ -344,11 +308,8 @@ type GetAllKeysResponse struct {
 
 func (a *generatorEndpoint) HandleGetAllKeys(w router.EndpointResponseWriter, r *router.EndpointRequest) {
 	keysStore := diffdb.New(a.generatorDB, generator.GeneratorDBPrefixKeys)
-	encodedKeysList, err := keysStore.Iterate([]byte{}, -1, false)
-	if err != nil {
-		w.Error(err)
-		return
-	}
+	encodedKeysList := keysStore.Iterate([]byte{}, -1, false)
+
 	resp := &GetAllKeysResponse{
 		Keys: []GetAllKeysResponseKey{},
 	}
@@ -382,10 +343,7 @@ func (a *generatorEndpoint) HandleGetAllKeys(w router.EndpointResponseWriter, r 
 			Data:    encryptedMsg,
 		})
 	}
-	if err := w.Write(resp); err != nil {
-		w.Error(err)
-		return
-	}
+	w.Write(resp)
 }
 
 type HasKeysRequest struct {
@@ -402,20 +360,13 @@ func (a *generatorEndpoint) HandleHasKeys(w router.EndpointResponseWriter, r *ro
 		return
 	}
 	keysStore := diffdb.New(a.generatorDB, generator.GeneratorDBPrefixKeys)
-	if _, err := keysStore.Get(req.Address); err != nil {
-		if !errors.Is(err, db.ErrDataNotFound) {
-			w.Error(err)
-			return
-		}
-		if err := w.Write(&HasKeysResponse{HasKeys: false}); err != nil {
-			w.Error(err)
-			return
-		}
-	}
-	if err := w.Write(&HasKeysResponse{HasKeys: true}); err != nil {
-		w.Error(err)
+	_, exist := keysStore.Get(req.Address)
+	if !exist {
+		w.Write(&HasKeysResponse{HasKeys: false})
 		return
 	}
+
+	w.Write(&HasKeysResponse{HasKeys: true})
 }
 
 type SetKeysRequest struct {
@@ -472,21 +423,9 @@ func (a *generatorEndpoint) HandleSetKeys(w router.EndpointResponseWriter, r *ro
 		w.Error(err)
 		return
 	}
-	if err := keysStore.Set(req.Address, encodedKeys); err != nil {
-		w.Error(err)
-		return
-	}
+	keysStore.Set(req.Address, encodedKeys)
 	batch := a.generatorDB.NewBatch()
-	if _, err := keysStore.Commit(batch); err != nil {
-		w.Error(err)
-		return
-	}
-	if err := a.generatorDB.Write(batch); err != nil {
-		w.Error(err)
-		return
-	}
-	if err := w.Write(&SetKeysResponse{}); err != nil {
-		w.Error(err)
-		return
-	}
+	keysStore.Commit(batch)
+	a.generatorDB.Write(batch)
+	w.Write(&SetKeysResponse{})
 }

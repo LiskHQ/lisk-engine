@@ -29,16 +29,16 @@ func NewWithPrefix(database *db.DB, batch *db.Batch, prefix []byte) *Database {
 	}
 }
 
-func (b *Database) Get(key []byte) ([]byte, error) {
+func (b *Database) Get(key []byte) ([]byte, bool) {
 	return b.database.Get(b.prefixedKey(key))
 }
 
-func (b *Database) Set(key, value []byte) error {
-	return b.batch.Set(b.prefixedKey(key), value)
+func (b *Database) Set(key, value []byte) {
+	b.batch.Set(b.prefixedKey(key), value)
 }
 
-func (b *Database) Del(key []byte) error {
-	return b.batch.Del(b.prefixedKey(key))
+func (b *Database) Del(key []byte) {
+	b.batch.Del(b.prefixedKey(key))
 }
 
 func (b *Database) prefixedKey(key []byte) []byte {

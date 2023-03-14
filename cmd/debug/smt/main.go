@@ -59,9 +59,7 @@ func main() {
 		if root, err = tree.Update(batchDB, keys, values); err != nil {
 			panic(err)
 		}
-		if err := database.Write(batch); err != nil {
-			panic(err)
-		}
+		database.Write(batch)
 		count += dataSize
 
 		fmt.Printf("Current count %d: %s \n", count, time.Since(now))

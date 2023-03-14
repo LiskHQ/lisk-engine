@@ -169,9 +169,9 @@ func (d *DataAccess) GetBlockHeaderByHeight(height uint32) (*BlockHeader, error)
 		return cachedBlock.Header, nil
 	}
 	heightBytes := bytes.FromUint32(height)
-	id, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), heightBytes))
-	if err != nil {
-		return nil, err
+	id, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), heightBytes))
+	if !exist {
+		return nil, db.ErrDataNotFound
 	}
 	return d.getBlockHeader(id)
 }
@@ -210,9 +210,9 @@ func (d *DataAccess) GetBlockByHeight(height uint32) (*Block, error) {
 		return cachedBlock, nil
 	}
 	heightBytes := bytes.FromUint32(height)
-	id, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), heightBytes))
-	if err != nil {
-		return nil, err
+	id, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), heightBytes))
+	if !exist {
+		return nil, db.ErrDataNotFound
 	}
 	return d.getBlock(id)
 }
@@ -281,10 +281,7 @@ func (d *DataAccess) GetTransactions(ids [][]byte) ([]*Transaction, error) {
 
 // GetTempBlocks returns all temp block exisst.
 func (d *DataAccess) GetTempBlocks() ([]*Block, error) {
-	tempBlocks, err := d.database.Iterate(DBPrefixToBytes(dbPrefixTemp), -1, true)
-	if err != nil {
-		return nil, err
-	}
+	tempBlocks := d.database.Iterate(DBPrefixToBytes(dbPrefixTemp), -1, true)
 	if len(tempBlocks) == 0 {
 		return []*Block{}, nil
 	}
@@ -300,27 +297,23 @@ func (d *DataAccess) GetTempBlocks() ([]*Block, error) {
 }
 
 // ClearTempBlocks removes all temp blocks.
-func (d *DataAccess) ClearTempBlocks() error {
-	tempBlockKeys, err := d.database.Iterate(DBPrefixToBytes(dbPrefixTemp), -1, true)
-	if err != nil {
-		return err
-	}
+func (d *DataAccess) ClearTempBlocks() {
+	tempBlockKeys := d.database.Iterate(DBPrefixToBytes(dbPrefixTemp), -1, true)
+
 	if len(tempBlockKeys) == 0 {
-		return nil
+		return
 	}
 	batch := d.database.NewBatch()
 	for _, data := range tempBlockKeys {
-		if err := batch.Del(data.Key()); err != nil {
-			return err
-		}
+		batch.Del(data.Key())
 	}
-	return d.database.Write(batch)
+	d.database.Write(batch)
 }
 
 func (d *DataAccess) GetEvents(height uint32) ([]*Event, error) {
-	encodedEvents, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), bytes.FromUint32(height)))
-	if err != nil {
-		return nil, err
+	encodedEvents, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), bytes.FromUint32(height)))
+	if !exist {
+		return nil, db.ErrDataNotFound
 	}
 	events, err := bytesToEvents(encodedEvents)
 	if err != nil {
@@ -333,9 +326,9 @@ func (d *DataAccess) GetEvents(height uint32) ([]*Event, error) {
 }
 
 func (d *DataAccess) GetFinalizedHeight() (uint32, error) {
-	finalizedHeightByte, err := d.database.Get(DBPrefixToBytes(dbPrefixFinalizedHeight))
-	if err != nil {
-		return 0, err
+	finalizedHeightByte, exist := d.database.Get(DBPrefixToBytes(dbPrefixFinalizedHeight))
+	if !exist {
+		return 0, db.ErrDataNotFound
 	}
 	return bytes.ToUint32(finalizedHeightByte), nil
 }
@@ -362,9 +355,9 @@ func (d *DataAccess) getBlock(id []byte) (*Block, error) {
 }
 
 func (d *DataAccess) getBlockHeader(id []byte) (*BlockHeader, error) {
-	headerBytes, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), id))
-	if err != nil {
-		return nil, err
+	headerBytes, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), id))
+	if !exist {
+		return nil, db.ErrDataNotFound
 	}
 	header := &BlockHeader{
 		ID: crypto.Hash(headerBytes),
@@ -376,13 +369,11 @@ func (d *DataAccess) getBlockHeader(id []byte) (*BlockHeader, error) {
 }
 
 func (d *DataAccess) getTransactions(blockID []byte) ([]*Transaction, error) {
-	txIDs, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), blockID))
-	if err != nil {
-		if errors.Is(err, db.ErrDataNotFound) {
-			return []*Transaction{}, nil
-		}
-		return nil, err
+	txIDs, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), blockID))
+	if !exist {
+		return []*Transaction{}, nil
 	}
+
 	resultSize := len(txIDs)
 	size := resultSize / idSize
 	txs := make([]*Transaction, size)
@@ -407,20 +398,17 @@ func (d *DataAccess) getTransactions(blockID []byte) ([]*Transaction, error) {
 }
 
 func (d *DataAccess) getBlockAssets(blockID []byte) (BlockAssets, error) {
-	assets, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), blockID))
-	if err != nil {
-		if errors.Is(err, db.ErrDataNotFound) {
-			return BlockAssets{}, nil
-		}
-		return nil, err
+	assets, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), blockID))
+	if !exist {
+		return BlockAssets{}, nil
 	}
 	return bytesToAssets(assets)
 }
 
 func (d *DataAccess) getTransaction(id []byte) (*Transaction, error) {
-	txBytes, err := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), id))
-	if err != nil {
-		return nil, err
+	txBytes, exist := d.database.Get(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), id))
+	if !exist {
+		return nil, db.ErrDataNotFound
 	}
 	tx, err := NewTransaction(txBytes)
 	if err != nil {
@@ -433,10 +421,7 @@ func (d *DataAccess) getTransaction(id []byte) (*Transaction, error) {
 }
 
 func (d *DataAccess) getLastBlock() (*Block, error) {
-	ids, err := d.database.Iterate(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), 1, true)
-	if err != nil {
-		return nil, err
-	}
+	ids := d.database.Iterate(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), 1, true)
 	if len(ids) == 0 {
 		return nil, db.ErrDataNotFound
 	}
@@ -449,12 +434,8 @@ func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, f
 	if err != nil {
 		return err
 	}
-	if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block.Header.ID), encodedBlockHeader); err != nil {
-		return err
-	}
-	if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), height), block.Header.ID); err != nil {
-		return err
-	}
+	batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block.Header.ID), encodedBlockHeader)
+	batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), height), block.Header.ID)
 	if len(block.Transactions) > 0 {
 		idsBytes := make([][]byte, len(block.Transactions))
 		for i, tx := range block.Transactions {
@@ -462,43 +443,33 @@ func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, f
 			if err != nil {
 				return err
 			}
-			if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), tx.ID), encodedTx); err != nil {
-				return err
-			}
+			batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), tx.ID), encodedTx)
 			idsBytes[i] = tx.ID
 		}
-		if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), block.Header.ID), bytes.Join(idsBytes...)); err != nil {
-			return err
-		}
+		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), block.Header.ID), bytes.Join(idsBytes...))
 	}
 	if len(events) > 0 {
 		eventBytes, err := encodableListToBytes(events)
 		if err != nil {
 			return err
 		}
-		if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), height), eventBytes); err != nil {
-			return err
-		}
+		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), height), eventBytes)
 	}
 	if len(block.Assets) > 0 {
 		assetBytes, err := encodableListToBytes(block.Assets)
 		if err != nil {
 			return err
 		}
-		if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), block.Header.ID), assetBytes); err != nil {
-			return err
-		}
+		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), block.Header.ID), assetBytes)
 	}
-	if err := batch.Set(DBPrefixToBytes(dbPrefixFinalizedHeight), bytes.FromUint32(finalizedHeight)); err != nil {
-		return err
-	}
+	batch.Set(DBPrefixToBytes(dbPrefixFinalizedHeight), bytes.FromUint32(finalizedHeight))
 	if d.keepEventsForHeights > -1 {
 		minEventDeleteHeight := ints.Min(
 			int(finalizedHeight),
 			ints.Max(0, int(block.Header.Height)-d.keepEventsForHeights),
 		)
 		if minEventDeleteHeight > 0 {
-			kvs, err := d.database.IterateRange(
+			kvs := d.database.IterateRange(
 				bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), bytes.FromUint32(0)),
 				bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), bytes.FromUint32(uint32(minEventDeleteHeight))),
 				-1, false,
@@ -507,16 +478,12 @@ func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, f
 				return err
 			}
 			for _, kv := range kvs {
-				if err := batch.Del(kv.Key()); err != nil {
-					return err
-				}
+				batch.Del(kv.Key())
 			}
 		}
 	}
 	if removeTemp {
-		if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixTemp), height)); err != nil {
-			return err
-		}
+		batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixTemp), height))
 	}
 	return nil
 }
@@ -527,34 +494,20 @@ func (d *DataAccess) removeBlock(batch *db.Batch, block *Block, saveTemp bool) e
 	if err != nil {
 		return err
 	}
-	if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block.Header.ID)); err != nil {
-		return err
-	}
-	if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), height)); err != nil {
-		return err
-	}
+	batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block.Header.ID))
+	batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), height))
 	if len(block.Transactions) > 0 {
 		for _, tx := range block.Transactions {
-			if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), tx.ID)); err != nil {
-				return err
-			}
+			batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), tx.ID))
 		}
-		if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), block.Header.ID)); err != nil {
-			return err
-		}
+		batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), block.Header.ID))
 	}
 	if len(block.Assets) > 0 {
-		if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), block.Header.ID)); err != nil {
-			return err
-		}
+		batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), block.Header.ID))
 	}
-	if err := batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), height)); err != nil {
-		return err
-	}
+	batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), height))
 	if saveTemp {
-		if err := batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixTemp), height), encodedBlock); err != nil {
-			return err
-		}
+		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixTemp), height), encodedBlock)
 	}
 	return nil
 }

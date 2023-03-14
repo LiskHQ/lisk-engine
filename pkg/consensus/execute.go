@@ -403,13 +403,9 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 		return err
 	}
 	batch := c.database.NewBatch()
-	diff, err := consensusStore.Commit(batch)
-	if err != nil {
-		return err
-	}
-	if err := batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(block.Header.Height)), diff.MustEncode()); err != nil {
-		return err
-	}
+	diff := consensusStore.Commit(batch)
+
+	batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(block.Header.Height)), diff.MustEncode())
 
 	// Save to DB
 	if err := abi.Commit(c.chain.LastBlock().Header.StateRoot, block.Header.StateRoot); err != nil {
@@ -422,17 +418,13 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 		nextFinalizedHeight = maxHeightPrecommited
 		finalizedHeightUpdated = true
 		// Delete finalized diff
-		keys, err := c.database.IterateKey(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), -1, false)
-		if err != nil {
-			return err
-		}
+		keys := c.database.IterateKey(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), -1, false)
+
 		for _, key := range keys {
 			heightByte := key[1:]
 			height := bytes.ToUint32(heightByte)
 			if height < maxHeightPrecommited {
-				if err := batch.Del(key); err != nil {
-					return err
-				}
+				batch.Del(key)
 			}
 		}
 	}
@@ -491,13 +483,9 @@ func (c *Executer) processGenesisBlock(ctx *ProcessContext) error {
 	if !bytes.Equal(calculatedEventRoot, ctx.block.Header.EventRoot) {
 		return fmt.Errorf("invalid event root. Event root %s does not match with calculated %s", ctx.block.Header.EventRoot, codec.Hex(calculatedEventRoot))
 	}
-	diff, err := consensusStore.Commit(batch)
-	if err != nil {
-		return err
-	}
-	if err := batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(ctx.block.Header.Height)), diff.MustEncode()); err != nil {
-		return err
-	}
+	diff := consensusStore.Commit(batch)
+
+	batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(ctx.block.Header.Height)), diff.MustEncode())
 	if err := abi.Commit(ctx.block.Header.StateRoot); err != nil {
 		return err
 	}
@@ -528,21 +516,17 @@ func (c *Executer) deleteBlock(ctx context.Context, deletingBlock *blockchain.Bl
 
 	c.logger.Debugf("Deleting block %d", deletingBlock.Header.Height)
 	diffKey := bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(deletingBlock.Header.Height))
-	diffBytes, err := c.database.Get(diffKey)
-	if err != nil {
-		return err
+	diffBytes, exist := c.database.Get(diffKey)
+	if !exist {
+		return fmt.Errorf("database key for diff stored with height %d does not exist", deletingBlock.Header.Height)
 	}
 	diff := &diffdb.Diff{}
 	if err := diff.Decode(diffBytes); err != nil {
 		return err
 	}
 	batch := c.database.NewBatch()
-	if err := diffStore.RevertDiff(batch, diff); err != nil {
-		return err
-	}
-	if err := batch.Del(diffKey); err != nil {
-		return err
-	}
+	diffStore.RevertDiff(batch, diff)
+	batch.Del(diffKey)
 	if err := abi.Revert(secondLastBlock.StateRoot); err != nil {
 		return err
 	}

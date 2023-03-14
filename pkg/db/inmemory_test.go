@@ -10,14 +10,11 @@ func TestInmemoryDB(t *testing.T) {
 	db, err := NewInMemoryDB()
 	assert.NoError(t, err)
 	for _, kv := range testData {
-		err := db.Set(kv.Key, kv.Value)
-		assert.NoError(t, err)
+		db.Set(kv.Key, kv.Value)
 	}
 
-	err = db.Del(testData[0].Key)
-	assert.NoError(t, err)
+	db.Del(testData[0].Key)
 
-	exist, err := db.Exist(testData[0].Key)
-	assert.NoError(t, err)
+	exist := db.Exist(testData[0].Key)
 	assert.False(t, exist)
 }

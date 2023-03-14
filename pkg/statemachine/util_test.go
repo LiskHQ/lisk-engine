@@ -50,7 +50,6 @@ func TestUtilEncode(t *testing.T) {
 	err := SetEncodable(diffStore, []byte("key"), &testObj{})
 	assert.NoError(t, err)
 
-	exist, err := diffStore.Has([]byte("key"))
-	assert.NoError(t, err)
+	exist := diffStore.Has([]byte("key"))
 	assert.True(t, exist)
 }

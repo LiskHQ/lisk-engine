@@ -93,9 +93,7 @@ func (c *Chain) AddBlock(batch *db.Batch, block *Block, events []*Event, finaliz
 	if err := c.dataAccess.saveBlock(batch, block, events, finalizedHeight, removeTemp); err != nil {
 		return err
 	}
-	if err := c.database.Write(batch); err != nil {
-		return err
-	}
+	c.database.Write(batch)
 	return c.dataAccess.Cache(block)
 }
 
@@ -108,9 +106,7 @@ func (c *Chain) RemoveBlock(batch *db.Batch, saveTemp bool) error {
 	if err := c.dataAccess.removeBlock(batch, lastBlock, saveTemp); err != nil {
 		return err
 	}
-	if err := c.database.Write(batch); err != nil {
-		return err
-	}
+	c.database.Write(batch)
 	c.dataAccess.RemoveCache()
 	return nil
 }

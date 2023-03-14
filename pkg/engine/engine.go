@@ -137,10 +137,7 @@ func (e *Engine) Start() error {
 			w.Error(err)
 			return
 		}
-		if err := w.Write(resp); err != nil {
-			w.Error(err)
-			return
-		}
+		w.Write(resp)
 	})
 	if _, err := e.abi.Clear(&labi.ClearRequest{}); err != nil {
 		return err

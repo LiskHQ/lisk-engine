@@ -45,9 +45,7 @@ func (a *SetData) Execute(ctx *statemachine.TransactionExecuteContext) error {
 		if params.Hash {
 			value = crypto.Hash(value)
 		}
-		if err := validatorStore.Set(pair.Key, value); err != nil {
-			return err
-		}
+		validatorStore.Set(pair.Key, value)
 		if err := ctx.EventQueue().Add("mock", "setdata", pair.Value, []codec.Hex{pair.Key}); err != nil {
 			return err
 		}

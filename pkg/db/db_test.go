@@ -16,12 +16,12 @@ func randomTempDir() string {
 }
 
 type dbInterface interface {
-	Get(key []byte) ([]byte, error)
-	Set(key, value []byte) error
-	Exist(key []byte) (bool, error)
-	Iterate(prefix []byte, limit int, reverse bool) ([]KeyValue, error)
-	IterateKey(prefix []byte, limit int, reverse bool) ([][]byte, error)
-	IterateRange(start, end []byte, limit int, reverse bool) ([]KeyValue, error)
+	Get(key []byte) ([]byte, bool)
+	Set(key, value []byte)
+	Exist(key []byte) bool
+	Iterate(prefix []byte, limit int, reverse bool) []KeyValue
+	IterateKey(prefix []byte, limit int, reverse bool) [][]byte
+	IterateRange(start, end []byte, limit int, reverse bool) []KeyValue
 	NewReader() *Reader
 }
 
@@ -62,59 +62,49 @@ func TestDB(t *testing.T) {
 
 	for _, dbi := range interfaces {
 		for _, kv := range testData {
-			err = dbi.Set(kv.Key, kv.Value)
-			assert.NoError(t, err)
+			dbi.Set(kv.Key, kv.Value)
 		}
 
-		fetched, err := dbi.Get(testData[0].Key)
-		assert.NoError(t, err)
+		fetched, exist := dbi.Get(testData[0].Key)
+		assert.True(t, exist)
 		assert.Equal(t, testData[0].Value, fetched)
 
-		exist, err := dbi.Exist(testData[0].Key)
-		assert.NoError(t, err)
+		exist = dbi.Exist(testData[0].Key)
 		assert.Equal(t, true, exist)
 
-		exist, err = dbi.Exist(crypto.RandomBytes(5))
-		assert.NoError(t, err)
+		exist = dbi.Exist(crypto.RandomBytes(5))
 		assert.Equal(t, false, exist)
 
-		result, err := dbi.Iterate([]byte{0}, 1, false)
-		assert.NoError(t, err)
+		result := dbi.Iterate([]byte{0}, 1, false)
 		assert.Len(t, result, 1)
 		assert.Equal(t, testData[0].Key, result[0].Key())
 		assert.Equal(t, testData[0].Value, result[0].Value())
 
-		result, err = dbi.Iterate([]byte{0}, 1, true)
-		assert.NoError(t, err)
+		result = dbi.Iterate([]byte{0}, 1, true)
 		assert.Len(t, result, 1)
 		assert.Equal(t, testData[1].Key, result[0].Key())
 		assert.Equal(t, testData[1].Value, result[0].Value())
 
-		result, err = dbi.Iterate([]byte{0}, -1, true)
-		assert.NoError(t, err)
+		result = dbi.Iterate([]byte{0}, -1, true)
 		assert.Len(t, result, 2)
 		assert.Equal(t, testData[1].Key, result[0].Key())
 		assert.Equal(t, testData[1].Value, result[0].Value())
 
-		result, err = dbi.IterateRange([]byte{0, 1}, []byte{1, 1}, -1, false)
-		assert.NoError(t, err)
+		result = dbi.IterateRange([]byte{0, 1}, []byte{1, 1}, -1, false)
 		assert.Len(t, result, 3)
 		assert.Equal(t, testData[1].Key, result[0].Key())
 		assert.Equal(t, testData[1].Value, result[0].Value())
 
-		result, err = dbi.IterateRange([]byte{0, 1}, []byte{1, 1}, 2, true)
-		assert.NoError(t, err)
+		result = dbi.IterateRange([]byte{0, 1}, []byte{1, 1}, 2, true)
 		assert.Len(t, result, 2)
 		assert.Equal(t, testData[3].Key, result[0].Key())
 		assert.Equal(t, testData[3].Value, result[0].Value())
 
-		keys, err := dbi.IterateKey([]byte{0}, -1, true)
-		assert.NoError(t, err)
+		keys := dbi.IterateKey([]byte{0}, -1, true)
 		assert.Len(t, keys, 2)
 		assert.Equal(t, testData[1].Key, keys[0])
 
-		keys, err = dbi.IterateKey([]byte{0}, 1, false)
-		assert.NoError(t, err)
+		keys = dbi.IterateKey([]byte{0}, 1, false)
 		assert.Len(t, keys, 1)
 		assert.Equal(t, testData[0].Key, keys[0])
 	}

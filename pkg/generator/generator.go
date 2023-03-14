@@ -5,7 +5,6 @@ import (
 	"container/heap"
 	"context"
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -243,19 +242,10 @@ func (g *Generator) forge() {
 	}
 	encodedPreviousInfo := previousInfo.MustEncode()
 	previousInfoStore := generatorDB.WithPrefix(GeneratorDBPrefixGeneratedInfo)
-	if err := previousInfoStore.Set(signedBlock.Header.GeneratorAddress, encodedPreviousInfo); err != nil {
-		g.logger.Errorf("Fail to set value with %w", err)
-		return
-	}
+	previousInfoStore.Set(signedBlock.Header.GeneratorAddress, encodedPreviousInfo)
 	batch := g.generatorDB.NewBatch()
-	if _, err := generatorDB.Commit(batch); err != nil {
-		g.logger.Errorf("Fail to commit block generation information with %v", err)
-		return
-	}
-	if err := g.generatorDB.Write(batch); err != nil {
-		g.logger.Errorf("Fail to commit block generation information with %v", err)
-		return
-	}
+	generatorDB.Commit(batch)
+	g.generatorDB.Write(batch)
 	g.logger.Infof("Generator %s forged block at height %d with %d transactions",
 		signedBlock.Header.GeneratorAddress.String(),
 		signedBlock.Header.Height,
@@ -363,9 +353,7 @@ func (g *Generator) saveGeneratorsFromFile() error {
 				Data:    rawKeys.Encrypted.MustEncode(),
 			}
 			g.logger.Infof("Saving keys for address %s", rawKeys.Address)
-			if err := keysStore.Set(rawKeys.Address, keys.MustEncode()); err != nil {
-				return err
-			}
+			keysStore.Set(rawKeys.Address, keys.MustEncode())
 			continue
 		}
 		if err := rawKeys.Plain.Validate(); err == nil {
@@ -375,29 +363,21 @@ func (g *Generator) saveGeneratorsFromFile() error {
 				Data:    rawKeys.Plain.MustEncode(),
 			}
 			g.logger.Infof("Saving keys for address %s", rawKeys.Address)
-			if err := keysStore.Set(rawKeys.Address, keys.MustEncode()); err != nil {
-				return err
-			}
+			keysStore.Set(rawKeys.Address, keys.MustEncode())
 			continue
 		}
 		g.logger.Errorf("Invalid key for %s", rawKeys.Address)
 	}
 	batch := g.generatorDB.NewBatch()
-	if _, err := keysStore.Commit(batch); err != nil {
-		return err
-	}
-	if err := g.generatorDB.Write(batch); err != nil {
-		return err
-	}
+	keysStore.Commit(batch)
+	g.generatorDB.Write(batch)
 	return nil
 }
 
 func (g *Generator) loadGenerator() error {
 	keysStore := diffdb.New(g.generatorDB, GeneratorDBPrefixKeys)
-	keysList, err := keysStore.Iterate([]byte{}, -1, false)
-	if err != nil {
-		return err
-	}
+	keysList := keysStore.Iterate([]byte{}, -1, false)
+
 	for _, encodedKeysPair := range keysList {
 		keys := &Keys{}
 		if err := keys.Decode(encodedKeysPair.Value()); err != nil {
@@ -473,11 +453,8 @@ func (g *Generator) initBlockHeader(
 	}
 	prevInfoStore := generatorDB.WithPrefix(GeneratorDBPrefixGeneratedInfo)
 	previousInfo := &GeneratorInfo{}
-	infoBytes, storeErr := prevInfoStore.Get(generatorAddress)
-	if storeErr != nil && !errors.Is(storeErr, db.ErrDataNotFound) {
-		return nil, storeErr
-	}
-	if storeErr == nil {
+	infoBytes, exist := prevInfoStore.Get(generatorAddress)
+	if exist {
 		if err := previousInfo.Decode(infoBytes); err != nil {
 			return nil, err
 		}
@@ -492,9 +469,7 @@ func (g *Generator) initBlockHeader(
 	if err != nil {
 		return nil, err
 	}
-	if err := prevInfoStore.Set(generatorAddress, encodedNextInfo); err != nil {
-		return nil, err
-	}
+	prevInfoStore.Set(generatorAddress, encodedNextInfo)
 
 	aggregateCommit, err := g.consensus.GetAggregateCommit()
 	if err != nil {

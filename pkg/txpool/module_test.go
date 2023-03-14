@@ -22,7 +22,7 @@ func (c *sampleCommand) Name() string {
 
 func (c *sampleCommand) Verify(ctx *statemachine.TransactionVerifyContext) statemachine.VerifyResult {
 	store := ctx.GetStore([]byte{0, 0, 0, 3}, []byte{0, 0})
-	errorKeyexist, _ := store.Has([]byte("error-key"))
+	errorKeyexist := store.Has([]byte("error-key"))
 	if ctx.Transaction().Nonce() == 32 && errorKeyexist {
 		return statemachine.NewVerifyResultError(errors.New("error key"))
 	}

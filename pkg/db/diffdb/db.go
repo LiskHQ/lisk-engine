@@ -2,7 +2,6 @@
 package diffdb
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -23,15 +22,15 @@ var (
 
 // DatabaseWriter interface only has put and set.
 type DatabaseWriter interface {
-	Set(key, value []byte) error
-	Del(key []byte) error
+	Set(key, value []byte)
+	Del(key []byte)
 }
 
 // DatabaseReader interface.
 type DatabaseReader interface {
-	Get(key []byte) ([]byte, error)
-	Iterate(prefix []byte, limit int, reverse bool) ([]db.KeyValue, error)
-	IterateRange(start, end []byte, limit int, reverse bool) ([]db.KeyValue, error)
+	Get(key []byte) ([]byte, bool)
+	Iterate(prefix []byte, limit int, reverse bool) []db.KeyValue
+	IterateRange(start, end []byte, limit int, reverse bool) []db.KeyValue
 }
 
 // DatabaseIterator interface.
@@ -83,49 +82,38 @@ func (s *Database) WithPrefix(prefix []byte) *Database {
 	}
 }
 
-func (s *Database) Has(key []byte) (bool, error) {
-	_, err := s.Get(key)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
+func (s *Database) Has(key []byte) bool {
+	_, exist := s.Get(key)
+	return exist
 }
 
 // Get returns value with specified key from cache or from storage.
-func (s *Database) Get(key []byte) ([]byte, error) {
+func (s *Database) Get(key []byte) ([]byte, bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	val, exist, deleted := s.cache.get(s.getKey(key))
 	if exist {
-		return bytes.Copy(val), nil
+		return bytes.Copy(val), true
 	}
 	if deleted {
-		return nil, ErrNotFound
+		return nil, false
 	}
-	val, err := s.store.Get(s.getKey(key))
-	if err != nil {
-		if errors.Is(err, db.ErrDataNotFound) {
-			return nil, ErrNotFound
-		}
-		return nil, err
+	val, exist = s.store.Get(s.getKey(key))
+	if !exist {
+		return nil, false
 	}
 	// set to cache
 	s.cache.cache(s.getKey(key), val)
-	return bytes.Copy(val), nil
+	return bytes.Copy(val), true
 }
 
-func (s *Database) Range(start, end []byte, limit int, reverse bool) ([]db.KeyValue, error) {
+func (s *Database) Range(start, end []byte, limit int, reverse bool) []db.KeyValue {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	prefixedStart := s.getKey(start)
 	prefixedEnd := s.getKey(end)
-	kv, err := s.store.IterateRange(prefixedStart, prefixedEnd, limit, reverse)
-	if err != nil {
-		return nil, err
-	}
+	kv := s.store.IterateRange(prefixedStart, prefixedEnd, limit, reverse)
+
 	storedValue := []db.KeyValue{}
 	for _, data := range kv {
 		val, exist, deleted := s.cache.get(data.Key())
@@ -142,17 +130,15 @@ func (s *Database) Range(start, end []byte, limit int, reverse bool) ([]db.KeyVa
 	}
 	cachedValue := s.cache.dataBetween(prefixedStart, prefixedEnd, s.prefixLength)
 
-	return s.mergeSortLimit(cachedValue, storedValue, reverse, limit), nil
+	return s.mergeSortLimit(cachedValue, storedValue, reverse, limit)
 }
 
-func (s *Database) Iterate(prefix []byte, limit int, reverse bool) ([]db.KeyValue, error) {
+func (s *Database) Iterate(prefix []byte, limit int, reverse bool) []db.KeyValue {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	prefixedKey := s.getKey(prefix)
-	kv, err := s.store.Iterate(prefixedKey, limit, reverse)
-	if err != nil {
-		return nil, err
-	}
+	kv := s.store.Iterate(prefixedKey, limit, reverse)
+
 	storedValue := []db.KeyValue{}
 	for _, data := range kv {
 		val, exist, deleted := s.cache.get(data.Key())
@@ -169,11 +155,11 @@ func (s *Database) Iterate(prefix []byte, limit int, reverse bool) ([]db.KeyValu
 	}
 	cachedValue := s.cache.withPrefix(prefix, s.prefixLength)
 
-	return s.mergeSortLimit(cachedValue, storedValue, reverse, limit), nil
+	return s.mergeSortLimit(cachedValue, storedValue, reverse, limit)
 }
 
 // Set the value with specified key to cache.
-func (s *Database) Set(key, value []byte) error {
+func (s *Database) Set(key, value []byte) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	prefixedKey := s.getKey(key)
@@ -181,21 +167,20 @@ func (s *Database) Set(key, value []byte) error {
 	// 2. it did exist in cache, but it was deleted => update
 	if s.cache.existAny(prefixedKey) {
 		s.cache.set(prefixedKey, value)
-		return nil
+		return
 	}
 	// 3. it does not exist in cache, but it does exist in DB => cache first and update
 	dataExist := s.ensureCache(prefixedKey)
 	if dataExist {
 		s.cache.set(prefixedKey, value)
-		return nil
+		return
 	}
 	// 4. it does not exist in cache, and it does not exist in DB => add as new
 	s.cache.add(prefixedKey, value)
-	return nil
 }
 
 // Del the key.
-func (s *Database) Del(key []byte) error {
+func (s *Database) Del(key []byte) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	prefixedKey := s.getKey(key)
@@ -205,36 +190,27 @@ func (s *Database) Del(key []byte) error {
 	}
 	// remove from cache. if the cache exist, register for deletion. if not cached, just delete from memory
 	s.cache.del(prefixedKey)
-	// if it exist in cache and DB, remove cache and register for deletion
-	return nil
 }
 
-func (s *Database) Commit(batch DatabaseWriter) (*Diff, error) {
+func (s *Database) Commit(batch DatabaseWriter) *Diff {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	// Create new child state db for state root and update here
-	diff, err := s.cache.commit(batch)
-	return diff, err
+	diff := s.cache.commit(batch)
+	return diff
 }
 
-func (s *Database) RevertDiff(batch DatabaseWriter, diff *Diff) error {
+func (s *Database) RevertDiff(batch DatabaseWriter, diff *Diff) {
 	// Revert diff
 	for _, added := range diff.Added {
-		if err := batch.Del(added); err != nil {
-			return err
-		}
+		batch.Del(added)
 	}
 	for _, deleted := range diff.Deleted {
-		if err := batch.Set(deleted.Key, deleted.Value); err != nil {
-			return err
-		}
+		batch.Set(deleted.Key, deleted.Value)
 	}
 	for _, updated := range diff.Updated {
-		if err := batch.Set(updated.Key, updated.Value); err != nil {
-			return err
-		}
+		batch.Set(updated.Key, updated.Value)
 	}
-	return nil
 }
 
 // Snapshot data and returns snapshot id.
@@ -270,8 +246,8 @@ func (s *Database) RestoreSnapshot(id int) error {
 
 // ensure if key is in DB, it is in cache also. return true if exist in cache or DB.
 func (s *Database) ensureCache(key []byte) bool {
-	val, err := s.store.Get(key)
-	if err != nil {
+	val, exist := s.store.Get(key)
+	if !exist {
 		return false
 	}
 	s.cache.cache(key, val)

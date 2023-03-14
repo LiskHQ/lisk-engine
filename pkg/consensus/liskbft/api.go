@@ -44,12 +44,9 @@ func (a *API) IsHeaderContradictingChain(context *diffdb.Database, header blockc
 
 func (a *API) ExistBFTParameters(diffStore *diffdb.Database, height uint32) (bool, error) {
 	paramsStore := diffStore.WithPrefix(dbPrefix(storePrefixBFTParams))
-	_, err := paramsStore.Get(bytes.FromUint32(height))
-	if err != nil {
-		if errors.Is(err, statemachine.ErrNotFound) {
-			return false, nil
-		}
-		return false, err
+	_, exist := paramsStore.Get(bytes.FromUint32(height))
+	if !exist {
+		return false, nil
 	}
 	return true, nil
 }
@@ -104,10 +101,8 @@ func (a *API) NextHeightBFTParameters(context *diffdb.Database, height uint32) (
 	paramsStore := context.WithPrefix(dbPrefix(storePrefixBFTParams))
 	start := bytes.FromUint32(height + 1)
 	end := bytes.FromUint32(math.MaxUint32)
-	kv, err := paramsStore.Range(start, end, 1, false)
-	if err != nil {
-		return 0, err
-	}
+	kv := paramsStore.Range(start, end, 1, false)
+
 	if len(kv) != 1 {
 		return 0, statemachine.ErrNotFound
 	}

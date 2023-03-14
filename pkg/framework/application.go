@@ -220,9 +220,7 @@ func (app *Application) GenerateGenesisBlock(height, timestamp uint32, previoudB
 	}
 	batch := stateDB.NewBatch()
 	stateBatch := newStateBatch(batch)
-	if _, err := diffStore.Commit(stateBatch); err != nil {
-		return nil, err
-	}
+	diffStore.Commit(stateBatch)
 
 	smtDB := batchdb.NewWithPrefix(stateDB, batch, StateDBPrefixTree)
 	tree := smt.NewTrie(nil, stateTreeKeySize)

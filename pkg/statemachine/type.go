@@ -29,21 +29,21 @@ type StateStore interface {
 }
 
 type Store interface {
-	Get(key []byte) ([]byte, error)
-	Has(key []byte) (bool, error)
-	Set(key, value []byte) error
-	Del(key []byte) error
-	Iterate(prefix []byte, limit int, reverse bool) ([]db.KeyValue, error)
-	Range(start, end []byte, limit int, reverse bool) ([]db.KeyValue, error)
+	Get(key []byte) ([]byte, bool)
+	Has(key []byte) bool
+	Set(key, value []byte)
+	Del(key []byte)
+	Iterate(prefix []byte, limit int, reverse bool) []db.KeyValue
+	Range(start, end []byte, limit int, reverse bool) []db.KeyValue
 	Snapshot() int
 	RestoreSnapshot(id int) error
 }
 
 type ImmutableStore interface {
-	Get(key []byte) ([]byte, error)
-	Has(key []byte) (bool, error)
-	Range(start, end []byte, limit int, reverse bool) ([]db.KeyValue, error)
-	Iterate(prefix []byte, limit int, reverse bool) ([]db.KeyValue, error)
+	Get(key []byte) ([]byte, bool)
+	Has(key []byte) bool
+	Range(start, end []byte, limit int, reverse bool) []db.KeyValue
+	Iterate(prefix []byte, limit int, reverse bool) []db.KeyValue
 }
 
 type Command interface {
