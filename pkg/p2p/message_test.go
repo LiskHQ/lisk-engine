@@ -22,9 +22,10 @@ func TestMessage_NewRequestMessage(t *testing.T) {
 func TestMessage_NewResponseMessage(t *testing.T) {
 	assert := assert.New(t)
 
-	msg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
+	msg := newResponseMessage(testReqMsgID, testProcedure, []byte(testResponseData), errors.New(testError))
 	assert.NotNil(msg)
 	assert.NotEmpty(msg.ID)
+	assert.Equal(testProcedure, msg.Procedure)
 	assert.NotEmpty(msg.Timestamp)
 	assert.Equal([]byte(testResponseData), msg.Data)
 	assert.Equal(testError, msg.Error)

@@ -133,12 +133,15 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	err := mp.RegisterRPCHandler(testRPC, testHandler)
+	assert.Nil(err)
 	mp.start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
 	mp.resCh[testReqMsgID] = ch
 
 	stream := testStream{}
-	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), errors.New(testError))
+	reqMsg := newResponseMessage(testReqMsgID, testRPC, []byte(testResponseData), errors.New(testError))
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
@@ -170,11 +173,13 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p, _ := newPeer(ctx, wg, &loggerTest, []byte{}, cfg)
 	mp := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp.RegisterRPCHandler(testProcedure, testHandler)
 	mp.start(ctx, &loggerTest, p)
 	// There is no channel for the request ID "testReqMsgID"
 
 	stream := testStream{}
-	reqMsg := newResponseMessage(testReqMsgID, []byte(testResponseData), nil)
+	reqMsg := newResponseMessage(testReqMsgID, testProcedure, []byte(testResponseData), nil)
 	data, _ := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
@@ -194,6 +199,7 @@ func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
 	assert.Nil(err)
 
 	assert.NotNil(mp.rpcHandlers[testRPC])
+	assert.NotNil(mp.rateLimit)
 
 	f1 := *(*unsafe.Pointer)(unsafe.Pointer(&testHandler))
 	handler := mp.rpcHandlers[testRPC]
@@ -258,6 +264,8 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp1.RegisterRPCHandler(testRPC, testHandler)
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
@@ -317,6 +325,8 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp1.RegisterRPCHandler(testRPC, testHandler)
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
@@ -386,9 +396,12 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp1 := newMessageProtocol(testChainID, testVersion)
+	testHandler := func(w ResponseWriter, req *Request) {}
+	mp1.RegisterRPCHandler(testProcedure, testHandler)
 	mp1.start(ctx, logger, p1)
 	p2, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
 	mp2 := newMessageProtocol(testChainID, testVersion)
+	mp2.RegisterRPCHandler(testProcedure, testHandler)
 	mp2.start(ctx, logger, p2)
 	p2Addrs, _ := p2.MultiAddress()
 	p2AddrInfo, _ := AddrInfoFromMultiAddr(p2Addrs[0])
@@ -397,7 +410,7 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	assert.Nil(err)
 	ch := make(chan *Response, 1)
 	mp2.resCh[testReqMsgID] = ch
-	err = mp1.respond(ctx, p2.ID(), testReqMsgID, []byte(testResponseData), errors.New(testError))
+	err = mp1.respond(ctx, p2.ID(), testReqMsgID, testProcedure, []byte(testResponseData), errors.New(testError))
 	assert.Nil(err)
 
 	select {

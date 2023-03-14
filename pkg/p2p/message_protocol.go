@@ -29,6 +29,8 @@ func messageProtocolResID(chainID []byte, version string) protocol.ID {
 	return protocol.ID(fmt.Sprintf("/lisk/message/res/%s/%s", codec.Hex(chainID).String(), version))
 }
 
+type RPCHandlerOption func(*MessageProtocol, string) error
+
 // MessageProtocol type.
 type MessageProtocol struct {
 	logger      log.Logger
@@ -37,6 +39,7 @@ type MessageProtocol struct {
 	resCh       map[string]chan<- *Response
 	timeout     time.Duration
 	rpcHandlers map[string]RPCHandler
+	rateLimit   *rateLimit
 	chainID     []byte
 	version     string
 }
@@ -47,6 +50,7 @@ func newMessageProtocol(chainID []byte, version string) *MessageProtocol {
 		resCh:       make(map[string]chan<- *Response),
 		timeout:     messageResponseTimeout,
 		rpcHandlers: make(map[string]RPCHandler),
+		rateLimit:   newRateLimit(),
 		chainID:     chainID,
 		version:     version,
 	}
@@ -54,7 +58,7 @@ func newMessageProtocol(chainID []byte, version string) *MessageProtocol {
 }
 
 // RegisterRPCHandler registers a new RPC handler function.
-func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) error {
+func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler, opts ...RPCHandlerOption) error {
 	if mp.peer != nil {
 		return errors.New("cannot register RPC handler after MessageProtocol is started")
 	}
@@ -62,6 +66,17 @@ func (mp *MessageProtocol) RegisterRPCHandler(name string, handler RPCHandler) e
 		return fmt.Errorf("rpcHandler %s is already registered", name)
 	}
 	mp.rpcHandlers[name] = handler
+	if err := mp.rateLimit.addRPCMessageCounter(name); err != nil {
+		return err
+	}
+
+	for _, opt := range opts {
+		err := opt(mp, name)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -89,6 +104,8 @@ func (mp *MessageProtocol) Broadcast(ctx context.Context, procedure string, data
 func (mp *MessageProtocol) start(ctx context.Context, logger log.Logger, peer *Peer) {
 	mp.logger = logger
 	mp.peer = peer
+	mp.rateLimit.start(logger, peer)
+
 	peer.host.SetStreamHandler(messageProtocolReqID(mp.chainID, mp.version), func(s network.Stream) {
 		mp.onRequest(ctx, s)
 	})
@@ -129,9 +146,18 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 		return
 	}
 	mp.logger.Debugf("%s request received", newMsg.Procedure)
+
+	// Rate limiting
+	mp.rateLimit.increaseCounter(newMsg.Procedure, remoteID)
+	err = mp.rateLimit.checkLimit(newMsg.Procedure, remoteID)
+	if err != nil {
+		mp.logger.Errorf("Rate limit error: %v", err)
+		return
+	}
+
 	w := &responseWriter{}
 	handler(w, newMsg)
-	err = mp.respond(ctx, s.Conn().RemotePeer(), newMsg.ID, w.data, w.err)
+	err = mp.respond(ctx, s.Conn().RemotePeer(), newMsg.ID, newMsg.Procedure, w.data, w.err)
 	if err != nil {
 		mp.logger.Errorf("Error sending response message: %v", err)
 		return
@@ -149,9 +175,9 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	newMsg := newResponseMessage("", nil, nil)
+	remoteID := s.Conn().RemotePeer()
+	newMsg := newResponseMessage("", "", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
-		remoteID := s.Conn().RemotePeer()
 		mp.logger.Errorf("Error while decoding message: %v", err)
 		err = mp.peer.blockPeer(remoteID)
 		if err != nil {
@@ -160,6 +186,24 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 		return
 	}
 	mp.logger.Debugf("Response message received: %+v", newMsg)
+
+	_, exist := mp.rpcHandlers[newMsg.Procedure]
+	if !exist {
+		mp.logger.Errorf("rpcHandler %s for received message is not registered", newMsg.Procedure)
+		err = mp.peer.blockPeer(remoteID)
+		if err != nil {
+			mp.logger.Errorf("BlockPeer error: %v", err)
+		}
+		return
+	}
+
+	// Rate limiting
+	mp.rateLimit.increaseCounter(newMsg.Procedure, remoteID)
+	err = mp.rateLimit.checkLimit(newMsg.Procedure, remoteID)
+	if err != nil {
+		mp.logger.Errorf("Rate limit error: %v", err)
+		return
+	}
 
 	mp.resMu.Lock()
 	defer mp.resMu.Unlock()
@@ -238,8 +282,8 @@ func (mp *MessageProtocol) sendRequestMessage(ctx context.Context, id peer.ID, p
 }
 
 // respond a message to a peer using a message protocol.
-func (mp *MessageProtocol) respond(ctx context.Context, id peer.ID, reqMsgID string, data []byte, err error) error {
-	resMsg := newResponseMessage(reqMsgID, data, err)
+func (mp *MessageProtocol) respond(ctx context.Context, id peer.ID, reqMsgID string, procedure string, data []byte, err error) error {
+	resMsg := newResponseMessage(reqMsgID, procedure, data, err)
 	return mp.send(ctx, id, messageProtocolResID(mp.chainID, mp.version), resMsg)
 }
 
