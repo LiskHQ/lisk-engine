@@ -363,6 +363,7 @@ func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p p2p.AddrInfo) er
 
 			// clear the libp2p dial backoff for this peer, otherwise the swarm will ignore our
 			// dial attempt and immediately return a "dial backoff" error
+			// TODO remove GetHost
 			if sw, ok := s.conn.GetHost().Network().(*swarm.Swarm); ok {
 				s.runenv.RecordMessage("clearing swarm dial backoff for peer %s", p.ID.Pretty())
 				sw.Backoff().Clear(p.ID)

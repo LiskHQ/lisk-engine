@@ -174,13 +174,13 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 			// Listen for incoming connections
 			laddr := listenAddrs(netclient)
 			runenv.RecordMessage("listening on %s", laddr)
-			if err = t.conn.GetHost().Network().Listen(laddr...); err != nil {
+			if err = t.conn.Listen(laddr); err != nil {
 				return nil
 			}
 
 			id := t.conn.ID().Pretty()
 			runenv.RecordMessage("Connection peer ID: %s, seq %d, node type: %s, node type seq: %d, node index: %d / %d, addrs: %v",
-				id, t.seq, params.nodeType, nodeTypeSeq, nodeIdx, params.nodesPerContainer, t.conn.GetHost().Addrs())
+				id, t.seq, params.nodeType, nodeTypeSeq, nodeIdx, params.nodesPerContainer, t.conn.Info().Addrs)
 
 			switch params.nodeType {
 			case NodeTypeSybil:

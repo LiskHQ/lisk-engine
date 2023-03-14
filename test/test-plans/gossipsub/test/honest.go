@@ -101,6 +101,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, c p2p.Connection
 	pubsub.GossipSubHeartbeatInitialDelay = cfg.Heartbeat.InitialDelay
 	pubsub.GossipSubHeartbeatInterval = cfg.Heartbeat.Interval
 
+	// TODO remove GetHost and use p2p.Gossipsub
 	ps, err := pubsub.NewGossipSub(ctx, c.GetHost(), opts...)
 
 	if err != nil {
@@ -159,7 +160,7 @@ func (p *PubsubNode) Run(runtime time.Duration, waitForReadyStateThenConnectAsyn
 	}
 
 	// ensure we have at least enough peers to fill a mesh after warmup period
-	npeers := len(p.conn.GetHost().Network().Peers())
+	npeers := p.conn.ConnectedPeers().Len()
 	if npeers < pubsub.GossipSubD {
 		panic(fmt.Errorf("not enough peers after warmup period. Need at least D=%d, have %d", pubsub.GossipSubD, npeers))
 	}
