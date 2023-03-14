@@ -210,7 +210,7 @@ func TestPeer_New_ConnectionManager(t *testing.T) {
 	assert.Equal(4, len(p.ConnectedPeers()))
 
 	// Wait for the connection manager to disconnect one of the peers
-	waitForTestCondition(t, func() int { return len(p.ConnectedPeers()) }, 2)
+	waitForTestCondition(t, func() int { return len(p.ConnectedPeers()) }, 2, testTimeout)
 
 	// Check that the number of connected peers is equal to the max number of connections
 	assert.Equal(2, len(p.ConnectedPeers()))

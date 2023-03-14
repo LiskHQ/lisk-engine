@@ -105,10 +105,13 @@ func (e *responseMsg) Encode() ([]byte, error) {
 	if err := writer.WriteString(1, e.ID); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteBytes(2, e.Data); err != nil {
+	if err := writer.WriteString(2, e.Procedure); err != nil {
 		return nil, err
 	}
-	if err := writer.WriteString(3, e.Error); err != nil {
+	if err := writer.WriteBytes(3, e.Data); err != nil {
+		return nil, err
+	}
+	if err := writer.WriteString(4, e.Error); err != nil {
 		return nil, err
 	}
 	return writer.Result(), nil
@@ -153,14 +156,21 @@ func (e *responseMsg) DecodeFromReader(reader *codec.Reader) error {
 		e.ID = val
 	}
 	{
-		val, err := reader.ReadBytes(2, false)
+		val, err := reader.ReadString(2, false)
+		if err != nil {
+			return err
+		}
+		e.Procedure = val
+	}
+	{
+		val, err := reader.ReadBytes(3, false)
 		if err != nil {
 			return err
 		}
 		e.Data = val
 	}
 	{
-		val, err := reader.ReadString(3, false)
+		val, err := reader.ReadString(4, false)
 		if err != nil {
 			return err
 		}
@@ -178,14 +188,21 @@ func (e *responseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 		e.ID = val
 	}
 	{
-		val, err := reader.ReadBytes(2, true)
+		val, err := reader.ReadString(2, true)
+		if err != nil {
+			return err
+		}
+		e.Procedure = val
+	}
+	{
+		val, err := reader.ReadBytes(3, true)
 		if err != nil {
 			return err
 		}
 		e.Data = val
 	}
 	{
-		val, err := reader.ReadString(3, true)
+		val, err := reader.ReadString(4, true)
 		if err != nil {
 			return err
 		}

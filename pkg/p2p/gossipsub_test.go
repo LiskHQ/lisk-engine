@@ -286,7 +286,7 @@ func TestGossipSub_BelowMinimumNumberOfConnections(t *testing.T) {
 	assert.Equal(0, len(gs.peer.ConnectedPeers()))
 
 	// From now on, gossipsub should try to connect to the peers we have in the known peers list
-	waitForTestCondition(t, func() int { return len(gs.peer.ConnectedPeers()) }, 2)
+	waitForTestCondition(t, func() int { return len(gs.peer.ConnectedPeers()) }, 2, testTimeout)
 
 	// Check if the number of connected peers is two as we should have been connected to two peers
 	assert.Equal(2, len(gs.peer.ConnectedPeers()))

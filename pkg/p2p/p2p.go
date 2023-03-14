@@ -101,6 +101,9 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	conn.wg.Add(1)
 	go connectionsHandler(ctx, &conn.wg, conn)
 
+	conn.wg.Add(1)
+	go rateLimiterHandler(ctx, &conn.wg, conn.MessageProtocol.rateLimit)
+
 	addrs, err := conn.MultiAddress()
 	if err != nil {
 		return err
