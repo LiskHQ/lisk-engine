@@ -36,10 +36,10 @@ type rateLimit struct {
 
 // rpcMessageCounter type for RPC message counters.
 type rpcMessageCounter struct {
-	mu      sync.Mutex
-	limit   int
-	penalty int
-	peers   map[PeerID]int
+	mu       sync.Mutex
+	limit    int
+	penalty  int
+	counters map[PeerID]int
 }
 
 // newRateLimit creates a new rate limit.
@@ -63,9 +63,9 @@ func (rl *rateLimit) addRPCMessageCounter(rpcName string) error {
 	}
 	rl.rpcMessageCounters[rpcName] =
 		&rpcMessageCounter{
-			limit:   defaultRateLimit,
-			penalty: defaultRateLimitPenalty,
-			peers:   make(map[PeerID]int),
+			limit:    defaultRateLimit,
+			penalty:  defaultRateLimitPenalty,
+			counters: make(map[PeerID]int),
 		}
 	return nil
 }
@@ -74,7 +74,7 @@ func (rl *rateLimit) addRPCMessageCounter(rpcName string) error {
 func (rl *rateLimit) increaseCounter(rpcName string, peerID PeerID) {
 	rl.rpcMessageCounters[rpcName].mu.Lock()
 	defer rl.rpcMessageCounters[rpcName].mu.Unlock()
-	rl.rpcMessageCounters[rpcName].peers[peerID]++
+	rl.rpcMessageCounters[rpcName].counters[peerID]++
 }
 
 // checkLimit checks if the rate limit for a specific RPC message has been reached and applies a penalty if needed.
@@ -83,16 +83,17 @@ func (rl *rateLimit) checkLimit(rpcName string, peerID PeerID) error {
 		return errors.New("cannot check rate limits because rate limiter is not started")
 	}
 
-	rl.rpcMessageCounters[rpcName].mu.Lock()
-	defer rl.rpcMessageCounters[rpcName].mu.Unlock()
+	msgCounter := rl.rpcMessageCounters[rpcName]
+	msgCounter.mu.Lock()
+	defer msgCounter.mu.Unlock()
 
-	if rl.rpcMessageCounters[rpcName].peers[peerID] > rl.rpcMessageCounters[rpcName].limit {
+	if msgCounter.counters[peerID] > msgCounter.limit {
 		rl.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", peerID, rpcName)
-		if err := rl.peer.addPenalty(peerID, rl.rpcMessageCounters[rpcName].penalty); err != nil {
+		if err := rl.peer.addPenalty(peerID, msgCounter.penalty); err != nil {
 			rl.logger.Errorf("Failed to apply penalty to peer %s: %v", peerID, err)
 			return err
 		}
-		rl.rpcMessageCounters[rpcName].peers = make(map[PeerID]int)
+		msgCounter.counters[peerID] = 0
 	}
 
 	return nil
@@ -111,7 +112,7 @@ func rateLimiterHandler(ctx context.Context, wg *sync.WaitGroup, rl *rateLimit) 
 			// Iterate over the rate limits map and reset the rate limiters counters.
 			for _, rpcMessageCounter := range rl.rpcMessageCounters {
 				rpcMessageCounter.mu.Lock()
-				rpcMessageCounter.peers = make(map[PeerID]int)
+				rpcMessageCounter.counters = make(map[PeerID]int)
 				rpcMessageCounter.mu.Unlock()
 			}
 			t.Reset(rl.interval)
