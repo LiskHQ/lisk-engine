@@ -160,6 +160,42 @@ func TestP2P_AddPenalty(t *testing.T) {
 	assert.Containsf(err.Error(), "no good addresses", "Connection should be rejected by ConnectionGater")
 }
 
+func TestP2P_BlockPeer(t *testing.T) {
+	assert := assert.New(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cfg := &Config{
+		AllowIncomingConnections: true,
+		Addresses:                []string{testIPv4TCP, testIPv4UDP},
+	}
+	_ = cfg.insertDefault()
+	node1 := NewConnection(cfg)
+	node2 := NewConnection(cfg)
+	logger, _ := logger.NewDefaultProductionLogger()
+	node1.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
+	node2.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
+	err := node1.Start(logger, []byte{})
+	assert.Nil(err)
+	err = node2.Start(logger, []byte{})
+	assert.Nil(err)
+
+	err = node2.Publish(ctx, testTopic1, testMessageData)
+	assert.Nil(err)
+	p2Addrs, err := node2.MultiAddress()
+	assert.Nil(err)
+	p2AddrInfo, err := AddrInfoFromMultiAddr(p2Addrs[0])
+	assert.Nil(err)
+	err = node1.Connect(ctx, *p2AddrInfo)
+	assert.Nil(err)
+
+	node1.BlockPeer(p2AddrInfo.ID)
+	assert.Equal(len(node1.ConnectedPeers()), 0)
+
+	err = node1.Connect(ctx, *p2AddrInfo)
+	assert.Containsf(err.Error(), "no good addresses", "Connection should be rejected by ConnectionGater")
+}
+
 func TestP2P_Stop(t *testing.T) {
 	assert := assert.New(t)
 

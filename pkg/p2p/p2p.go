@@ -159,11 +159,26 @@ func (conn *Connection) ApplyPenalty(pid PeerID, score int) {
 		addr := c.RemoteMultiaddr().String() + "/p2p/" + pid.String()
 		maddr, err := ma.NewMultiaddr(addr)
 		if err != nil {
-			conn.logger.Warningf("Failed to create a new multiaddr: %s", err)
+			conn.logger.Errorf("Failed to create a new multiaddr: %s", err)
 			return
 		}
 		if err := conn.addPenalty(maddr, score); err != nil {
 			conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+		}
+	}
+}
+
+// BlockPeer blocks the given PeerID and disconnects the peer immediately.
+func (conn *Connection) BlockPeer(pid PeerID) {
+	for _, c := range conn.Peer.host.Network().ConnsToPeer(pid) {
+		addr := c.RemoteMultiaddr().String() + "/p2p/" + pid.String()
+		maddr, err := ma.NewMultiaddr(addr)
+		if err != nil {
+			conn.logger.Errorf("Failed to create a new multiaddr: %s", err)
+			return
+		}
+		if err := conn.Peer.blockPeer(maddr); err != nil {
+			conn.logger.Errorf("Failed to block peer %s: %v", pid, err)
 		}
 	}
 }
