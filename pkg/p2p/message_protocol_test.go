@@ -107,7 +107,7 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 
 			stream := testStream{}
 			reqMsg := newRequestMessage(testPeerID, tt.procedure, []byte(""))
-			data, _ := reqMsg.Encode()
+			data := reqMsg.Encode()
 			stream.data = data
 			mp.onRequest(ctx, stream)
 
@@ -142,7 +142,7 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 
 	stream := testStream{}
 	reqMsg := newResponseMessage(testReqMsgID, testRPC, []byte(testResponseData), errors.New(testError))
-	data, _ := reqMsg.Encode()
+	data := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
 
@@ -180,7 +180,7 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 	stream := testStream{}
 	reqMsg := newResponseMessage(testReqMsgID, testProcedure, []byte(testResponseData), nil)
-	data, _ := reqMsg.Encode()
+	data := reqMsg.Encode()
 	stream.data = data
 	mp.onResponse(stream)
 

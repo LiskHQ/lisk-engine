@@ -37,11 +37,7 @@ func GetDecodableOrDefault(diffDB getter, key []byte, value codec.Decodable) err
 	return nil
 }
 
-func SetEncodable(diffDB setter, key []byte, value codec.Encodable) error {
-	encodedSender, err := value.Encode()
-	if err != nil {
-		return err
-	}
+func SetEncodable(diffDB setter, key []byte, value codec.Encodable) {
+	encodedSender := value.Encode()
 	diffDB.Set(key, encodedSender)
-	return nil
 }

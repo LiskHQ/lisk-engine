@@ -6,29 +6,17 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *Proof) Encode() ([]byte, error) {
+func (e *Proof) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.SiblingHashes)); err != nil {
-		return nil, err
-	}
+	writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.SiblingHashes))
 	{
 		for _, val := range e.Queries {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *Proof) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *Proof) Decode(data []byte) error {
@@ -97,26 +85,12 @@ func (e *Proof) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *QueryProof) Encode() ([]byte, error) {
+func (e *QueryProof) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Key); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Value); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Bitmap); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *QueryProof) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Key)
+	writer.WriteBytes(2, e.Value)
+	writer.WriteBytes(3, e.Bitmap)
+	return writer.Result()
 }
 
 func (e *QueryProof) Decode(data []byte) error {

@@ -16,191 +16,137 @@ func NewWriter() *Writer {
 }
 
 // WriteBytes writes a bytes to result.
-func (w *Writer) WriteBytes(fieldNumber int, data []byte) error {
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
-	return w.writeBytes(data)
+func (w *Writer) WriteBytes(fieldNumber int, data []byte) {
+	w.writeKey(wireType2, fieldNumber)
+	w.writeBytes(data)
 }
 
 // WriteBytesArray writes bytes array to result.
-func (w *Writer) WriteBytesArray(fieldNumber int, data [][]byte) error {
+func (w *Writer) WriteBytesArray(fieldNumber int, data [][]byte) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
 	for _, val := range data {
-		if err := w.WriteBytes(fieldNumber, val); err != nil {
-			return nil
-		}
+		w.WriteBytes(fieldNumber, val)
 	}
-	return nil
 }
 
 // WriteString writes a string to result.
-func (w *Writer) WriteString(fieldNumber int, data string) error {
-	return w.WriteBytes(fieldNumber, []byte(data))
+func (w *Writer) WriteString(fieldNumber int, data string) {
+	w.WriteBytes(fieldNumber, []byte(data))
 }
 
 // WriteStrings writes strings to result.
-func (w *Writer) WriteStrings(fieldNumber int, data []string) error {
+func (w *Writer) WriteStrings(fieldNumber int, data []string) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
 	for _, val := range data {
-		if err := w.WriteString(fieldNumber, val); err != nil {
-			return nil
-		}
+		w.WriteString(fieldNumber, val)
 	}
-	return nil
 }
 
 // WriteBool writes a boolean to result.
-func (w *Writer) WriteBool(fieldNumber int, data bool) error {
-	if err := w.writeKey(wireType0, fieldNumber); err != nil {
-		return err
-	}
-	return w.writeBool(data)
+func (w *Writer) WriteBool(fieldNumber int, data bool) {
+	w.writeKey(wireType0, fieldNumber)
+	w.writeBool(data)
 }
 
 // WriteBools writes booleans to result.
-func (w *Writer) WriteBools(fieldNumber int, data []bool) error {
+func (w *Writer) WriteBools(fieldNumber int, data []bool) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
+	w.writeKey(wireType2, fieldNumber)
 	writer := NewWriter()
 	for _, val := range data {
-		if err := writer.writeBool(val); err != nil {
-			return err
-		}
+		writer.writeBool(val)
 	}
-	if err := w.writeBytes(writer.Result()); err != nil {
-		return err
-	}
-	return nil
+	w.writeBytes(writer.Result())
 }
 
 // WriteUInt writes uint to result.
-func (w *Writer) WriteUInt(fieldNumber int, data uint64) error {
-	if err := w.writeKey(wireType0, fieldNumber); err != nil {
-		return err
-	}
-	return w.writeUInt(data)
+func (w *Writer) WriteUInt(fieldNumber int, data uint64) {
+	w.writeKey(wireType0, fieldNumber)
+	w.writeUInt(data)
 }
 
 // WriteUInt32 writes uint to result.
-func (w *Writer) WriteUInt32(fieldNumber int, data uint32) error {
-	return w.WriteUInt(fieldNumber, uint64(data))
+func (w *Writer) WriteUInt32(fieldNumber int, data uint32) {
+	w.WriteUInt(fieldNumber, uint64(data))
 }
 
 // WriteUInts writes uint to result.
-func (w *Writer) WriteUInts(fieldNumber int, data []uint64) error {
+func (w *Writer) WriteUInts(fieldNumber int, data []uint64) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
+	w.writeKey(wireType2, fieldNumber)
 	writer := NewWriter()
 	for _, val := range data {
-		if err := writer.writeUInt(val); err != nil {
-			return err
-		}
+		writer.writeUInt(val)
 	}
-	if err := w.writeBytes(writer.Result()); err != nil {
-		return err
-	}
-	return nil
+	w.writeBytes(writer.Result())
 }
 
 // WriteUInt32s writes uint to result.
-func (w *Writer) WriteUInt32s(fieldNumber int, data []uint32) error {
+func (w *Writer) WriteUInt32s(fieldNumber int, data []uint32) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
+	w.writeKey(wireType2, fieldNumber)
 	writer := NewWriter()
 	for _, val := range data {
-		if err := writer.writeUInt(uint64(val)); err != nil {
-			return err
-		}
+		writer.writeUInt(uint64(val))
 	}
-	if err := w.writeBytes(writer.Result()); err != nil {
-		return err
-	}
-	return nil
+	w.writeBytes(writer.Result())
 }
 
 // WriteInt writes int to result.
-func (w *Writer) WriteInt(fieldNumber int, data int64) error {
-	if err := w.writeKey(wireType0, fieldNumber); err != nil {
-		return err
-	}
-	return w.writeInt(data)
+func (w *Writer) WriteInt(fieldNumber int, data int64) {
+	w.writeKey(wireType0, fieldNumber)
+	w.writeInt(data)
 }
 
 // WriteInt32 writes int to result.
-func (w *Writer) WriteInt32(fieldNumber int, data int32) error {
-	return w.WriteInt(fieldNumber, int64(data))
+func (w *Writer) WriteInt32(fieldNumber int, data int32) {
+	w.WriteInt(fieldNumber, int64(data))
 }
 
 // WriteInts writes int to result.
-func (w *Writer) WriteInts(fieldNumber int, data []int64) error {
+func (w *Writer) WriteInts(fieldNumber int, data []int64) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
+	w.writeKey(wireType2, fieldNumber)
 	writer := NewWriter()
 	for _, val := range data {
-		if err := writer.writeInt(val); err != nil {
-			return err
-		}
+		writer.writeInt(val)
 	}
-	if err := w.writeBytes(writer.Result()); err != nil {
-		return err
-	}
-	return nil
+	w.writeBytes(writer.Result())
 }
 
 // WriteInt32s writes int to result.
-func (w *Writer) WriteInt32s(fieldNumber int, data []int32) error {
+func (w *Writer) WriteInt32s(fieldNumber int, data []int32) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
+	w.writeKey(wireType2, fieldNumber)
 	writer := NewWriter()
 	for _, val := range data {
-		if err := writer.writeInt(int64(val)); err != nil {
-			return err
-		}
+		writer.writeInt(int64(val))
 	}
-	if err := w.writeBytes(writer.Result()); err != nil {
-		return err
-	}
-	return nil
+	w.writeBytes(writer.Result())
 }
 
 // WriteEncodable writes encodable struct to result.
-func (w *Writer) WriteEncodable(fieldNumber int, data Encodable) error {
+func (w *Writer) WriteEncodable(fieldNumber int, data Encodable) {
 	if data == nil {
-		return nil
+		return
 	}
-	if err := w.writeKey(wireType2, fieldNumber); err != nil {
-		return err
-	}
-	result, err := data.Encode()
-	if err != nil {
-		return err
-	}
-	return w.writeBytes(result)
+	w.writeKey(wireType2, fieldNumber)
+	result := data.Encode()
+	w.writeBytes(result)
 }
 
 // Result returns the written bytes.
@@ -214,44 +160,38 @@ func (w *Writer) Size() int {
 }
 
 // writeKey writes a key to the byte.
-func (w *Writer) writeKey(wireType int, fieldNumber int) error {
+func (w *Writer) writeKey(wireType int, fieldNumber int) {
 	vint, size := getKey(wireType, fieldNumber)
 	w.size += size
 	w.result = append(w.result, vint[0:size]...)
-	return nil
 }
 
 // writeBytes writes a bytes to result without key.
-func (w *Writer) writeBytes(data []byte) error {
+func (w *Writer) writeBytes(data []byte) {
 	size := len(data)
-	if err := w.writeUInt(uint64(size)); err != nil {
-		return err
-	}
+	w.writeUInt(uint64(size))
 	w.size += size
 	w.result = append(w.result, data...)
-	return nil
 }
 
 // writeUInt writes uint to result without key.
-func (w *Writer) writeUInt(data uint64) error {
+func (w *Writer) writeUInt(data uint64) {
 	vint := make([]byte, binary.MaxVarintLen64)
 	size := binary.PutUvarint(vint, data)
 	w.size = size
 	w.result = append(w.result, vint[0:size]...)
-	return nil
 }
 
 // writeInt writes int to result without key.
-func (w *Writer) writeInt(data int64) error {
+func (w *Writer) writeInt(data int64) {
 	vint := make([]byte, binary.MaxVarintLen64)
 	size := binary.PutVarint(vint, data)
 	w.size = size
 	w.result = append(w.result, vint[0:size]...)
-	return nil
 }
 
 // writeBool writes bool to result without key.
-func (w *Writer) writeBool(data bool) error {
+func (w *Writer) writeBool(data bool) {
 	b := make([]byte, 1)
 	if data {
 		b[0] = 0x01
@@ -260,5 +200,4 @@ func (w *Writer) writeBool(data bool) error {
 	}
 	w.size++
 	w.result = append(w.result, b...)
-	return nil
 }

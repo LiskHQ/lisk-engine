@@ -6,26 +6,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *ipcRequest) Encode() ([]byte, error) {
+func (e *ipcRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt(1, e.id); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.method); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.params); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ipcRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt(1, e.id)
+	writer.WriteString(2, e.method)
+	writer.WriteBytes(3, e.params)
+	return writer.Result()
 }
 
 func (e *ipcRequest) Decode(data []byte) error {
@@ -100,20 +86,10 @@ func (e *ipcRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *errObj) Encode() ([]byte, error) {
+func (e *errObj) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.message); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *errObj) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteString(1, e.message)
+	return writer.Result()
 }
 
 func (e *errObj) Decode(data []byte) error {
@@ -160,31 +136,15 @@ func (e *errObj) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ipcResponse) Encode() ([]byte, error) {
+func (e *ipcResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt(1, e.id); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBool(2, e.success); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt(1, e.id)
+	writer.WriteBool(2, e.success)
 	if e.err != nil {
-		if err := writer.WriteEncodable(3, e.err); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(3, e.err)
 	}
-	if err := writer.WriteBytes(4, e.result); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ipcResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(4, e.result)
+	return writer.Result()
 }
 
 func (e *ipcResponse) Decode(data []byte) error {

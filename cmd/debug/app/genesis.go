@@ -120,7 +120,7 @@ func GetGenesisCommand(starter Starter) *cli.Command {
 				}
 				mockAsset := blockchain.BlockAsset{
 					Module: "mock",
-					Data:   data.MustEncode(),
+					Data:   data.Encode(),
 				}
 				blockAssets = append(blockAssets, &mockAsset)
 			}
@@ -139,10 +139,7 @@ func GetGenesisCommand(starter Starter) *cli.Command {
 				fmt.Println(string(genesisJSON))
 				return nil
 			}
-			encodedGenesis, err := genesis.Encode()
-			if err != nil {
-				return err
-			}
+			encodedGenesis := genesis.Encode()
 
 			if err := os.WriteFile(output, encodedGenesis, 0755); err != nil { //nolint:gosec // ok to write as 0755
 				return err

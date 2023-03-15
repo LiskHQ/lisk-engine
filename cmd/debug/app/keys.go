@@ -145,10 +145,7 @@ func generateKeys(passphrase, password string, chainID codec.Hex, offset int) (*
 		},
 	}
 	if password != "" {
-		encodedKeys, err := account.Plain.Encode()
-		if err != nil {
-			return nil, err
-		}
+		encodedKeys := account.Plain.Encode()
 		encryptedMsg, err := crypto.EncryptMessageWithPassword(encodedKeys, password, crypto.DefaultEncryptOptions())
 		if err != nil {
 			return nil, err

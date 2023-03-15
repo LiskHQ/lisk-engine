@@ -105,29 +105,24 @@ func TestBlockSignature(t *testing.T) {
 			CertificateSignature: []byte{},
 		},
 	}
-	signingBytes, err := header.SigningBytes()
-	assert.NoError(t, err)
+	signingBytes := header.SigningBytes()
 
 	networkID := crypto.RandomBytes(32)
-	expectedSignature, err := crypto.Sign(sk, crypto.Hash(bytes.Join(
+	expectedSignature := crypto.Sign(sk, crypto.Hash(bytes.Join(
 		TagBlockHeader,
 		networkID,
 		signingBytes,
 	)))
-	assert.NoError(t, err)
 
-	err = header.Sign(networkID, sk)
-	assert.NoError(t, err)
+	header.Sign(networkID, sk)
 
 	assert.Equal(t, expectedSignature, []byte(header.Signature))
 
-	valid, err := header.VerifySignature(networkID, pk)
-	assert.NoError(t, err)
+	valid := header.VerifySignature(networkID, pk)
 	assert.True(t, valid)
 
 	header.Version = 0
-	valid, err = header.VerifySignature(networkID, pk)
-	assert.NoError(t, err)
+	valid = header.VerifySignature(networkID, pk)
 	assert.False(t, valid)
 }
 
@@ -169,14 +164,14 @@ func TestBlockCodec(t *testing.T) {
 	block := createRandomBlock(100)
 
 	// Raw Block
-	encoded := block.MustEncode()
+	encoded := block.Encode()
 	rawBlock := &RawBlock{}
 	err := rawBlock.Decode(encoded)
 
 	assert.NoError(t, err)
 	rawBlock.MustDecode(encoded)
 
-	reEncoded := rawBlock.MustEncode()
+	reEncoded := rawBlock.Encode()
 	assert.Equal(t, encoded, reEncoded)
 
 	// Block
@@ -186,17 +181,17 @@ func TestBlockCodec(t *testing.T) {
 	// Signing block
 	signingBlock := &signingBlockHeader{}
 	signingBlock.MustDecode(rawBlock.Header)
-	encodedSigning := signingBlock.MustEncode()
+	encodedSigning := signingBlock.Encode()
 	// Signature should not be part of the encoding
 	assert.NotEqual(t, rawBlock.Header, encodedSigning)
 
 	// Header
 	header := &BlockHeader{}
 	header.MustDecode(rawBlock.Header)
-	encodedHeader := header.MustEncode()
+	encodedHeader := header.Encode()
 	assert.Equal(t, rawBlock.Header, encodedHeader)
 
-	encodedCommit := header.AggregateCommit.MustEncode()
+	encodedCommit := header.AggregateCommit.Encode()
 	aggCommit := &AggregateCommit{}
 	aggCommit.MustDecode(encodedCommit)
 }
@@ -210,8 +205,7 @@ func TestBlockCodecFuzz(t *testing.T) {
 			block := &Block{}
 			err := block.Decode(randomBytes)
 			if err == nil {
-				_, err := block.Encode()
-				return err
+				block.Encode()
 			}
 			return nil
 		})

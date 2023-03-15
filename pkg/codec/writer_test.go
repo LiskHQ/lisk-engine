@@ -26,8 +26,7 @@ func TestWriteBool(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteBool(1, c.input)
-		assert.Nil(t, err)
+		writer.WriteBool(1, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
@@ -48,8 +47,7 @@ func TestWriteBytes(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteBytes(1, c.input)
-		assert.Nil(t, err)
+		writer.WriteBytes(1, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
@@ -74,8 +72,7 @@ func TestWriteBytesArray(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteBytesArray(1, c.input)
-		assert.Nil(t, err)
+		writer.WriteBytesArray(1, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
@@ -101,8 +98,7 @@ func TestWriteUInt(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteUInt(c.fieldNumber, c.input)
-		assert.Nil(t, err)
+		writer.WriteUInt(c.fieldNumber, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
@@ -124,8 +120,7 @@ func TestWriteUInts(t *testing.T) {
 	for _, c := range cases {
 		{
 			writer := NewWriter()
-			err := writer.WriteUInts(c.fieldNumber, c.input)
-			assert.Nil(t, err)
+			writer.WriteUInts(c.fieldNumber, c.input)
 			expected, err := hex.DecodeString(c.result)
 			assert.Nil(t, err)
 			assert.Equal(t, expected, writer.Result())
@@ -136,8 +131,7 @@ func TestWriteUInts(t *testing.T) {
 			for i, val := range c.input {
 				input[i] = uint32(val)
 			}
-			err := writer.WriteUInt32s(c.fieldNumber, input)
-			assert.Nil(t, err)
+			writer.WriteUInt32s(c.fieldNumber, input)
 			expected, err := hex.DecodeString(c.result)
 			assert.Nil(t, err)
 			assert.Equal(t, expected, writer.Result())
@@ -160,8 +154,7 @@ func TestWriteInts(t *testing.T) {
 	for _, c := range cases {
 		{
 			writer := NewWriter()
-			err := writer.WriteInts(c.fieldNumber, c.input)
-			assert.Nil(t, err)
+			writer.WriteInts(c.fieldNumber, c.input)
 			expected, err := hex.DecodeString(c.result)
 			assert.Nil(t, err)
 			assert.Equal(t, expected, writer.Result())
@@ -172,8 +165,7 @@ func TestWriteInts(t *testing.T) {
 			for i, val := range c.input {
 				input[i] = int32(val)
 			}
-			err := writer.WriteInt32s(c.fieldNumber, input)
-			assert.Nil(t, err)
+			writer.WriteInt32s(c.fieldNumber, input)
 			expected, err := hex.DecodeString(c.result)
 			assert.Nil(t, err)
 			assert.Equal(t, expected, writer.Result())
@@ -200,8 +192,7 @@ func TestWriteInt(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteInt(1, c.input)
-		assert.Nil(t, err)
+		writer.WriteInt(1, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
@@ -222,8 +213,7 @@ func TestWriteBools(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteBools(c.fieldNumber, c.input)
-		assert.Nil(t, err)
+		writer.WriteBools(c.fieldNumber, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
@@ -249,19 +239,18 @@ func TestWriteStrings(t *testing.T) {
 	}
 	for _, c := range cases {
 		writer := NewWriter()
-		err := writer.WriteStrings(c.fieldNumber, c.input)
-		assert.Nil(t, err)
+		writer.WriteStrings(c.fieldNumber, c.input)
 		expected, err := hex.DecodeString(c.result)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, writer.Result())
 	}
 }
 
-func (t *testDecodableAccount) Encode() ([]byte, error) {
+func (t *testDecodableAccount) Encode() []byte {
 	writer := NewWriter()
 	writer.WriteString(1, t.Address)
 	writer.WriteUInt(2, t.Amount)
-	return writer.Result(), nil
+	return writer.Result()
 }
 
 func TestWriteEncodables(t *testing.T) {
@@ -281,8 +270,7 @@ func TestWriteEncodables(t *testing.T) {
 	writer := NewWriter()
 
 	for _, val := range vals {
-		err := writer.WriteEncodable(1, val)
-		assert.Nil(t, err)
+		writer.WriteEncodable(1, val)
 	}
 	assert.Equal(t, expected, writer.Result())
 }

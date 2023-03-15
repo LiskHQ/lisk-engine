@@ -6,38 +6,16 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *Transaction) Encode() ([]byte, error) {
+func (e *Transaction) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Module); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.Command); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.Nonce); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(4, e.Fee); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(5, e.SenderPublicKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(6, e.Params); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(7, codec.HexArrayToBytesArray(e.Signatures)); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Transaction) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteString(1, e.Module)
+	writer.WriteString(2, e.Command)
+	writer.WriteUInt(3, e.Nonce)
+	writer.WriteUInt(4, e.Fee)
+	writer.WriteBytes(5, e.SenderPublicKey)
+	writer.WriteBytes(6, e.Params)
+	writer.WriteBytesArray(7, codec.HexArrayToBytesArray(e.Signatures))
+	return writer.Result()
 }
 
 func (e *Transaction) Decode(data []byte) error {

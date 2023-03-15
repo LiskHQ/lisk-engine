@@ -58,7 +58,7 @@ func NewStandardTransactionEventData(success bool) []byte {
 	e := &StandardTransactionEvent{
 		Success: success,
 	}
-	return e.MustEncode()
+	return e.Encode()
 }
 
 type Event struct {
@@ -84,7 +84,7 @@ func (e *Event) UpdateID() []byte {
 
 func (e *Event) KeyPairs() []EventKeyPair {
 	result := make([]EventKeyPair, len(e.Topics))
-	value := e.MustEncode()
+	value := e.Encode()
 	for i, topic := range e.Topics {
 		indexBytes := bytes.FromUint32((e.Index << eventTopicIndexLengthBits) + uint32(i))
 		topicBytes := crypto.Hash(topic)[:eventTopicHashLengthBytes]

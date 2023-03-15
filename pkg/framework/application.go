@@ -203,10 +203,8 @@ func (app *Application) GenerateGenesisBlock(height, timestamp uint32, previoudB
 	diffStore := diffdb.New(stateDB, StateDBPrefixState)
 
 	eventLogger := statemachine.NewEventLogger(height)
-	genesisBlock, err := blockchain.NewGenesisBlock(height, timestamp, previoudBlockID, assets)
-	if err != nil {
-		return nil, err
-	}
+	genesisBlock := blockchain.NewGenesisBlock(height, timestamp, previoudBlockID, assets)
+
 	genesisContext := statemachine.NewGenesisBlockProcessingContext(
 		app.ctx,
 		logger,

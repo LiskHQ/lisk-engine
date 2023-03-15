@@ -352,10 +352,7 @@ func (c *bftParamsCache) cache(from, to uint32) error {
 		if err != nil {
 			return err
 		}
-		encodedNextLowest, err := nextLowest.Encode()
-		if err != nil {
-			return err
-		}
+		encodedNextLowest := nextLowest.Encode()
 		kv = append(kv, &KV{
 			key:   bytes.FromUint32(from),
 			value: encodedNextLowest,

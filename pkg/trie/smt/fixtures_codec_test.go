@@ -6,30 +6,16 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *fixtureTestCase) Encode() ([]byte, error) {
+func (e *fixtureTestCase) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Description); err != nil {
-		return nil, err
-	}
+	writer.WriteString(1, e.Description)
 	if e.Input != nil {
-		if err := writer.WriteEncodable(2, e.Input); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(2, e.Input)
 	}
 	if e.Output != nil {
-		if err := writer.WriteEncodable(3, e.Output); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(3, e.Output)
 	}
-	return writer.Result(), nil
-}
-
-func (e *fixtureTestCase) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *fixtureTestCase) Decode(data []byte) error {
@@ -104,29 +90,13 @@ func (e *fixtureTestCase) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *fixtureInput) Encode() ([]byte, error) {
+func (e *fixtureInput) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.Keys)); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(2, codec.HexArrayToBytesArray(e.Values)); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(3, codec.HexArrayToBytesArray(e.DeleteKeys)); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(4, codec.HexArrayToBytesArray(e.QueryKeys)); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *fixtureInput) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.Keys))
+	writer.WriteBytesArray(2, codec.HexArrayToBytesArray(e.Values))
+	writer.WriteBytesArray(3, codec.HexArrayToBytesArray(e.DeleteKeys))
+	writer.WriteBytesArray(4, codec.HexArrayToBytesArray(e.QueryKeys))
+	return writer.Result()
 }
 
 func (e *fixtureInput) Decode(data []byte) error {
@@ -215,25 +185,13 @@ func (e *fixtureInput) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *fixtureOutput) Encode() ([]byte, error) {
+func (e *fixtureOutput) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.MerkleRoot); err != nil {
-		return nil, err
-	}
+	writer.WriteBytes(1, e.MerkleRoot)
 	if e.Proof != nil {
-		if err := writer.WriteEncodable(2, e.Proof); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(2, e.Proof)
 	}
-	return writer.Result(), nil
-}
-
-func (e *fixtureOutput) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *fixtureOutput) Decode(data []byte) error {
@@ -294,26 +252,12 @@ func (e *fixtureOutput) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *fixtureOutputProofQuery) Encode() ([]byte, error) {
+func (e *fixtureOutputProofQuery) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Bitmap); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Key); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Value); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *fixtureOutputProofQuery) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Bitmap)
+	writer.WriteBytes(2, e.Key)
+	writer.WriteBytes(3, e.Value)
+	return writer.Result()
 }
 
 func (e *fixtureOutputProofQuery) Decode(data []byte) error {
@@ -388,29 +332,17 @@ func (e *fixtureOutputProofQuery) DecodeStrictFromReader(reader *codec.Reader) e
 	return nil
 }
 
-func (e *fixtureOutputProof) Encode() ([]byte, error) {
+func (e *fixtureOutputProof) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.SiblingHashes)); err != nil {
-		return nil, err
-	}
+	writer.WriteBytesArray(1, codec.HexArrayToBytesArray(e.SiblingHashes))
 	{
 		for _, val := range e.Queries {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *fixtureOutputProof) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *fixtureOutputProof) Decode(data []byte) error {
@@ -479,32 +411,18 @@ func (e *fixtureOutputProof) DecodeStrictFromReader(reader *codec.Reader) error 
 	return nil
 }
 
-func (e *fixture) Encode() ([]byte, error) {
+func (e *fixture) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Title); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.Summary); err != nil {
-		return nil, err
-	}
+	writer.WriteString(1, e.Title)
+	writer.WriteString(2, e.Summary)
 	{
 		for _, val := range e.TestCases {
 			if val != nil {
-				if err := writer.WriteEncodable(3, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(3, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *fixture) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *fixture) Decode(data []byte) error {

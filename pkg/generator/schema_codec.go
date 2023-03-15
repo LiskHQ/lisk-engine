@@ -6,29 +6,13 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *Keypair) Encode() ([]byte, error) {
+func (e *Keypair) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.generationPublicKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.generationPrivateKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.blsPrivateKey); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Keypair) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.address)
+	writer.WriteBytes(2, e.generationPublicKey)
+	writer.WriteBytes(3, e.generationPrivateKey)
+	writer.WriteBytes(4, e.blsPrivateKey)
+	return writer.Result()
 }
 
 func (e *Keypair) Decode(data []byte) error {
@@ -117,26 +101,12 @@ func (e *Keypair) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *GeneratorInfo) Encode() ([]byte, error) {
+func (e *GeneratorInfo) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.MaxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.MaxHeightGenerated); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *GeneratorInfo) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.Height)
+	writer.WriteUInt32(2, e.MaxHeightPrevoted)
+	writer.WriteUInt32(3, e.MaxHeightGenerated)
+	return writer.Result()
 }
 
 func (e *GeneratorInfo) Decode(data []byte) error {
@@ -211,26 +181,12 @@ func (e *GeneratorInfo) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *Keys) Encode() ([]byte, error) {
+func (e *Keys) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.Type); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Keys) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Address)
+	writer.WriteString(2, e.Type)
+	writer.WriteBytes(3, e.Data)
+	return writer.Result()
 }
 
 func (e *Keys) Decode(data []byte) error {
@@ -305,29 +261,13 @@ func (e *Keys) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *PlainKeys) Encode() ([]byte, error) {
+func (e *PlainKeys) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.GeneratorKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.GeneratorPrivateKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.BLSKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.BLSPrivateKey); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *PlainKeys) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.GeneratorKey)
+	writer.WriteBytes(2, e.GeneratorPrivateKey)
+	writer.WriteBytes(3, e.BLSKey)
+	writer.WriteBytes(4, e.BLSPrivateKey)
+	return writer.Result()
 }
 
 func (e *PlainKeys) Decode(data []byte) error {

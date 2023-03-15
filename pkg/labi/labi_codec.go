@@ -8,26 +8,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/trie/smt"
 )
 
-func (e *InitRequest) Encode() ([]byte, error) {
+func (e *InitRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ChainID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.LastBlockHeight); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.LastStateRoot); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *InitRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.ChainID)
+	writer.WriteUInt32(2, e.LastBlockHeight)
+	writer.WriteBytes(3, e.LastStateRoot)
+	return writer.Result()
 }
 
 func (e *InitRequest) Decode(data []byte) error {
@@ -102,22 +88,12 @@ func (e *InitRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *InitStateMachineRequest) Encode() ([]byte, error) {
+func (e *InitStateMachineRequest) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Header != nil {
-		if err := writer.WriteEncodable(1, e.Header); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Header)
 	}
-	return writer.Result(), nil
-}
-
-func (e *InitStateMachineRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *InitStateMachineRequest) Decode(data []byte) error {
@@ -164,20 +140,10 @@ func (e *InitStateMachineRequest) DecodeStrictFromReader(reader *codec.Reader) e
 	return nil
 }
 
-func (e *InitStateMachineResponse) Encode() ([]byte, error) {
+func (e *InitStateMachineResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *InitStateMachineResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.ContextID)
+	return writer.Result()
 }
 
 func (e *InitStateMachineResponse) Decode(data []byte) error {
@@ -224,20 +190,10 @@ func (e *InitStateMachineResponse) DecodeStrictFromReader(reader *codec.Reader) 
 	return nil
 }
 
-func (e *InitGenesisStateRequest) Encode() ([]byte, error) {
+func (e *InitGenesisStateRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *InitGenesisStateRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.ContextID)
+	return writer.Result()
 }
 
 func (e *InitGenesisStateRequest) Decode(data []byte) error {
@@ -284,41 +240,25 @@ func (e *InitGenesisStateRequest) DecodeStrictFromReader(reader *codec.Reader) e
 	return nil
 }
 
-func (e *InitGenesisStateResponse) Encode() ([]byte, error) {
+func (e *InitGenesisStateResponse) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Events {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteUInt(2, e.PreCommitThreshold); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt(2, e.PreCommitThreshold)
+	writer.WriteUInt(3, e.CertificateThreshold)
 	{
 		for _, val := range e.NextValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(4, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(4, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *InitGenesisStateResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *InitGenesisStateResponse) Decode(data []byte) error {
@@ -423,23 +363,11 @@ func (e *InitGenesisStateResponse) DecodeStrictFromReader(reader *codec.Reader) 
 	return nil
 }
 
-func (e *InsertAssetsRequest) Encode() ([]byte, error) {
+func (e *InsertAssetsRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.FinalizedHeight); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *InsertAssetsRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.ContextID)
+	writer.WriteUInt32(2, e.FinalizedHeight)
+	return writer.Result()
 }
 
 func (e *InsertAssetsRequest) Decode(data []byte) error {
@@ -500,26 +428,16 @@ func (e *InsertAssetsRequest) DecodeStrictFromReader(reader *codec.Reader) error
 	return nil
 }
 
-func (e *InsertAssetsResponse) Encode() ([]byte, error) {
+func (e *InsertAssetsResponse) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Assets {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *InsertAssetsResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *InsertAssetsResponse) Decode(data []byte) error {
@@ -574,29 +492,17 @@ func (e *InsertAssetsResponse) DecodeStrictFromReader(reader *codec.Reader) erro
 	return nil
 }
 
-func (e *VerifyAssetsRequest) Encode() ([]byte, error) {
+func (e *VerifyAssetsRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
+	writer.WriteBytes(1, e.ContextID)
 	{
 		for _, val := range e.Assets {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *VerifyAssetsRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *VerifyAssetsRequest) Decode(data []byte) error {
@@ -665,29 +571,13 @@ func (e *VerifyAssetsRequest) DecodeStrictFromReader(reader *codec.Reader) error
 	return nil
 }
 
-func (e *Validator) Encode() ([]byte, error) {
+func (e *Validator) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(2, e.BFTWeight); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.GeneratorKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.BLSKey); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Validator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Address)
+	writer.WriteUInt(2, e.BFTWeight)
+	writer.WriteBytes(3, e.GeneratorKey)
+	writer.WriteBytes(4, e.BLSKey)
+	return writer.Result()
 }
 
 func (e *Validator) Decode(data []byte) error {
@@ -776,35 +666,19 @@ func (e *Validator) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *Consensus) Encode() ([]byte, error) {
+func (e *Consensus) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.CurrentValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteBool(2, e.ImplyMaxPrevote); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.MaxHeightCertified); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(4, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Consensus) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBool(2, e.ImplyMaxPrevote)
+	writer.WriteUInt32(3, e.MaxHeightCertified)
+	writer.WriteUInt(4, e.CertificateThreshold)
+	return writer.Result()
 }
 
 func (e *Consensus) Decode(data []byte) error {
@@ -901,34 +775,20 @@ func (e *Consensus) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *BeforeTransactionsExecuteRequest) Encode() ([]byte, error) {
+func (e *BeforeTransactionsExecuteRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
+	writer.WriteBytes(1, e.ContextID)
 	{
 		for _, val := range e.Assets {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
 	if e.Consensus != nil {
-		if err := writer.WriteEncodable(3, e.Consensus); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(3, e.Consensus)
 	}
-	return writer.Result(), nil
-}
-
-func (e *BeforeTransactionsExecuteRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *BeforeTransactionsExecuteRequest) Decode(data []byte) error {
@@ -1011,26 +871,16 @@ func (e *BeforeTransactionsExecuteRequest) DecodeStrictFromReader(reader *codec.
 	return nil
 }
 
-func (e *BeforeTransactionsExecuteResponse) Encode() ([]byte, error) {
+func (e *BeforeTransactionsExecuteResponse) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Events {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *BeforeTransactionsExecuteResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *BeforeTransactionsExecuteResponse) Decode(data []byte) error {
@@ -1085,43 +935,27 @@ func (e *BeforeTransactionsExecuteResponse) DecodeStrictFromReader(reader *codec
 	return nil
 }
 
-func (e *AfterTransactionsExecuteRequest) Encode() ([]byte, error) {
+func (e *AfterTransactionsExecuteRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
+	writer.WriteBytes(1, e.ContextID)
 	{
 		for _, val := range e.Assets {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
 	if e.Consensus != nil {
-		if err := writer.WriteEncodable(3, e.Consensus); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(3, e.Consensus)
 	}
 	{
 		for _, val := range e.Transactions {
 			if val != nil {
-				if err := writer.WriteEncodable(4, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(4, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *AfterTransactionsExecuteRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *AfterTransactionsExecuteRequest) Decode(data []byte) error {
@@ -1226,41 +1060,25 @@ func (e *AfterTransactionsExecuteRequest) DecodeStrictFromReader(reader *codec.R
 	return nil
 }
 
-func (e *AfterTransactionsExecuteResponse) Encode() ([]byte, error) {
+func (e *AfterTransactionsExecuteResponse) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Events {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteUInt(2, e.PreCommitThreshold); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt(2, e.PreCommitThreshold)
+	writer.WriteUInt(3, e.CertificateThreshold)
 	{
 		for _, val := range e.NextValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(4, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(4, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *AfterTransactionsExecuteResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *AfterTransactionsExecuteResponse) Decode(data []byte) error {
@@ -1365,25 +1183,13 @@ func (e *AfterTransactionsExecuteResponse) DecodeStrictFromReader(reader *codec.
 	return nil
 }
 
-func (e *VerifyTransactionRequest) Encode() ([]byte, error) {
+func (e *VerifyTransactionRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
+	writer.WriteBytes(1, e.ContextID)
 	if e.Transaction != nil {
-		if err := writer.WriteEncodable(2, e.Transaction); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(2, e.Transaction)
 	}
-	return writer.Result(), nil
-}
-
-func (e *VerifyTransactionRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *VerifyTransactionRequest) Decode(data []byte) error {
@@ -1444,20 +1250,10 @@ func (e *VerifyTransactionRequest) DecodeStrictFromReader(reader *codec.Reader) 
 	return nil
 }
 
-func (e *VerifyTransactionResponse) Encode() ([]byte, error) {
+func (e *VerifyTransactionResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteInt32(1, e.Result); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *VerifyTransactionResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteInt32(1, e.Result)
+	return writer.Result()
 }
 
 func (e *VerifyTransactionResponse) Decode(data []byte) error {
@@ -1504,47 +1300,27 @@ func (e *VerifyTransactionResponse) DecodeStrictFromReader(reader *codec.Reader)
 	return nil
 }
 
-func (e *ExecuteTransactionRequest) Encode() ([]byte, error) {
+func (e *ExecuteTransactionRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
+	writer.WriteBytes(1, e.ContextID)
 	if e.Transaction != nil {
-		if err := writer.WriteEncodable(2, e.Transaction); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(2, e.Transaction)
 	}
 	{
 		for _, val := range e.Assets {
 			if val != nil {
-				if err := writer.WriteEncodable(3, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(3, val)
 			}
 		}
 	}
-	if err := writer.WriteBool(4, e.DryRun); err != nil {
-		return nil, err
-	}
+	writer.WriteBool(4, e.DryRun)
 	if e.Header != nil {
-		if err := writer.WriteEncodable(5, e.Header); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(5, e.Header)
 	}
 	if e.Consensus != nil {
-		if err := writer.WriteEncodable(6, e.Consensus); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(6, e.Consensus)
 	}
-	return writer.Result(), nil
-}
-
-func (e *ExecuteTransactionRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *ExecuteTransactionRequest) Decode(data []byte) error {
@@ -1669,29 +1445,17 @@ func (e *ExecuteTransactionRequest) DecodeStrictFromReader(reader *codec.Reader)
 	return nil
 }
 
-func (e *ExecuteTransactionResponse) Encode() ([]byte, error) {
+func (e *ExecuteTransactionResponse) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Events {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteInt32(2, e.Result); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ExecuteTransactionResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteInt32(2, e.Result)
+	return writer.Result()
 }
 
 func (e *ExecuteTransactionResponse) Decode(data []byte) error {
@@ -1760,29 +1524,13 @@ func (e *ExecuteTransactionResponse) DecodeStrictFromReader(reader *codec.Reader
 	return nil
 }
 
-func (e *CommitRequest) Encode() ([]byte, error) {
+func (e *CommitRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.ExpectedStateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBool(4, e.DryRun); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *CommitRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.ContextID)
+	writer.WriteBytes(2, e.StateRoot)
+	writer.WriteBytes(3, e.ExpectedStateRoot)
+	writer.WriteBool(4, e.DryRun)
+	return writer.Result()
 }
 
 func (e *CommitRequest) Decode(data []byte) error {
@@ -1871,20 +1619,10 @@ func (e *CommitRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *CommitResponse) Encode() ([]byte, error) {
+func (e *CommitResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.StateRoot); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *CommitResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.StateRoot)
+	return writer.Result()
 }
 
 func (e *CommitResponse) Decode(data []byte) error {
@@ -1931,26 +1669,12 @@ func (e *CommitResponse) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *RevertRequest) Encode() ([]byte, error) {
+func (e *RevertRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.ContextID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.ExpectedStateRoot); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *RevertRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.ContextID)
+	writer.WriteBytes(2, e.StateRoot)
+	writer.WriteBytes(3, e.ExpectedStateRoot)
+	return writer.Result()
 }
 
 func (e *RevertRequest) Decode(data []byte) error {
@@ -2025,20 +1749,10 @@ func (e *RevertRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *RevertResponse) Encode() ([]byte, error) {
+func (e *RevertResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.StateRoot); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *RevertResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.StateRoot)
+	return writer.Result()
 }
 
 func (e *RevertResponse) Decode(data []byte) error {
@@ -2085,20 +1799,10 @@ func (e *RevertResponse) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *FinalizeRequest) Encode() ([]byte, error) {
+func (e *FinalizeRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.FinalizedHeight); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *FinalizeRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.FinalizedHeight)
+	return writer.Result()
 }
 
 func (e *FinalizeRequest) Decode(data []byte) error {
@@ -2145,20 +1849,10 @@ func (e *FinalizeRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *MetadataResponse) Encode() ([]byte, error) {
+func (e *MetadataResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *MetadataResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Data)
+	return writer.Result()
 }
 
 func (e *MetadataResponse) Decode(data []byte) error {
@@ -2205,28 +1899,14 @@ func (e *MetadataResponse) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *QueryRequest) Encode() ([]byte, error) {
+func (e *QueryRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Method); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Params); err != nil {
-		return nil, err
-	}
+	writer.WriteString(1, e.Method)
+	writer.WriteBytes(2, e.Params)
 	if e.Header != nil {
-		if err := writer.WriteEncodable(3, e.Header); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(3, e.Header)
 	}
-	return writer.Result(), nil
-}
-
-func (e *QueryRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *QueryRequest) Decode(data []byte) error {
@@ -2301,20 +1981,10 @@ func (e *QueryRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *QueryResponse) Encode() ([]byte, error) {
+func (e *QueryResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *QueryResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Data)
+	return writer.Result()
 }
 
 func (e *QueryResponse) Decode(data []byte) error {
@@ -2361,23 +2031,11 @@ func (e *QueryResponse) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ProveRequest) Encode() ([]byte, error) {
+func (e *ProveRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(2, codec.HexArrayToBytesArray(e.Keys)); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ProveRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.StateRoot)
+	writer.WriteBytesArray(2, codec.HexArrayToBytesArray(e.Keys))
+	return writer.Result()
 }
 
 func (e *ProveRequest) Decode(data []byte) error {
@@ -2438,22 +2096,12 @@ func (e *ProveRequest) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ProveResponse) Encode() ([]byte, error) {
+func (e *ProveResponse) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Result != nil {
-		if err := writer.WriteEncodable(1, e.Result); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Result)
 	}
-	return writer.Result(), nil
-}
-
-func (e *ProveResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *ProveResponse) Decode(data []byte) error {

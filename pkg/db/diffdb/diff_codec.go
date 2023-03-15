@@ -6,23 +6,11 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *KV) Encode() ([]byte, error) {
+func (e *KV) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Key); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Value); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *KV) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Key)
+	writer.WriteBytes(2, e.Value)
+	return writer.Result()
 }
 
 func (e *KV) Decode(data []byte) error {
@@ -83,38 +71,24 @@ func (e *KV) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *Diff) Encode() ([]byte, error) {
+func (e *Diff) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, e.Added); err != nil {
-		return nil, err
-	}
+	writer.WriteBytesArray(1, e.Added)
 	{
 		for _, val := range e.Updated {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
 	{
 		for _, val := range e.Deleted {
 			if val != nil {
-				if err := writer.WriteEncodable(3, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(3, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *Diff) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *Diff) Decode(data []byte) error {

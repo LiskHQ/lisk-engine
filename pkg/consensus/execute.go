@@ -371,7 +371,7 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	// publish block to a topic only if it was internally generated
 	if publish {
 		go func() {
-			err = c.conn.Publish(ctx, P2PEventPostBlock, block.MustEncode())
+			err = c.conn.Publish(ctx, P2PEventPostBlock, block.Encode())
 			if err != nil {
 				c.logger.Errorf("Fail to publish postBlock with %v", err)
 			}
@@ -405,7 +405,7 @@ func (c *Executer) processValidated(ctx context.Context, block *blockchain.Block
 	batch := c.database.NewBatch()
 	diff := consensusStore.Commit(batch)
 
-	batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(block.Header.Height)), diff.MustEncode())
+	batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(block.Header.Height)), diff.Encode())
 
 	// Save to DB
 	if err := abi.Commit(c.chain.LastBlock().Header.StateRoot, block.Header.StateRoot); err != nil {
@@ -485,7 +485,7 @@ func (c *Executer) processGenesisBlock(ctx *ProcessContext) error {
 	}
 	diff := consensusStore.Commit(batch)
 
-	batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(ctx.block.Header.Height)), diff.MustEncode())
+	batch.Set(bytes.Join(blockchain.DBPrefixToBytes(blockchain.DBPrefixStateDiff), bytes.FromUint32(ctx.block.Header.Height)), diff.Encode())
 	if err := abi.Commit(ctx.block.Header.StateRoot); err != nil {
 		return err
 	}

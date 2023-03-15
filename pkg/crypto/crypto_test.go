@@ -77,9 +77,8 @@ func TestGetAddress(t *testing.T) {
 func TestSignature(t *testing.T) {
 	pk, _ := hexToBytes("af52aaba65b2e71b01f8eadd748e56d877b7e555376ae389922e3a0ab4f5bee0")
 	sk, _ := hexToBytes("81076308b1be76842f0bbcdc8659647400a14c193c333582a649bfda130856e3af52aaba65b2e71b01f8eadd748e56d877b7e555376ae389922e3a0ab4f5bee0")
-	signature, err := Sign(sk, []byte("message"))
-	assert.NoError(t, err)
+	signature := Sign(sk, []byte("message"))
 
-	err = VerifySignature(pk, signature, []byte("message"))
+	err := VerifySignature(pk, signature, []byte("message"))
 	assert.NoError(t, err)
 }

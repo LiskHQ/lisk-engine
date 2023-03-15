@@ -75,9 +75,7 @@ func (m *Module) InitGenesisState(blockHeader blockchain.SealedBlockHeader, diff
 		blockBFTInfos:            []*BFTBlockHeader{},
 		activeValidatorsVoteInfo: []*ActiveValidator{},
 	}
-	if err := diffdb.SetEncodable(voteStore, emptyKey, bftVotes); err != nil {
-		return err
-	}
+	diffdb.SetEncodable(voteStore, emptyKey, bftVotes)
 	return nil
 }
 
@@ -111,9 +109,7 @@ func (m *Module) BeforeTransactionsExecute(blockHeader blockchain.ReadableBlockH
 		return err
 	}
 	// store updated bft votes
-	if err := diffdb.SetEncodable(voteStore, emptyKey, bftVotes); err != nil {
-		return err
-	}
+	diffdb.SetEncodable(voteStore, emptyKey, bftVotes)
 	minHeightBFTParamsRequired := ints.Min(
 		bftVotes.blockBFTInfos[len(bftVotes.blockBFTInfos)-1].height,
 		bftVotes.maxHeightCertified+1,

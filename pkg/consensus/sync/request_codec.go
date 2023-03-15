@@ -6,20 +6,10 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *getHighestCommonBlockRequest) Encode() ([]byte, error) {
+func (e *getHighestCommonBlockRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, e.ids); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *getHighestCommonBlockRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytesArray(1, e.ids)
+	return writer.Result()
 }
 
 func (e *getHighestCommonBlockRequest) Decode(data []byte) error {
@@ -66,20 +56,10 @@ func (e *getHighestCommonBlockRequest) DecodeStrictFromReader(reader *codec.Read
 	return nil
 }
 
-func (e *getHighestCommonBlockResponse) Encode() ([]byte, error) {
+func (e *getHighestCommonBlockResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.id); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *getHighestCommonBlockResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.id)
+	return writer.Result()
 }
 
 func (e *getHighestCommonBlockResponse) Decode(data []byte) error {
@@ -126,20 +106,10 @@ func (e *getHighestCommonBlockResponse) DecodeStrictFromReader(reader *codec.Rea
 	return nil
 }
 
-func (e *getBlocksFromIDRequest) Encode() ([]byte, error) {
+func (e *getBlocksFromIDRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.blockID); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *getBlocksFromIDRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.blockID)
+	return writer.Result()
 }
 
 func (e *getBlocksFromIDRequest) Decode(data []byte) error {
@@ -186,20 +156,10 @@ func (e *getBlocksFromIDRequest) DecodeStrictFromReader(reader *codec.Reader) er
 	return nil
 }
 
-func (e *getBlocksFromIDResponse) Encode() ([]byte, error) {
+func (e *getBlocksFromIDResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, e.blocks); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *getBlocksFromIDResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytesArray(1, e.blocks)
+	return writer.Result()
 }
 
 func (e *getBlocksFromIDResponse) Decode(data []byte) error {

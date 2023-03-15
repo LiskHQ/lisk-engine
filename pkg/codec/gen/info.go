@@ -118,10 +118,6 @@ func (i *fieldInfo) ShowLogic() string {
 	return "being called"
 }
 
-func defaultEncodeReturn(fn string) string {
-	return fmt.Sprintf("if err := %s; err != nil { return nil, err }", fn)
-}
-
 func (i *fieldInfo) EncodeLogic() string {
 	var fn string
 	switch i.Type {
@@ -161,15 +157,15 @@ func (i *fieldInfo) EncodeLogic() string {
 		if strings.Contains(i.Type, "[]") {
 			fn = fmt.Sprintf("writer.WriteEncodable(%d, val)", i.FieldNumber)
 			loopStart := fmt.Sprintf("{ for _, val := range e.%s {", i.Name)
-			loop := fmt.Sprintf("if val != nil { if err := %s; err != nil { return nil, err }}", fn)
+			loop := fmt.Sprintf("if val != nil { %s }", fn)
 			loopEnd := "} }"
 			return loopStart + loop + loopEnd
 		}
 		fn = fmt.Sprintf("writer.WriteEncodable(%d, e.%s)", i.FieldNumber, i.Name)
-		result := fmt.Sprintf("if e.%s != nil { if err := %s; err != nil { return nil, err }}", i.Name, fn)
+		result := fmt.Sprintf("if e.%s != nil { %s }", i.Name, fn)
 		return result
 	}
-	return defaultEncodeReturn(fn)
+	return fn
 }
 
 func defaultDecodeReturn(fn, name string) string {

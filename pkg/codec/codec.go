@@ -8,7 +8,7 @@ package codec
 // Encodable is interface for struct which is encodable
 // All generated struct code should have this method.
 type Encodable interface {
-	Encode() ([]byte, error)
+	Encode() []byte
 }
 
 // Decodable is interface for struct which is decodable

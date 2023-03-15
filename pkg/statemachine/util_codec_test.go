@@ -6,20 +6,10 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *testObj) Encode() ([]byte, error) {
+func (e *testObj) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *testObj) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.data)
+	return writer.Result()
 }
 
 func (e *testObj) Decode(data []byte) error {

@@ -6,26 +6,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *Request) Encode() ([]byte, error) {
+func (e *Request) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.ID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.Procedure); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Request) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteString(1, e.ID)
+	writer.WriteString(2, e.Procedure)
+	writer.WriteBytes(3, e.Data)
+	return writer.Result()
 }
 
 func (e *Request) Decode(data []byte) error {
@@ -100,29 +86,13 @@ func (e *Request) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *responseMsg) Encode() ([]byte, error) {
+func (e *responseMsg) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.ID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.Procedure); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Data); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(4, e.Error); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *responseMsg) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteString(1, e.ID)
+	writer.WriteString(2, e.Procedure)
+	writer.WriteBytes(3, e.Data)
+	writer.WriteString(4, e.Error)
+	return writer.Result()
 }
 
 func (e *responseMsg) Decode(data []byte) error {
@@ -211,20 +181,10 @@ func (e *responseMsg) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *Message) Encode() ([]byte, error) {
+func (e *Message) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Message) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Data)
+	return writer.Result()
 }
 
 func (e *Message) Decode(data []byte) error {

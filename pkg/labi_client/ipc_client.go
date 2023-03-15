@@ -260,11 +260,7 @@ func (c *ipcClient) call(method string, req codec.Encodable, res codec.Decodable
 func (c *ipcClient) request(method string, req codec.Encodable) (*reqOp, error) {
 	encodedReq := []byte{}
 	if req != nil {
-		var err error
-		encodedReq, err = req.Encode()
-		if err != nil {
-			return nil, err
-		}
+		encodedReq = req.Encode()
 	}
 
 	c.mutex.Lock()
@@ -278,10 +274,7 @@ func (c *ipcClient) request(method string, req codec.Encodable) (*reqOp, error) 
 		method: method,
 		params: encodedReq,
 	}
-	encodedReqData, err := reqData.Encode()
-	if err != nil {
-		return nil, err
-	}
+	encodedReqData := reqData.Encode()
 	if err := c.client.Send(zmq4.NewMsg(encodedReqData)); err != nil {
 		return nil, err
 	}

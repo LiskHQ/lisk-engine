@@ -6,20 +6,10 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *GetValidatorInfoResponse) Encode() ([]byte, error) {
+func (e *GetValidatorInfoResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.MaxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *GetValidatorInfoResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.MaxHeightPrevoted)
+	return writer.Result()
 }
 
 func (e *GetValidatorInfoResponse) Decode(data []byte) error {
@@ -66,29 +56,13 @@ func (e *GetValidatorInfoResponse) DecodeStrictFromReader(reader *codec.Reader) 
 	return nil
 }
 
-func (e *IsBFTComplientRequest) Encode() ([]byte, error) {
+func (e *IsBFTComplientRequest) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.GeneratorPublicKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.MaxHeightGenerated); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(4, e.MaxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *IsBFTComplientRequest) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.GeneratorPublicKey)
+	writer.WriteUInt32(2, e.Height)
+	writer.WriteUInt32(3, e.MaxHeightGenerated)
+	writer.WriteUInt32(4, e.MaxHeightPrevoted)
+	return writer.Result()
 }
 
 func (e *IsBFTComplientRequest) Decode(data []byte) error {
@@ -177,20 +151,10 @@ func (e *IsBFTComplientRequest) DecodeStrictFromReader(reader *codec.Reader) err
 	return nil
 }
 
-func (e *IsBFTComplientResponse) Encode() ([]byte, error) {
+func (e *IsBFTComplientResponse) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBool(1, e.Valid); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *IsBFTComplientResponse) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBool(1, e.Valid)
+	return writer.Result()
 }
 
 func (e *IsBFTComplientResponse) Decode(data []byte) error {

@@ -90,11 +90,7 @@ func (c *Executer) singleCommitValidator(ctx context.Context, msg *p2p.Message) 
 			c.logger.Errorf("Failed to get registered keys for %s while processing single commits with %v", singleCommit.ValidatorAddress(), err)
 			return p2p.ValidationIgnore
 		}
-		validCert, err := cert.Verify(c.chain.ChainID(), singleCommit.CertificateSignature(), validator.BLSKey())
-		if err != nil {
-			c.logger.Errorf("Failed to verify signature while processing single commits with %v", err)
-			return p2p.ValidationIgnore
-		}
+		validCert := cert.Verify(c.chain.ChainID(), singleCommit.CertificateSignature(), validator.BLSKey())
 		if !validCert {
 			c.logger.Errorf("Invalid commit received")
 			return p2p.ValidationReject
@@ -139,10 +135,7 @@ func (c *Executer) Certify(from, to uint32, address codec.Lisk32, blsPrivateKey 
 				return err
 			}
 			c.logger.Debugf("certifying block at hegiht %d", i)
-			singleCommit, err := certificate.NewSingleCommit(header, address, c.chain.ChainID(), blsPrivateKey)
-			if err != nil {
-				return err
-			}
+			singleCommit := certificate.NewSingleCommit(header, address, c.chain.ChainID(), blsPrivateKey)
 			c.certificatePool.Add(singleCommit)
 			return nil
 		})
@@ -171,10 +164,7 @@ func (c *Executer) Certify(from, to uint32, address codec.Lisk32, blsPrivateKey 
 		return err
 	}
 	c.logger.Debugf("certifying block at hegiht %d", to)
-	singleCommit, err := certificate.NewSingleCommit(header, address, c.chain.ChainID(), blsPrivateKey)
-	if err != nil {
-		return err
-	}
+	singleCommit := certificate.NewSingleCommit(header, address, c.chain.ChainID(), blsPrivateKey)
 	c.certificatePool.Add(singleCommit)
 	return nil
 }
@@ -226,10 +216,7 @@ func (c *Executer) broadcastCertificate() error {
 	postCertificateData := &EventPostSingleCommits{
 		SingleCommits: selectedCommites,
 	}
-	data, err := postCertificateData.Encode()
-	if err != nil {
-		return err
-	}
+	data := postCertificateData.Encode()
 	err = c.conn.Publish(c.ctx, P2PEventPostSingleCommits, data)
 	if err != nil {
 		return err
@@ -288,10 +275,7 @@ func (c *Executer) verifyAggregateCommit(diffStore *diffdb.Database, aggregteCom
 		keys[i] = val.BLSKey
 		weights[i] = val.BFTWeight
 	}
-	valid, err := certificateFromBlock.VerifyAggregateCertificateSignature(keys, weights, params.CertificateThreshold(), c.chain.ChainID())
-	if err != nil {
-		return err
-	}
+	valid := certificateFromBlock.VerifyAggregateCertificateSignature(keys, weights, params.CertificateThreshold(), c.chain.ChainID())
 	if !valid {
 		return errors.New("invalid certificate received")
 	}

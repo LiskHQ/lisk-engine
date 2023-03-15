@@ -36,22 +36,16 @@ func NewTransaction(value []byte) (*Transaction, error) {
 	if err := tx.DecodeStrict(value); err != nil {
 		return nil, err
 	}
-	if err := tx.Init(); err != nil {
-		return nil, err
-	}
+	tx.Init()
 	return tx, nil
 }
 
-func (t *Transaction) Init() error {
-	txBytes, err := t.Encode()
-	if err != nil {
-		return err
-	}
+func (t *Transaction) Init() {
+	txBytes := t.Encode()
 	id := crypto.Hash(txBytes)
 	size := len(txBytes)
 	t.ID = id
 	t.size = size
-	return nil
 }
 
 // Size returns the transaction size.
@@ -59,7 +53,7 @@ func (t *Transaction) Size() int                   { return t.size }
 func (t *Transaction) SenderAddress() codec.Lisk32 { return crypto.GetAddress(t.SenderPublicKey) }
 
 // Bytes return transaction in bytes.
-func (t *Transaction) Bytes() ([]byte, error) {
+func (t *Transaction) Bytes() []byte {
 	return t.Encode()
 }
 
@@ -80,11 +74,8 @@ func (t *Transaction) Copy() *Transaction {
 	}
 	return tx
 }
-func (t *Transaction) GetSignature(chainID, privateKey []byte) ([]byte, error) {
-	signingBytes, err := t.SigningBytes()
-	if err != nil {
-		return nil, err
-	}
+func (t *Transaction) GetSignature(chainID, privateKey []byte) []byte {
+	signingBytes := t.SigningBytes()
 	return crypto.Sign(privateKey, crypto.Hash(bytes.Join(TagTransaction, chainID, signingBytes)))
 }
 
@@ -104,7 +95,7 @@ func (t *Transaction) Freeze() FrozenTransaction {
 }
 
 // SigningBytes return signed byte so the transaction.
-func (t *Transaction) SigningBytes() ([]byte, error) {
+func (t *Transaction) SigningBytes() []byte {
 	stx := &SigningTransaction{
 		Module:          t.Module,
 		Command:         t.Command,
@@ -162,7 +153,7 @@ type FrozenTransaction interface {
 	SenderPublicKey() codec.Hex
 	Signatures() [][]byte
 	Size() int
-	SigningBytes() ([]byte, error)
+	SigningBytes() []byte
 }
 
 type frozenTransaction struct {
@@ -187,7 +178,7 @@ func (t *frozenTransaction) SenderAddress() codec.Lisk32 { return crypto.GetAddr
 func (t *frozenTransaction) Params() []byte              { return t.params }
 func (t *frozenTransaction) Signatures() [][]byte        { return t.signatures }
 func (t *frozenTransaction) Size() int                   { return t.size }
-func (t *frozenTransaction) SigningBytes() ([]byte, error) {
+func (t *frozenTransaction) SigningBytes() []byte {
 	stx := &SigningTransaction{
 		Module:          t.module,
 		Command:         t.command,

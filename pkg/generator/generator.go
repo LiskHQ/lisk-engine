@@ -240,7 +240,7 @@ func (g *Generator) forge() {
 		MaxHeightPrevoted:  signedBlock.Header.MaxHeightPrevoted,
 		MaxHeightGenerated: signedBlock.Header.MaxHeightGenerated,
 	}
-	encodedPreviousInfo := previousInfo.MustEncode()
+	encodedPreviousInfo := previousInfo.Encode()
 	previousInfoStore := generatorDB.WithPrefix(GeneratorDBPrefixGeneratedInfo)
 	previousInfoStore.Set(signedBlock.Header.GeneratorAddress, encodedPreviousInfo)
 	batch := g.generatorDB.NewBatch()
@@ -350,20 +350,20 @@ func (g *Generator) saveGeneratorsFromFile() error {
 			keys := &Keys{
 				Address: rawKeys.Address,
 				Type:    KeyTypeEncrypted,
-				Data:    rawKeys.Encrypted.MustEncode(),
+				Data:    rawKeys.Encrypted.Encode(),
 			}
 			g.logger.Infof("Saving keys for address %s", rawKeys.Address)
-			keysStore.Set(rawKeys.Address, keys.MustEncode())
+			keysStore.Set(rawKeys.Address, keys.Encode())
 			continue
 		}
 		if err := rawKeys.Plain.Validate(); err == nil {
 			keys := &Keys{
 				Address: rawKeys.Address,
 				Type:    KeyTypePlain,
-				Data:    rawKeys.Plain.MustEncode(),
+				Data:    rawKeys.Plain.Encode(),
 			}
 			g.logger.Infof("Saving keys for address %s", rawKeys.Address)
-			keysStore.Set(rawKeys.Address, keys.MustEncode())
+			keysStore.Set(rawKeys.Address, keys.Encode())
 			continue
 		}
 		g.logger.Errorf("Invalid key for %s", rawKeys.Address)
@@ -465,10 +465,7 @@ func (g *Generator) initBlockHeader(
 		MaxHeightPrevoted:  maxHeightPrevoted,
 		MaxHeightGenerated: previousInfo.Height,
 	}
-	encodedNextInfo, err := nextInfo.Encode()
-	if err != nil {
-		return nil, err
-	}
+	encodedNextInfo := nextInfo.Encode()
 	prevInfoStore.Set(generatorAddress, encodedNextInfo)
 
 	aggregateCommit, err := g.consensus.GetAggregateCommit()
@@ -510,10 +507,7 @@ func (g *Generator) sealBlock(
 	}
 	partialHeader.ValidatorsHash = params.ValidatorsHash()
 	partialHeader.TransactionRoot = rmt.CalculateRoot(txIDs)
-	assetRoot, err := blockAssets.GetRoot()
-	if err != nil {
-		return nil, err
-	}
+	assetRoot := blockAssets.GetRoot()
 	partialHeader.AssetRoot = assetRoot
 	eventRoot, err := blockchain.CalculateEventRoot(events)
 	if err != nil {
@@ -522,9 +516,7 @@ func (g *Generator) sealBlock(
 	partialHeader.EventRoot = eventRoot
 	partialHeader.StateRoot = stateRoot
 
-	if err := partialHeader.Sign(g.chain.ChainID(), privateKey); err != nil {
-		return nil, err
-	}
+	partialHeader.Sign(g.chain.ChainID(), privateKey)
 
 	signedBlock := &blockchain.Block{
 		Header:       partialHeader,

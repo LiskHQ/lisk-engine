@@ -6,23 +6,11 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *Pair) Encode() ([]byte, error) {
+func (e *Pair) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Key); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Value); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Pair) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Key)
+	writer.WriteBytes(2, e.Value)
+	return writer.Result()
 }
 
 func (e *Pair) Decode(data []byte) error {
@@ -83,29 +71,17 @@ func (e *Pair) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *DataSetParams) Encode() ([]byte, error) {
+func (e *DataSetParams) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Pairs {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteBool(2, e.Hash); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *DataSetParams) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBool(2, e.Hash)
+	return writer.Result()
 }
 
 func (e *DataSetParams) Decode(data []byte) error {

@@ -69,16 +69,11 @@ func NewBlock(val []byte) (*Block, error) {
 }
 
 // Init the calculated value if decoded directly without NewBlock.
-func (b *Block) Init() error {
-	if err := b.Header.Init(); err != nil {
-		return err
-	}
+func (b *Block) Init() {
+	b.Header.Init()
 	for _, tx := range b.Transactions {
-		if err := tx.Init(); err != nil {
-			return err
-		}
+		tx.Init()
 	}
-	return nil
 }
 
 // Validate a block.
@@ -98,10 +93,7 @@ func (b *Block) Validate() error {
 	if err := assets.Valid(); err != nil {
 		return err
 	}
-	assetsRoot, err := assets.GetRoot()
-	if err != nil {
-		return err
-	}
+	assetsRoot := assets.GetRoot()
 	if !bytes.Equal(b.Header.AssetRoot, assetsRoot) {
 		return errors.New("assets root must match the assets")
 	}
@@ -120,10 +112,7 @@ func (b *Block) ValidateGenesis() error {
 	if err := assets.Valid(); err != nil {
 		return err
 	}
-	assetsRoot, err := assets.GetRoot()
-	if err != nil {
-		return err
-	}
+	assetsRoot := assets.GetRoot()
 	if !bytes.Equal(b.Header.AssetRoot, assetsRoot) {
 		return errors.New("asset root must match the assets")
 	}
@@ -178,31 +167,21 @@ func (b *BlockHeader) signingBlockHeader() *signingBlockHeader {
 }
 
 // SigningBytes return signed part of the block header.
-func (b *BlockHeader) SigningBytes() ([]byte, error) {
+func (b *BlockHeader) SigningBytes() []byte {
 	return b.signingBlockHeader().Encode()
 }
 
-func (b *BlockHeader) Sign(chainID, privateKey []byte) error {
-	signature, err := b.signingBlockHeader().Sign(chainID, privateKey)
-	if err != nil {
-		return err
-	}
+func (b *BlockHeader) Sign(chainID, privateKey []byte) {
+	signature := b.signingBlockHeader().Sign(chainID, privateKey)
 	b.Signature = signature
-	headerBytes, err := b.Encode()
-	if err != nil {
-		return err
-	}
+	headerBytes := b.Encode()
 	id := crypto.Hash(headerBytes)
 	b.ID = id
-	return nil
 }
 
-func (b *BlockHeader) VerifySignature(chainID, publicKey []byte) (bool, error) {
-	signingBytes, err := b.SigningBytes()
-	if err != nil {
-		return false, err
-	}
-	return ValidateBlockSignature(publicKey, b.Signature, chainID, signingBytes), nil
+func (b *BlockHeader) VerifySignature(chainID, publicKey []byte) bool {
+	signingBytes := b.SigningBytes()
+	return ValidateBlockSignature(publicKey, b.Signature, chainID, signingBytes)
 }
 
 // NewBlockHeader create blockheader instance from encoded value.
@@ -211,23 +190,16 @@ func NewBlockHeader(value []byte) (*BlockHeader, error) {
 	if err := header.Decode(value); err != nil {
 		return nil, err
 	}
-	headerBytes, err := header.Encode()
-	if err != nil {
-		return nil, err
-	}
+	headerBytes := header.Encode()
 	id := crypto.Hash(headerBytes)
 	header.ID = id
 	return header, nil
 }
 
-func (b *BlockHeader) Init() error {
-	headerBytes, err := b.Encode()
-	if err != nil {
-		return err
-	}
+func (b *BlockHeader) Init() {
+	headerBytes := b.Encode()
 	id := crypto.Hash(headerBytes)
 	b.ID = id
-	return nil
 }
 
 func NewBlockHeaderWithValues(
@@ -260,10 +232,7 @@ func NewBlockHeaderWithValues(
 		AggregateCommit:    aggregateCommit,
 		Signature:          signature,
 	}
-	headerBytes, err := header.Encode()
-	if err != nil {
-		return nil, err
-	}
+	headerBytes := header.Encode()
 	id := crypto.Hash(headerBytes)
 	header.ID = id
 	return header, nil
@@ -310,7 +279,7 @@ type SealedBlockHeader interface {
 	ReadableBlockHeader
 	ID() []byte
 	Signature() []byte
-	SigningBytes() ([]byte, error)
+	SigningBytes() []byte
 	TransactionRoot() []byte
 	AssetRoot() []byte
 	StateRoot() []byte
@@ -341,8 +310,8 @@ func (b *readonlyBlockHeader) MaxHeightGenerated() uint32 {
 func (b *readonlyBlockHeader) ValidatorsHash() []byte            { return b.header.ValidatorsHash }
 func (b *readonlyBlockHeader) AggregateCommit() *AggregateCommit { return b.header.AggregateCommit }
 
-func (b *readonlyBlockHeader) Signature() []byte             { return b.header.Signature }
-func (b *readonlyBlockHeader) SigningBytes() ([]byte, error) { return b.header.SigningBytes() }
+func (b *readonlyBlockHeader) Signature() []byte    { return b.header.Signature }
+func (b *readonlyBlockHeader) SigningBytes() []byte { return b.header.SigningBytes() }
 
 // signingBlockHeader holds signing part of block header.
 type signingBlockHeader struct {
@@ -361,16 +330,10 @@ type signingBlockHeader struct {
 	AggregateCommit    *AggregateCommit `fieldNumber:"13"`
 }
 
-func (s *signingBlockHeader) Sign(chainID, privateKey []byte) ([]byte, error) {
-	encoded, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	signature, err := crypto.Sign(privateKey, crypto.Hash(bytes.Join(TagBlockHeader, chainID, encoded)))
-	if err != nil {
-		return nil, err
-	}
-	return signature, nil
+func (s *signingBlockHeader) Sign(chainID, privateKey []byte) []byte {
+	encoded := s.Encode()
+	signature := crypto.Sign(privateKey, crypto.Hash(bytes.Join(TagBlockHeader, chainID, encoded)))
+	return signature
 }
 
 type BlockAsset struct {
@@ -424,17 +387,14 @@ func (a *BlockAssets) Sort() {
 	*a = original
 }
 
-func (a BlockAssets) GetRoot() ([]byte, error) {
+func (a BlockAssets) GetRoot() []byte {
 	assets := make([][]byte, len(a))
 	for i, asset := range a {
-		encoded, err := asset.Encode()
-		if err != nil {
-			return nil, err
-		}
+		encoded := asset.Encode()
 		assets[i] = encoded
 	}
 
-	return rmt.CalculateRoot(assets), nil
+	return rmt.CalculateRoot(assets)
 }
 
 func (a *BlockAssets) SetAsset(module string, data []byte) {

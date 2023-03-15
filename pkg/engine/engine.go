@@ -65,9 +65,7 @@ func (e *Engine) Start() error {
 	if err != nil {
 		return err
 	}
-	if err := genesisBlock.Init(); err != nil {
-		return err
-	}
+	genesisBlock.Init()
 	ctx, cancel := context.WithCancel(context.Background())
 	e.ctx = ctx
 	e.cancel = cancel

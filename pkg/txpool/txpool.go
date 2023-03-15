@@ -246,12 +246,8 @@ func (t *TransactionPool) Add(tx *blockchain.Transaction) bool {
 	t.allTransactions[string(tx.ID)] = incomingTx
 	heap.Push(&t.feePriorityQueue, incomingTx)
 
-	data, err := tx.Bytes()
-	if err != nil {
-		t.logger.Errorf("Failed to serialize transaction: %s", err)
-		return false
-	}
-	err = t.conn.Publish(t.ctx, RPCEventPostTransactionAnnouncement, data)
+	data := tx.Bytes()
+	err := t.conn.Publish(t.ctx, RPCEventPostTransactionAnnouncement, data)
 	if err != nil {
 		t.logger.Errorf("Failed to publish transaction announcement: %s", err)
 		return false
@@ -436,11 +432,7 @@ func (t *TransactionPool) HandleRPCEndpointGetTransaction(w p2p.ResponseWriter, 
 		resp := &GetTransactionsResponse{
 			Transactions: processables,
 		}
-		encoded, err := resp.Encode()
-		if err != nil {
-			w.Error(err)
-			return
-		}
+		encoded := resp.Encode()
 		w.Write(encoded)
 		return
 	}

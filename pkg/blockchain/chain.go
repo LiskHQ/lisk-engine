@@ -90,9 +90,7 @@ func (c *Chain) GenesisBlockExist(block *Block) (bool, error) {
 
 // AddBlock adds a block on top of the current chain.
 func (c *Chain) AddBlock(batch *db.Batch, block *Block, events []*Event, finalizedHeight uint32, removeTemp bool) error {
-	if err := c.dataAccess.saveBlock(batch, block, events, finalizedHeight, removeTemp); err != nil {
-		return err
-	}
+	c.dataAccess.saveBlock(batch, block, events, finalizedHeight, removeTemp)
 	c.database.Write(batch)
 	return c.dataAccess.Cache(block)
 }
@@ -103,9 +101,7 @@ func (c *Chain) RemoveBlock(batch *db.Batch, saveTemp bool) error {
 	if lastBlock.Header.Height == c.genesisBlock.Header.Height {
 		return fmt.Errorf("genesis block cannot be removed")
 	}
-	if err := c.dataAccess.removeBlock(batch, lastBlock, saveTemp); err != nil {
-		return err
-	}
+	c.dataAccess.removeBlock(batch, lastBlock, saveTemp)
 	c.database.Write(batch)
 	c.dataAccess.RemoveCache()
 	return nil

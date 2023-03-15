@@ -71,10 +71,7 @@ func (c *Executer) verifyBlock(consensusStore *diffdb.Database, block *blockchai
 		return err
 	}
 	// check signature
-	valid, err := blockHeader.VerifySignature(c.chain.ChainID(), generator.GeneratorKey())
-	if err != nil {
-		return err
-	}
+	valid := blockHeader.VerifySignature(c.chain.ChainID(), generator.GeneratorKey())
 	if !valid {
 		return fmt.Errorf("invalid signature %s received from %s", blockHeader.Signature, lastBlockHeader.GeneratorAddress)
 	}

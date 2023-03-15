@@ -207,10 +207,7 @@ func (a *generatorEndpoint) verifyAndUpdateGeneratorInfo(generatorInfoStore *dif
 	} else if !inputGeneratorInfo.IsZero() {
 		return errors.New("failed to enable block generation. there is no previous generator info")
 	}
-	encodedGeneratorInfo, err := inputGeneratorInfo.Encode()
-	if err != nil {
-		return err
-	}
+	encodedGeneratorInfo := inputGeneratorInfo.Encode()
 	generatorInfoStore.Set(generatorAddress, encodedGeneratorInfo)
 	return nil
 }
@@ -236,11 +233,7 @@ func (a *generatorEndpoint) HandleSetStatus(w router.EndpointResponseWriter, r *
 		MaxHeightGenerated: req.MaxHeightGenerated,
 	}
 	generatorInfoStore := diffdb.New(a.generatorDB, generator.GeneratorDBPrefixGeneratedInfo)
-	encodedGeneratorInfo, err := inputGeneratorInfo.Encode()
-	if err != nil {
-		w.Error(err)
-		return
-	}
+	encodedGeneratorInfo := inputGeneratorInfo.Encode()
 	generatorInfoStore.Set(req.Address, encodedGeneratorInfo)
 	batch := a.generatorDB.NewBatch()
 	generatorInfoStore.Commit(batch)
@@ -405,12 +398,7 @@ func (a *generatorEndpoint) HandleSetKeys(w router.EndpointResponseWriter, r *ro
 			w.Error(err)
 			return
 		}
-		var err error
-		data, err = keysData.Encode()
-		if err != nil {
-			w.Error(err)
-			return
-		}
+		data = keysData.Encode()
 	}
 	keysStore := diffdb.New(a.generatorDB, generator.GeneratorDBPrefixKeys)
 	keys := &generator.Keys{
@@ -418,11 +406,8 @@ func (a *generatorEndpoint) HandleSetKeys(w router.EndpointResponseWriter, r *ro
 		Type:    req.Type,
 		Data:    data,
 	}
-	encodedKeys, err := keys.Encode()
-	if err != nil {
-		w.Error(err)
-		return
-	}
+	encodedKeys := keys.Encode()
+
 	keysStore.Set(req.Address, encodedKeys)
 	batch := a.generatorDB.NewBatch()
 	keysStore.Commit(batch)

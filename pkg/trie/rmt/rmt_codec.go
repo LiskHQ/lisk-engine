@@ -6,26 +6,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *info) Encode() ([]byte, error) {
+func (e *info) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.root); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(2, e.appendPath); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.size); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *info) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.root)
+	writer.WriteBytesArray(2, e.appendPath)
+	writer.WriteUInt(3, e.size)
+	return writer.Result()
 }
 
 func (e *info) Decode(data []byte) error {

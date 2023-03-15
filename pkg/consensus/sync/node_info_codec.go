@@ -6,29 +6,13 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *NodeInfo) Encode() ([]byte, error) {
+func (e *NodeInfo) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.maxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.blockVersion); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.lastBlockID); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *NodeInfo) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.height)
+	writer.WriteUInt32(2, e.maxHeightPrevoted)
+	writer.WriteUInt32(3, e.blockVersion)
+	writer.WriteBytes(4, e.lastBlockID)
+	return writer.Result()
 }
 
 func (e *NodeInfo) Decode(data []byte) error {

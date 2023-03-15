@@ -30,10 +30,7 @@ func GetDecodableOrDefault(diffStore ImmutableStore, key []byte, value codec.Dec
 }
 
 func SetEncodable(diffStore Store, key []byte, value codec.Encodable) error {
-	encodedSender, err := value.Encode()
-	if err != nil {
-		return err
-	}
+	encodedSender := value.Encode()
 	diffStore.Set(key, encodedSender)
 	return nil
 }

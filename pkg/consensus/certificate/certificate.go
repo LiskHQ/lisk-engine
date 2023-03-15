@@ -60,7 +60,7 @@ func (c Certificate) Empty() bool {
 		len(c.Signature) == 0
 }
 
-func (c *Certificate) SigningBytes() ([]byte, error) {
+func (c *Certificate) SigningBytes() []byte {
 	certificate := &SigningCertificate{
 		BlockID:        c.BlockID,
 		Height:         c.Height,
@@ -71,37 +71,27 @@ func (c *Certificate) SigningBytes() ([]byte, error) {
 	return certificate.Encode()
 }
 
-func (c *Certificate) Sign(chainID, blsSecretKey []byte) error {
-	signingBytes, err := c.SigningBytes()
-	if err != nil {
-		return err
-	}
+func (c *Certificate) Sign(chainID, blsSecretKey []byte) {
+	signingBytes := c.SigningBytes()
 	signature := crypto.BLSSign(crypto.Hash(bytes.Join(certificateTag, chainID, signingBytes)), blsSecretKey)
 	c.Signature = signature
-	return nil
 }
 
-func (c Certificate) Verify(chainID, signature, blsPublicKey []byte) (bool, error) {
-	signingBytes, err := c.SigningBytes()
-	if err != nil {
-		return false, err
-	}
+func (c Certificate) Verify(chainID, signature, blsPublicKey []byte) bool {
+	signingBytes := c.SigningBytes()
 	valid := crypto.BLSVerify(crypto.Hash(bytes.Join(certificateTag, chainID, signingBytes)), signature, blsPublicKey)
-	return valid, nil
+	return valid
 }
 
-func (c Certificate) VerifyAggregateCertificateSignature(keyList [][]byte, weights []uint64, threshold uint64, chainID []byte) (bool, error) {
+func (c Certificate) VerifyAggregateCertificateSignature(keyList [][]byte, weights []uint64, threshold uint64, chainID []byte) bool {
 	aggregateSignature := bytes.Copy(c.Signature)
 	aggregationBits := bytes.Copy(c.AggregationBits)
-	signingBytes, err := c.SigningBytes()
-	if err != nil {
-		return false, err
-	}
+	signingBytes := c.SigningBytes()
 	valid := crypto.BLSVerifyWeightedAggSig(keyList, aggregationBits, aggregateSignature, weights, threshold, crypto.Hash(bytes.Join(certificateTag, chainID, signingBytes)))
-	return valid, nil
+	return valid
 }
 
-func NewSingleCommit(header *blockchain.BlockHeader, address codec.Lisk32, chainID, sk []byte) (*SingleCommit, error) {
+func NewSingleCommit(header *blockchain.BlockHeader, address codec.Lisk32, chainID, sk []byte) *SingleCommit {
 	singleCommit := &SingleCommit{
 		blockID:          header.ID,
 		height:           header.Height,
@@ -109,11 +99,9 @@ func NewSingleCommit(header *blockchain.BlockHeader, address codec.Lisk32, chain
 		internal:         true,
 	}
 	certificate := NewCertificateFromBlock(header)
-	if err := certificate.Sign(chainID, sk); err != nil {
-		return nil, err
-	}
+	certificate.Sign(chainID, sk)
 	singleCommit.certificateSignature = certificate.Signature
-	return singleCommit, nil
+	return singleCommit
 }
 
 type SingleCommit struct {
