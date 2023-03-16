@@ -274,8 +274,8 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	_ = p.host.Connect(ctx, *p2AddrInfo)
 	_ = p.host.Connect(ctx, *p3AddrInfo)
 
-	gs.ps.BlacklistPeer(p1.ID())                                    // blacklisting peer1
-	_, err = gs.peer.connGater.addPenalty(p2.ID(), MaxPenaltyScore) // blacklisting peer2
+	gs.ps.BlacklistPeer(p1.ID())                                               // blacklisting peer1
+	_, err = gs.peer.connGater.addPenalty(p2.host.Addrs()[0], MaxPenaltyScore) // blacklisting peer2
 	assert.Nil(err)
 	gs.peer.connGater.blockAddr(net.ParseIP(p3Addrs[0])) // blacklisting peer3
 

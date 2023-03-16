@@ -26,9 +26,8 @@ func TestRateLimit_RPCMessageCounter_BanPeer(t *testing.T) {
 	node1.MessageProtocol.timeout = time.Millisecond * 10             // Decrease the interval to speed up the test
 	err := node1.Start(logger, []byte{})
 	assert.Nil(err)
-	// TODO - uncomment this when GH #97 is done
-	// node1Addrs, _ := node1.MultiAddress()
-	// node1AddrInfo, _ := AddrInfoFromMultiAddr(node1Addrs[0])
+	node1Addrs, _ := node1.MultiAddress()
+	node1AddrInfo, _ := AddrInfoFromMultiAddr(node1Addrs[0])
 	node1.connGater.intervalCheck = time.Millisecond * 25 // Decrease the interval to speed up the test
 
 	node2 := NewConnection(cfg)
@@ -64,8 +63,9 @@ func TestRateLimit_RPCMessageCounter_BanPeer(t *testing.T) {
 	err = node1.Connect(ctx, *node2AddrInfo)
 	assert.NotNil(err)
 
-	// Try to connect node2 with node1 (it should not be possible because node2 is banned)
-	// TODO - uncomment this when GH #97 is done
-	// err = node2.Connect(ctx, *node1AddrInfo)
-	// assert.NotNil(err)
+	// Try to connect node2 with node1 and send a request (it should not be possible because node2 is banned)
+	err = node2.Connect(ctx, *node1AddrInfo)
+	assert.Nil(err)
+	_, err = node2.request(ctx, node1.ID(), testRPC, []byte(testRequestData))
+	assert.NotNil(err)
 }

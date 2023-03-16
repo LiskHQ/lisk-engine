@@ -124,13 +124,13 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	remoteID := s.Conn().RemotePeer()
+	remoteAddr := s.Conn().RemoteMultiaddr()
 	newMsg := newRequestMessage(s.Conn().RemotePeer(), "", nil)
 	if err := newMsg.Decode(buf); err != nil {
 		mp.logger.Errorf("Error while decoding message: %v", err)
-		err = mp.peer.blockPeer(remoteID)
+		err = mp.peer.banPeer(remoteAddr)
 		if err != nil {
-			mp.logger.Errorf("BlockPeer error: %v", err)
+			mp.logger.Errorf("banPeer error: %v", err)
 		}
 		return
 	}
@@ -139,17 +139,18 @@ func (mp *MessageProtocol) onRequest(ctx context.Context, s network.Stream) {
 	handler, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
 		mp.logger.Errorf("rpcHandler %s is not registered", newMsg.Procedure)
-		err = mp.peer.blockPeer(remoteID)
+		err = mp.peer.banPeer(remoteAddr)
 		if err != nil {
-			mp.logger.Errorf("BlockPeer error: %v", err)
+			mp.logger.Errorf("banPeer error: %v", err)
 		}
 		return
 	}
 	mp.logger.Debugf("%s request received", newMsg.Procedure)
 
 	// Rate limiting
+	remoteID := s.Conn().RemotePeer()
 	mp.rateLimit.increaseCounter(newMsg.Procedure, remoteID)
-	err = mp.rateLimit.checkLimit(newMsg.Procedure, remoteID)
+	err = mp.rateLimit.checkLimit(newMsg.Procedure, remoteID, remoteAddr)
 	if err != nil {
 		mp.logger.Errorf("Rate limit error: %v", err)
 		return
@@ -175,13 +176,13 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	s.Close()
 	mp.logger.Debugf("Data from %v received: %s", s.Conn().RemotePeer().String(), string(buf))
 
-	remoteID := s.Conn().RemotePeer()
+	remoteAddr := s.Conn().RemoteMultiaddr()
 	newMsg := newResponseMessage("", "", nil, nil)
 	if err := newMsg.Decode(buf); err != nil {
 		mp.logger.Errorf("Error while decoding message: %v", err)
-		err = mp.peer.blockPeer(remoteID)
+		err = mp.peer.banPeer(remoteAddr)
 		if err != nil {
-			mp.logger.Errorf("BlockPeer error: %v", err)
+			mp.logger.Errorf("banPeer error: %v", err)
 		}
 		return
 	}
@@ -190,16 +191,17 @@ func (mp *MessageProtocol) onResponse(s network.Stream) {
 	_, exist := mp.rpcHandlers[newMsg.Procedure]
 	if !exist {
 		mp.logger.Errorf("rpcHandler %s for received message is not registered", newMsg.Procedure)
-		err = mp.peer.blockPeer(remoteID)
+		err = mp.peer.banPeer(remoteAddr)
 		if err != nil {
-			mp.logger.Errorf("BlockPeer error: %v", err)
+			mp.logger.Errorf("banPeer error: %v", err)
 		}
 		return
 	}
 
 	// Rate limiting
+	remoteID := s.Conn().RemotePeer()
 	mp.rateLimit.increaseCounter(newMsg.Procedure, remoteID)
-	err = mp.rateLimit.checkLimit(newMsg.Procedure, remoteID)
+	err = mp.rateLimit.checkLimit(newMsg.Procedure, remoteID, remoteAddr)
 	if err != nil {
 		mp.logger.Errorf("Rate limit error: %v", err)
 		return

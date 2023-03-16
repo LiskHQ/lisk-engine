@@ -145,24 +145,24 @@ type GetHighestCommonBlockResponse struct {
 func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
 	return func(w p2p.ResponseWriter, r *p2p.Request) {
 		if r.Data == nil {
-			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+			s.conn.BanPeer(r.PeerID)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		req := &GetHighestCommonBlockRequest{}
 		if err := req.Decode(r.Data); err != nil {
-			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+			s.conn.BanPeer(r.PeerID)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		if len(req.IDs) == 0 {
-			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+			s.conn.BanPeer(r.PeerID)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		for _, id := range req.IDs {
 			if len(id) != 32 {
-				s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+				s.conn.BanPeer(r.PeerID)
 				s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 				return
 			}
@@ -213,18 +213,18 @@ type GetBlocksFromIDResponse struct {
 func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
 	return func(w p2p.ResponseWriter, r *p2p.Request) {
 		if r.Data == nil {
-			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+			s.conn.BanPeer(r.PeerID)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		req := &GetBlocksFromIDRequest{}
 		if err := req.Decode(r.Data); err != nil {
-			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+			s.conn.BanPeer(r.PeerID)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}
 		if len(req.ID) != blockchain.IDLength {
-			s.conn.ApplyPenalty(r.PeerID, p2p.MaxPenaltyScore)
+			s.conn.BanPeer(r.PeerID)
 			s.logger.Warningf("Banning peer %s with invalid request on getHighestCommonBlock", r.PeerID)
 			return
 		}

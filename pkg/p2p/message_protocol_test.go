@@ -12,6 +12,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
 
@@ -24,6 +25,10 @@ type testConn struct {
 
 func (c testConn) RemotePeer() peer.ID {
 	return peer.ID("testPeerID")
+}
+
+func (c testConn) RemoteMultiaddr() ma.Multiaddr {
+	return ma.StringCast("/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")
 }
 
 type testStream struct {
