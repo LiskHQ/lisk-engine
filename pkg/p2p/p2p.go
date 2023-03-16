@@ -152,7 +152,7 @@ func (conn *Connection) Stop() error {
 	return nil
 }
 
-// ApplyPenalty updates the score of the given PeerID and blocks the peer if the
+// ApplyPenalty updates the score of the given PeerID (all its IP addresses) and bans the peer if the
 // score exceeded. Also disconnected the peer immediately.
 func (conn *Connection) ApplyPenalty(pid PeerID, score int) {
 	for _, c := range conn.Peer.host.Network().ConnsToPeer(pid) {
@@ -168,8 +168,8 @@ func (conn *Connection) ApplyPenalty(pid PeerID, score int) {
 	}
 }
 
-// BlockPeer blocks the given PeerID and disconnects the peer immediately.
-func (conn *Connection) BlockPeer(pid PeerID) {
+// BanPeer bans the given PeerID (all its IP addresses) and disconnects the peer immediately.
+func (conn *Connection) BanPeer(pid PeerID) {
 	for _, c := range conn.Peer.host.Network().ConnsToPeer(pid) {
 		addr := c.RemoteMultiaddr().String() + "/p2p/" + pid.String()
 		maddr, err := ma.NewMultiaddr(addr)
@@ -177,8 +177,8 @@ func (conn *Connection) BlockPeer(pid PeerID) {
 			conn.logger.Errorf("Failed to create a new multiaddr: %s", err)
 			return
 		}
-		if err := conn.Peer.blockPeer(maddr); err != nil {
-			conn.logger.Errorf("Failed to block peer %s: %v", pid, err)
+		if err := conn.Peer.banPeer(maddr); err != nil {
+			conn.logger.Errorf("Failed to ban peer %s: %v", pid, err)
 		}
 	}
 }

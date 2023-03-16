@@ -160,7 +160,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 	assert.Containsf(err.Error(), "no good addresses", "Connection should be rejected by ConnectionGater")
 }
 
-func TestP2P_BlockPeer(t *testing.T) {
+func TestP2P_BanPeer(t *testing.T) {
 	assert := assert.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -189,7 +189,7 @@ func TestP2P_BlockPeer(t *testing.T) {
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 
-	node1.BlockPeer(p2AddrInfo.ID)
+	node1.BanPeer(p2AddrInfo.ID)
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)

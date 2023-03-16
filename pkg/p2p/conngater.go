@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	MaxPenaltyScore = 100 // When a peer exceeded the MaxPenaltyScore, it should be blocked
+	MaxPenaltyScore = 100 // When a peer exceeded the MaxPenaltyScore, it should be banned.
 )
 
 var (
@@ -124,7 +124,7 @@ func (cg *connectionGater) listBannedPeers() []net.IP {
 }
 
 // start runs a new goroutine to check the expiration time based on
-// interval. If the expiration time is reached, the peer will be removed (unbanned)
+// interval. If the expiration time is reached, the peer will be removed (unbanned).
 func (cg *connectionGater) start(ctx context.Context, wg *sync.WaitGroup) {
 	if !cg.isStarted {
 		t := time.NewTicker(cg.intervalCheck)

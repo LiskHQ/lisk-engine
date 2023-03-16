@@ -25,7 +25,7 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 		return false, err
 	}
 	if commonBlockHeader.Height < ctx.FinalizedBlockHeader.Height {
-		s.conn.BlockPeer(ctx.PeerID)
+		s.conn.BanPeer(ctx.PeerID)
 		return false, errors.New("received common block has hight lower than finalized block")
 	}
 	twoRounds := uint32(len(ctx.CurrentValidators)) * 2
@@ -61,7 +61,7 @@ func (s *fastSyncer) Sync(ctx *SyncContext) (bool, error) {
 			if err := s.restoreBlocks(ctx, commonBlockHeader); err != nil {
 				return true, err
 			}
-			s.conn.BlockPeer(ctx.PeerID)
+			s.conn.BanPeer(ctx.PeerID)
 			return true, err
 		}
 	}
@@ -79,7 +79,7 @@ func (s *fastSyncer) downloadAndValidate(ctx *SyncContext, downloader *Downloade
 		}
 		if err := downloaded.block.Validate(); err != nil {
 			downloader.Stop()
-			s.conn.BlockPeer(ctx.PeerID)
+			s.conn.BanPeer(ctx.PeerID)
 			return downloadedBlocks, err
 		}
 		downloadedBlocks = append(downloadedBlocks, downloaded.block)
@@ -100,7 +100,7 @@ func (s *fastSyncer) getCommonBlock(ctx *SyncContext, lastBlockHeader *blockchai
 	blockID, err := requestHighestCommonBlock(ctx.Ctx, s.conn, ctx.PeerID, ids)
 	if err != nil {
 		if errors.Is(err, errCommonBlockNotFound) {
-			s.conn.BlockPeer(ctx.PeerID)
+			s.conn.BanPeer(ctx.PeerID)
 			return nil, err
 		}
 		return nil, err

@@ -126,7 +126,7 @@ func TestConneGater(t *testing.T) {
 	pidA := peer.ID("A")
 	pidB := peer.ID("B")
 
-	// test peer blocking
+	// test peer banning
 
 	allow := cg.InterceptSecured(network.DirInbound, pidA, &mockConnMultiaddrs{local: nil, remote: addrA})
 	assert.Truef(allow, "expected gater to allow peer A")
