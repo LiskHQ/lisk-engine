@@ -54,9 +54,6 @@ func ComputeValidatorsHash(validators []HashValidator, certificateThreshold uint
 		certificateThreshold: certificateThreshold,
 	}
 
-	encodedInfo, err := validatorsHash.Encode()
-	if err != nil {
-		return nil, err
-	}
+	encodedInfo := validatorsHash.Encode()
 	return crypto.Hash(encodedInfo), nil
 }

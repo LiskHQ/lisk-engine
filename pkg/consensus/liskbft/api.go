@@ -177,9 +177,7 @@ func (a *API) SetBFTParameters(
 	}
 
 	nextHeightBytes := bytes.FromUint32(nextHeight)
-	if err := diffdb.SetEncodable(paramsStore, nextHeightBytes, params); err != nil {
-		return err
-	}
+	diffdb.SetEncodable(paramsStore, nextHeightBytes, params)
 
 	currentActiveValidators := ActiveValidators(bftVotes.activeValidatorsVoteInfo)
 	newActiveValidators := make(ActiveValidators, len(validators))
@@ -199,9 +197,7 @@ func (a *API) SetBFTParameters(
 	}
 	newActiveValidators.sort()
 	bftVotes.activeValidatorsVoteInfo = newActiveValidators
-	if err := diffdb.SetEncodable(bftVotesStore, emptyKey, bftVotes); err != nil {
-		return err
-	}
+	diffdb.SetEncodable(bftVotesStore, emptyKey, bftVotes)
 	return nil
 }
 
@@ -216,9 +212,7 @@ func (a *API) SetGeneratorKeys(diffStore *diffdb.Database, generators Generators
 		nextHeight = bftVotes.blockBFTInfos[0].height + 1
 	}
 	keysStore := diffStore.WithPrefix(dbPrefix(storePrefixGeneratorKeys))
-	if err := diffdb.SetEncodable(keysStore, bytes.FromUint32(nextHeight), &GeneratorKeys{Generators: generators}); err != nil {
-		return err
-	}
+	diffdb.SetEncodable(keysStore, bytes.FromUint32(nextHeight), &GeneratorKeys{Generators: generators})
 	return nil
 }
 

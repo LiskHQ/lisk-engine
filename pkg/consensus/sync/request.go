@@ -60,10 +60,7 @@ func requestHighestCommonBlock(ctx context.Context, conn *p2p.Connection, peerID
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	body := &getHighestCommonBlockRequest{ids: ids}
-	encoded, err := body.Encode()
-	if err != nil {
-		return nil, err
-	}
+	encoded := body.Encode()
 	go func() {
 		defer close(respChan)
 		resp := conn.RequestFrom(childCtx, peerID, RPCEndpointGetHighestCommonBlock, encoded)
@@ -100,10 +97,7 @@ func requestBlocksFromID(ctx context.Context, conn *p2p.Connection, peerID p2p.P
 	childCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	body := &getBlocksFromIDRequest{blockID: id}
-	encoded, err := body.Encode()
-	if err != nil {
-		return nil, err
-	}
+	encoded := body.Encode()
 	go func() {
 		defer close(respChan)
 		resp := conn.RequestFrom(childCtx, peerID, RPCEndpointGetBlocksFromID, encoded)

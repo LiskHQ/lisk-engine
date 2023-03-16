@@ -104,10 +104,8 @@ func (a *ABIHandler) InitStateMachine(req *labi.InitStateMachineRequest) (*labi.
 	if a.executionContext != nil {
 		return nil, fmt.Errorf("state machine is already initialized with id %s", a.executionContext.id)
 	}
-	if err := req.Header.Init(); err != nil {
-		return nil, err
-	}
-	id := crypto.Hash(req.Header.MustEncode())
+	req.Header.Init()
+	id := crypto.Hash(req.Header.Encode())
 	a.executionContext = &executionContext{
 		id:          id,
 		diffStore:   diffdb.New(a.stateDB, StateDBPrefixState),
@@ -214,9 +212,7 @@ func (a *ABIHandler) AfterTransactionsExecute(req *labi.AfterTransactionsExecute
 		return nil, err
 	}
 	for _, transaction := range req.Transactions {
-		if err := transaction.Init(); err != nil {
-			return nil, err
-		}
+		transaction.Init()
 	}
 	eventLogger := statemachine.NewEventLogger(a.executionContext.header.Height)
 	context := statemachine.NewAfterTransactionsExecuteContext(
@@ -251,9 +247,7 @@ func (a *ABIHandler) VerifyTransaction(req *labi.VerifyTransactionRequest) (*lab
 	} else {
 		diffStore = a.executionContext.diffStore
 	}
-	if err := req.Transaction.Init(); err != nil {
-		return nil, err
-	}
+	req.Transaction.Init()
 	context := statemachine.NewTransactionVerifyContext(
 		a.ctx,
 		a.logger,
@@ -281,9 +275,7 @@ func (a *ABIHandler) ExecuteTransaction(req *labi.ExecuteTransactionRequest) (*l
 		header = a.executionContext.header
 		diffStore = diffdb.New(a.stateDB, StateDBPrefixState)
 	}
-	if err := req.Transaction.Init(); err != nil {
-		return nil, err
-	}
+	req.Transaction.Init()
 	context := statemachine.NewTransactionExecuteContext(
 		a.ctx,
 		a.logger,
@@ -311,7 +303,7 @@ func (a *ABIHandler) Commit(req *labi.CommitRequest) (*labi.CommitResponse, erro
 	batch := a.stateDB.NewBatch()
 	stateBatch := newStateBatch(batch)
 	diff := a.executionContext.diffStore.Commit(stateBatch)
-	encodedDiff := diff.MustEncode()
+	encodedDiff := diff.Encode()
 	batch.Set(bytes.Join(StateDBPrefixDiff, bytes.FromUint32(a.executionContext.header.Height)), encodedDiff)
 	smtDB := batchdb.NewWithPrefix(a.stateDB, batch, StateDBPrefixTree)
 	tree := smt.NewTrie(req.StateRoot, stateTreeKeySize)
@@ -382,9 +374,7 @@ func (a *ABIHandler) Query(req *labi.QueryRequest) (*labi.QueryResponse, error) 
 	if len(splitMethod) != 2 {
 		return nil, fmt.Errorf("invalid method %s", req.Method)
 	}
-	if err := req.Header.Init(); err != nil {
-		return nil, err
-	}
+	req.Header.Init()
 	namespace, endpoint := splitMethod[0], splitMethod[1]
 	for _, mod := range a.modules {
 		if namespace == mod.Name() {

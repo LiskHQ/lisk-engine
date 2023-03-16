@@ -20,7 +20,7 @@ func TestUtilDecode(t *testing.T) {
 	diffStore := diffdb.New(database, []byte{1})
 
 	diffStore.Set([]byte("invalid"), []byte{3, 2, 1})
-	diffStore.Set([]byte("key"), (&testObj{data: codec.Hex("123")}).MustEncode())
+	diffStore.Set([]byte("key"), (&testObj{data: codec.Hex("123")}).Encode())
 
 	err := GetDecodable(diffStore, []byte("invalid"), &testObj{})
 	assert.EqualError(t, err, "invalid data")

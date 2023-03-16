@@ -129,11 +129,7 @@ func (s *Syncer) shouldSync(ctx *SyncContext) bool {
 func (s *Syncer) HandleRPCEndpointGetLastBlock() p2p.RPCHandler {
 	return func(w p2p.ResponseWriter, r *p2p.Request) {
 		lastBlock := s.chain.LastBlock()
-		encoded, err := lastBlock.Encode()
-		if err != nil {
-			w.Error(err)
-			return
-		}
+		encoded := lastBlock.Encode()
 		w.Write(encoded)
 	}
 }
@@ -201,11 +197,7 @@ func (s *Syncer) HandleRPCEndpointGetHighestCommonBlock() p2p.RPCHandler {
 		resp := &GetHighestCommonBlockResponse{
 			ID: headers[0].ID,
 		}
-		encoded, err := resp.Encode()
-		if err != nil {
-			w.Error(err)
-			return
-		}
+		encoded := resp.Encode()
 		w.Write(encoded)
 	}
 }
@@ -251,11 +243,7 @@ func (s *Syncer) HandleRPCEndpointGetBlocksFromID() p2p.RPCHandler {
 		resp := &GetBlocksFromIDResponse{
 			Blocks: blocks,
 		}
-		encoded, err := resp.Encode()
-		if err != nil {
-			w.Error(err)
-			return
-		}
+		encoded := resp.Encode()
 		w.Write(encoded)
 	}
 }

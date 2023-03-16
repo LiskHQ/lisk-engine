@@ -6,20 +6,10 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *UserAccount) Encode() ([]byte, error) {
+func (e *UserAccount) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt(1, e.Nonce); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *UserAccount) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt(1, e.Nonce)
+	return writer.Result()
 }
 
 func (e *UserAccount) Decode(data []byte) error {
@@ -66,29 +56,13 @@ func (e *UserAccount) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ValidatorKey) Encode() ([]byte, error) {
+func (e *ValidatorKey) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.GenerationKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.BLSKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(4, e.BFTWeight); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ValidatorKey) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Address)
+	writer.WriteBytes(2, e.GenerationKey)
+	writer.WriteBytes(3, e.BLSKey)
+	writer.WriteUInt(4, e.BFTWeight)
+	return writer.Result()
 }
 
 func (e *ValidatorKey) Decode(data []byte) error {
@@ -177,26 +151,16 @@ func (e *ValidatorKey) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *ValidatorsData) Encode() ([]byte, error) {
+func (e *ValidatorsData) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Keys {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *ValidatorsData) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *ValidatorsData) Decode(data []byte) error {

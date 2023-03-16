@@ -9,10 +9,7 @@ import (
 )
 
 func verifySignatures(userAccount *UserAccount, chainID []byte, transaction blockchain.FrozenTransaction) error {
-	signingBytes, err := transaction.SigningBytes()
-	if err != nil {
-		return err
-	}
+	signingBytes := transaction.SigningBytes()
 	networkSigningBytes := crypto.Hash(bytes.Join(blockchain.TagTransaction, chainID, signingBytes))
 	if len(transaction.Signatures()) != 1 {
 		return fmt.Errorf("non multi-signature account must have signature of length 1 but received %d", len(transaction.Signatures()))

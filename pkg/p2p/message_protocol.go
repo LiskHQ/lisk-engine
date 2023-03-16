@@ -295,10 +295,7 @@ func (mp *MessageProtocol) send(ctx context.Context, id peer.ID, pId protocol.ID
 	}
 	defer s.Close()
 
-	data, err := msg.Encode()
-	if err != nil {
-		return err
-	}
+	data := msg.Encode()
 
 	n, err := s.Write(data)
 	if err != nil {

@@ -6,20 +6,10 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *StandardTransactionEvent) Encode() ([]byte, error) {
+func (e *StandardTransactionEvent) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBool(1, e.Success); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *StandardTransactionEvent) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBool(1, e.Success)
+	return writer.Result()
 }
 
 func (e *StandardTransactionEvent) Decode(data []byte) error {
@@ -66,35 +56,15 @@ func (e *StandardTransactionEvent) DecodeStrictFromReader(reader *codec.Reader) 
 	return nil
 }
 
-func (e *Event) Encode() ([]byte, error) {
+func (e *Event) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Module); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(2, e.Name); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Data); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(4, codec.HexArrayToBytesArray(e.Topics)); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(5, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(6, e.Index); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Event) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteString(1, e.Module)
+	writer.WriteString(2, e.Name)
+	writer.WriteBytes(3, e.Data)
+	writer.WriteBytesArray(4, codec.HexArrayToBytesArray(e.Topics))
+	writer.WriteUInt32(5, e.Height)
+	writer.WriteUInt32(6, e.Index)
+	return writer.Result()
 }
 
 func (e *Event) Decode(data []byte) error {

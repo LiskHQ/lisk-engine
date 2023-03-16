@@ -6,23 +6,11 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *hashValidator) Encode() ([]byte, error) {
+func (e *hashValidator) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.blsKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(2, e.bftWeight); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *hashValidator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.blsKey)
+	writer.WriteUInt(2, e.bftWeight)
+	return writer.Result()
 }
 
 func (e *hashValidator) Decode(data []byte) error {
@@ -83,29 +71,17 @@ func (e *hashValidator) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *validatrorsHashData) Encode() ([]byte, error) {
+func (e *validatrorsHashData) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.activeValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteUInt(2, e.certificateThreshold); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *validatrorsHashData) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt(2, e.certificateThreshold)
+	return writer.Result()
 }
 
 func (e *validatrorsHashData) Decode(data []byte) error {

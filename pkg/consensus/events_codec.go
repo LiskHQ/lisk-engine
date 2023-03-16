@@ -8,22 +8,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
 )
 
-func (e *EventNetworkBlockNewMessage) Encode() ([]byte, error) {
+func (e *EventNetworkBlockNewMessage) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Block != nil {
-		if err := writer.WriteEncodable(1, e.Block); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Block)
 	}
-	return writer.Result(), nil
-}
-
-func (e *EventNetworkBlockNewMessage) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EventNetworkBlockNewMessage) Decode(data []byte) error {
@@ -70,31 +60,19 @@ func (e *EventNetworkBlockNewMessage) DecodeStrictFromReader(reader *codec.Reade
 	return nil
 }
 
-func (e *EventBlockNewMessage) Encode() ([]byte, error) {
+func (e *EventBlockNewMessage) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Block != nil {
-		if err := writer.WriteEncodable(1, e.Block); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Block)
 	}
 	{
 		for _, val := range e.Events {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *EventBlockNewMessage) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EventBlockNewMessage) Decode(data []byte) error {
@@ -163,22 +141,12 @@ func (e *EventBlockNewMessage) DecodeStrictFromReader(reader *codec.Reader) erro
 	return nil
 }
 
-func (e *EventBlockDeleteMessage) Encode() ([]byte, error) {
+func (e *EventBlockDeleteMessage) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Block != nil {
-		if err := writer.WriteEncodable(1, e.Block); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Block)
 	}
-	return writer.Result(), nil
-}
-
-func (e *EventBlockDeleteMessage) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EventBlockDeleteMessage) Decode(data []byte) error {
@@ -225,22 +193,12 @@ func (e *EventBlockDeleteMessage) DecodeStrictFromReader(reader *codec.Reader) e
 	return nil
 }
 
-func (e *EventChainForkMessage) Encode() ([]byte, error) {
+func (e *EventChainForkMessage) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Block != nil {
-		if err := writer.WriteEncodable(1, e.Block); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Block)
 	}
-	return writer.Result(), nil
-}
-
-func (e *EventChainForkMessage) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EventChainForkMessage) Decode(data []byte) error {
@@ -287,32 +245,18 @@ func (e *EventChainForkMessage) DecodeStrictFromReader(reader *codec.Reader) err
 	return nil
 }
 
-func (e *EventChangeValidator) Encode() ([]byte, error) {
+func (e *EventChangeValidator) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.NextValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteUInt(2, e.PrecommitThreshold); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *EventChangeValidator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt(2, e.PrecommitThreshold)
+	writer.WriteUInt(3, e.CertificateThreshold)
+	return writer.Result()
 }
 
 func (e *EventChangeValidator) Decode(data []byte) error {
@@ -395,28 +339,14 @@ func (e *EventChangeValidator) DecodeStrictFromReader(reader *codec.Reader) erro
 	return nil
 }
 
-func (e *EventBlockFinalizeMessage) Encode() ([]byte, error) {
+func (e *EventBlockFinalizeMessage) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.Original); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Next); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt32(1, e.Original)
+	writer.WriteUInt32(2, e.Next)
 	if e.Trigger != nil {
-		if err := writer.WriteEncodable(3, e.Trigger); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(3, e.Trigger)
 	}
-	return writer.Result(), nil
-}
-
-func (e *EventBlockFinalizeMessage) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EventBlockFinalizeMessage) Decode(data []byte) error {

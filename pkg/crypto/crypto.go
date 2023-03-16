@@ -75,9 +75,9 @@ func hexToBytes(key string) ([]byte, error) {
 	return hex.DecodeString(key)
 }
 
-func Sign(privateKey []byte, message []byte) ([]byte, error) {
+func Sign(privateKey []byte, message []byte) []byte {
 	signature := ed.Sign(privateKey, message)
-	return signature, nil
+	return signature
 }
 
 func VerifySignature(publicKey, signature []byte, message []byte) error {

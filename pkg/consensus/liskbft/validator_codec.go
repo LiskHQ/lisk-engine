@@ -6,26 +6,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *ActiveValidator) Encode() ([]byte, error) {
+func (e *ActiveValidator) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.minActiveHeight); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.largestHeightPrecommit); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ActiveValidator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.address)
+	writer.WriteUInt32(2, e.minActiveHeight)
+	writer.WriteUInt32(3, e.largestHeightPrecommit)
+	return writer.Result()
 }
 
 func (e *ActiveValidator) Decode(data []byte) error {
@@ -100,26 +86,12 @@ func (e *ActiveValidator) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *BFTValidator) Encode() ([]byte, error) {
+func (e *BFTValidator) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(2, e.bftWeight); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.blsKey); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *BFTValidator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.address)
+	writer.WriteUInt(2, e.bftWeight)
+	writer.WriteBytes(3, e.blsKey)
+	return writer.Result()
 }
 
 func (e *BFTValidator) Decode(data []byte) error {
@@ -194,38 +166,20 @@ func (e *BFTValidator) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *BFTParams) Encode() ([]byte, error) {
+func (e *BFTParams) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt(1, e.prevoteThreshold); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(2, e.precommitThreshold); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.certificateThreshold); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt(1, e.prevoteThreshold)
+	writer.WriteUInt(2, e.precommitThreshold)
+	writer.WriteUInt(3, e.certificateThreshold)
 	{
 		for _, val := range e.validators {
 			if val != nil {
-				if err := writer.WriteEncodable(4, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(4, val)
 			}
 		}
 	}
-	if err := writer.WriteBytes(5, e.validatorsHash); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *BFTParams) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(5, e.validatorsHash)
+	return writer.Result()
 }
 
 func (e *BFTParams) Decode(data []byte) error {
@@ -336,35 +290,15 @@ func (e *BFTParams) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *BFTBlockHeader) Encode() ([]byte, error) {
+func (e *BFTBlockHeader) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.generatorAddress); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.maxHeightGenerated); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(4, e.maxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(5, e.prevoteWeight); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(6, e.precommitWeight); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *BFTBlockHeader) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.height)
+	writer.WriteBytes(2, e.generatorAddress)
+	writer.WriteUInt32(3, e.maxHeightGenerated)
+	writer.WriteUInt32(4, e.maxHeightPrevoted)
+	writer.WriteUInt(5, e.prevoteWeight)
+	writer.WriteUInt(6, e.precommitWeight)
+	return writer.Result()
 }
 
 func (e *BFTBlockHeader) Decode(data []byte) error {
@@ -481,44 +415,26 @@ func (e *BFTBlockHeader) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *BFTVotes) Encode() ([]byte, error) {
+func (e *BFTVotes) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.maxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.maxHeightPrecommited); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.maxHeightCertified); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt32(1, e.maxHeightPrevoted)
+	writer.WriteUInt32(2, e.maxHeightPrecommited)
+	writer.WriteUInt32(3, e.maxHeightCertified)
 	{
 		for _, val := range e.blockBFTInfos {
 			if val != nil {
-				if err := writer.WriteEncodable(5, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(5, val)
 			}
 		}
 	}
 	{
 		for _, val := range e.activeValidatorsVoteInfo {
 			if val != nil {
-				if err := writer.WriteEncodable(6, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(6, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *BFTVotes) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *BFTVotes) Decode(data []byte) error {
@@ -637,23 +553,11 @@ func (e *BFTVotes) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *HashValidator) Encode() ([]byte, error) {
+func (e *HashValidator) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.BLSKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(2, e.BFTWeight); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *HashValidator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.BLSKey)
+	writer.WriteUInt(2, e.BFTWeight)
+	return writer.Result()
 }
 
 func (e *HashValidator) Decode(data []byte) error {
@@ -714,29 +618,17 @@ func (e *HashValidator) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *HashingValidators) Encode() ([]byte, error) {
+func (e *HashingValidators) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.ActiveValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteUInt(2, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *HashingValidators) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt(2, e.CertificateThreshold)
+	return writer.Result()
 }
 
 func (e *HashingValidators) Decode(data []byte) error {
@@ -805,23 +697,11 @@ func (e *HashingValidators) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *Generator) Encode() ([]byte, error) {
+func (e *Generator) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.address); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.generatorKey); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Generator) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.address)
+	writer.WriteBytes(2, e.generatorKey)
+	return writer.Result()
 }
 
 func (e *Generator) Decode(data []byte) error {
@@ -882,26 +762,16 @@ func (e *Generator) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *GeneratorKeys) Encode() ([]byte, error) {
+func (e *GeneratorKeys) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.Generators {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *GeneratorKeys) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *GeneratorKeys) Decode(data []byte) error {

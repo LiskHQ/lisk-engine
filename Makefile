@@ -41,7 +41,7 @@ lint:
 	golangci-lint run
 
 format:
-	gofmt -s -w ./..
+	gofmt -s -w .
 
 godocs:
 	@go install golang.org/x/tools/cmd/godoc@latest

@@ -289,15 +289,11 @@ func (gs *GossipSub) RegisterEventHandler(name string, handler EventHandler, val
 func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte) error {
 	msg := NewMessage(data)
 
-	data, err := msg.Encode()
-	if err != nil {
-		return err
-	}
 	topic := gs.topics[gs.formatTopic(topicName)]
 	if topic == nil {
 		return ErrTopicNotFound
 	}
-	return topic.Publish(ctx, data)
+	return topic.Publish(ctx, msg.Encode())
 }
 
 func (gs *GossipSub) formatTopic(name string) string {

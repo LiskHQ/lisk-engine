@@ -230,21 +230,21 @@ func TestTxPoolOnAnnouncement(t *testing.T) {
 		labiMock,
 	)
 
-	assert.Equal(t, p2p.ValidationAccept, pool.transactionValidator(context.Background(), p2p.NewMessage(tx.MustEncode())))
-	pool.onTransactionAnnoucement(p2p.NewEvent("127.0.0.1:4949", EventTransactionAnnouncement, tx.MustEncode()))
+	assert.Equal(t, p2p.ValidationAccept, pool.transactionValidator(context.Background(), p2p.NewMessage(tx.Encode())))
+	pool.onTransactionAnnoucement(p2p.NewEvent("127.0.0.1:4949", EventTransactionAnnouncement, tx.Encode()))
 	assert.Len(t, pool.allTransactions, 1)
 
 	unknownTx := tx.Copy()
 	unknownTx.Module = "unknown"
-	assert.Equal(t, p2p.ValidationAccept, pool.transactionValidator(context.Background(), p2p.NewMessage(unknownTx.MustEncode())))
-	pool.onTransactionAnnoucement(p2p.NewEvent("127.0.0.1:4949", EventTransactionAnnouncement, unknownTx.MustEncode()))
+	assert.Equal(t, p2p.ValidationAccept, pool.transactionValidator(context.Background(), p2p.NewMessage(unknownTx.Encode())))
+	pool.onTransactionAnnoucement(p2p.NewEvent("127.0.0.1:4949", EventTransactionAnnouncement, unknownTx.Encode()))
 	assert.Len(t, pool.allTransactions, 1)
 
 	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage([]byte{})))
 	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage(crypto.RandomBytes(200))))
 	invalidTx := tx.Copy()
 	invalidTx.Signatures = nil // invalid signature to make transaction invalid
-	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage(invalidTx.MustEncode())))
+	assert.Equal(t, p2p.ValidationReject, pool.transactionValidator(context.Background(), p2p.NewMessage(invalidTx.Encode())))
 }
 
 func TestTxPoolReorg(t *testing.T) {

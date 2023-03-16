@@ -35,7 +35,7 @@ func TestDataAccessGetBlockHeader(t *testing.T) {
 
 	// Set data
 	block1 := createRandomBlock(1)
-	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block1.Header.ID), block1.Header.MustEncode())
+	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block1.Header.ID), block1.Header.Encode())
 
 	dataAccess := NewDataAccess(ctx.database, 1, 1)
 
@@ -67,8 +67,7 @@ func TestDataAccessGetBlockHeaders(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 	}
 	ctx.database.Write(batch)
 
@@ -92,11 +91,11 @@ func TestDataAccessGetBlockByHeight(t *testing.T) {
 	// Set data
 	block1 := createRandomBlock(1)
 	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), bytes.FromUint32(1)), block1.Header.ID)
-	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block1.Header.ID), block1.Header.MustEncode())
+	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block1.Header.ID), block1.Header.Encode())
 
 	block2 := createRandomBlock(2)
 	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), bytes.FromUint32(2)), block2.Header.ID)
-	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block2.Header.ID), block2.Header.MustEncode())
+	ctx.database.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block2.Header.ID), block2.Header.Encode())
 
 	dataAccess := NewDataAccess(ctx.database, 1, 1)
 	blocks, err := dataAccess.GetBlocksBetweenHeight(1, 3)
@@ -117,8 +116,7 @@ func TestDataAccessGetBlockHeadersByHeights(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 	}
 	ctx.database.Write(batch)
 
@@ -145,8 +143,7 @@ func TestDataAccessGetBlockHeaderByHeight(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 	}
 	ctx.database.Write(batch)
 
@@ -171,8 +168,7 @@ func TestDataAccessGetLastBlockHeader(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 	}
 	ctx.database.Write(batch)
 
@@ -191,8 +187,7 @@ func TestDataAccessGetLastBlock(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		dataAccess.Cache(b)
 	}
 	ctx.database.Write(batch)
@@ -212,8 +207,7 @@ func TestDataAccessGetTransaction(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 	}
 	ctx.database.Write(batch)
 	dataAccess.Cache(blocks[0])
@@ -237,8 +231,7 @@ func TestDataAccessGetTransactions(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		dataAccess.Cache(b)
 	}
 	ctx.database.Write(batch)
@@ -264,11 +257,10 @@ func TestDataAccessGetEvents(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{
+		dataAccess.saveBlock(batch, b, []*Event{
 			NewEventFromValues("token", "transfer", crypto.RandomBytes(20), []codec.Hex{crypto.RandomBytes(32)}, b.Header.Height, 0),
 			NewEventFromValues("token", "transfer", crypto.RandomBytes(20), []codec.Hex{crypto.RandomBytes(32)}, b.Header.Height, 1),
 		}, 0, false)
-		assert.NoError(t, err)
 		dataAccess.Cache(b)
 	}
 	ctx.database.Write(batch)
@@ -293,8 +285,7 @@ func TestDataAccessTempBlocks(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		dataAccess.Cache(b)
 	}
 	ctx.database.Write(batch)
@@ -327,8 +318,7 @@ func TestDataAccessSaveBlock(t *testing.T) {
 	events := []*Event{createRandomEvent(block.Header.Height, 0), createRandomEvent(block.Header.Height, 1)}
 	{
 		batch := ctx.database.NewBatch()
-		err := dataAccess.saveBlock(batch, block, events, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, block, events, 0, false)
 		ctx.database.Write(batch)
 	}
 
@@ -344,16 +334,14 @@ func TestDataAccessSaveBlock(t *testing.T) {
 	block = createRandomBlock(2)
 	{
 		batch := ctx.database.NewBatch()
-		err = dataAccess.saveBlock(batch, block, events, 1, true)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, block, events, 1, true)
 		ctx.database.Write(batch)
 	}
 
 	block = createRandomBlock(3)
 	{
 		batch := ctx.database.NewBatch()
-		err = dataAccess.saveBlock(batch, block, events, 1, true)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, block, events, 1, true)
 		ctx.database.Write(batch)
 	}
 	_, err = dataAccess.GetEvents(1)
@@ -372,8 +360,7 @@ func TestDataAccessRemoveBlock(t *testing.T) {
 	}
 	batch := ctx.database.NewBatch()
 	for _, b := range blocks {
-		err := dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
-		assert.NoError(t, err)
+		dataAccess.saveBlock(batch, b, []*Event{}, 0, false)
 		dataAccess.Cache(b)
 	}
 	ctx.database.Write(batch)

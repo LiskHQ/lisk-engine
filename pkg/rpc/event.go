@@ -10,7 +10,7 @@ type EventContent interface {
 	Event() string
 	Data() codec.EncodeDecodable
 	JSONData() ([]byte, error)
-	CodecData() ([]byte, error)
+	CodecData() []byte
 }
 
 func NewEventContent(event string, data codec.EncodeDecodable) EventContent {
@@ -37,6 +37,6 @@ func (e *eventContent) JSONData() ([]byte, error) {
 	return json.Marshal(e.data)
 }
 
-func (e *eventContent) CodecData() ([]byte, error) {
+func (e *eventContent) CodecData() []byte {
 	return e.data.Encode()
 }

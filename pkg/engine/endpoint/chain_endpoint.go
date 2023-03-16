@@ -123,10 +123,7 @@ func (a *chainEndpoint) HandlePostBlock(w router.EndpointResponseWriter, r *rout
 		w.Error(err)
 		return
 	}
-	if err := req.Block.Init(); err != nil {
-		w.Error(err)
-		return
-	}
+	req.Block.Init()
 	a.consensusExec.AddInternal(req.Block)
 	resp := &PostBlockResponse{
 		BlockID: req.Block.Header.ID,

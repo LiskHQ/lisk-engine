@@ -6,29 +6,13 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *plainKeys) Encode() ([]byte, error) {
+func (e *plainKeys) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.GeneratorKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.GeneratorPrivateKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.BLSKey); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.BLSSecretKey); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *plainKeys) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.GeneratorKey)
+	writer.WriteBytes(2, e.GeneratorPrivateKey)
+	writer.WriteBytes(3, e.BLSKey)
+	writer.WriteBytes(4, e.BLSSecretKey)
+	return writer.Result()
 }
 
 func (e *plainKeys) Decode(data []byte) error {

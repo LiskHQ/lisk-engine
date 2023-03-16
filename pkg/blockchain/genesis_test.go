@@ -12,7 +12,7 @@ import (
 
 func TestGenesisBlock(t *testing.T) {
 	prevID := crypto.RandomBytes(32)
-	genesis, err := NewGenesisBlock(123, 1234567890, prevID, BlockAssets{
+	genesis := NewGenesisBlock(123, 1234567890, prevID, BlockAssets{
 		{
 			Module: "token",
 			Data:   crypto.RandomBytes(100),
@@ -22,7 +22,6 @@ func TestGenesisBlock(t *testing.T) {
 			Data:   crypto.RandomBytes(20),
 		},
 	})
-	assert.NoError(t, err)
 	assert.Equal(t, uint32(0), genesis.Header.Version)
 	assert.Equal(t, uint32(123), genesis.Header.Height)
 	assert.Equal(t, uint32(1234567890), genesis.Header.Timestamp)

@@ -6,26 +6,12 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *RawBlock) Encode() ([]byte, error) {
+func (e *RawBlock) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Header); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(2, e.Transactions); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytesArray(3, e.Assets); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *RawBlock) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Header)
+	writer.WriteBytesArray(2, e.Transactions)
+	writer.WriteBytesArray(3, e.Assets)
+	return writer.Result()
 }
 
 func (e *RawBlock) Decode(data []byte) error {
@@ -100,40 +86,26 @@ func (e *RawBlock) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *Block) Encode() ([]byte, error) {
+func (e *Block) Encode() []byte {
 	writer := codec.NewWriter()
 	if e.Header != nil {
-		if err := writer.WriteEncodable(1, e.Header); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(1, e.Header)
 	}
 	{
 		for _, val := range e.Transactions {
 			if val != nil {
-				if err := writer.WriteEncodable(2, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(2, val)
 			}
 		}
 	}
 	{
 		for _, val := range e.Assets {
 			if val != nil {
-				if err := writer.WriteEncodable(3, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(3, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *Block) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *Block) Decode(data []byte) error {
@@ -224,61 +196,25 @@ func (e *Block) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *BlockHeader) Encode() ([]byte, error) {
+func (e *BlockHeader) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.Version); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Timestamp); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.PreviousBlockID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(5, e.GeneratorAddress); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(6, e.TransactionRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(7, e.AssetRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(8, e.EventRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(9, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(10, e.MaxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(11, e.MaxHeightGenerated); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(12, e.ValidatorsHash); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt32(1, e.Version)
+	writer.WriteUInt32(2, e.Timestamp)
+	writer.WriteUInt32(3, e.Height)
+	writer.WriteBytes(4, e.PreviousBlockID)
+	writer.WriteBytes(5, e.GeneratorAddress)
+	writer.WriteBytes(6, e.TransactionRoot)
+	writer.WriteBytes(7, e.AssetRoot)
+	writer.WriteBytes(8, e.EventRoot)
+	writer.WriteBytes(9, e.StateRoot)
+	writer.WriteUInt32(10, e.MaxHeightPrevoted)
+	writer.WriteUInt32(11, e.MaxHeightGenerated)
+	writer.WriteBytes(12, e.ValidatorsHash)
 	if e.AggregateCommit != nil {
-		if err := writer.WriteEncodable(13, e.AggregateCommit); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(13, e.AggregateCommit)
 	}
-	if err := writer.WriteBytes(14, e.Signature); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *BlockHeader) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(14, e.Signature)
+	return writer.Result()
 }
 
 func (e *BlockHeader) Decode(data []byte) error {
@@ -507,26 +443,12 @@ func (e *BlockHeader) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *AggregateCommit) Encode() ([]byte, error) {
+func (e *AggregateCommit) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.AggregationBits); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.CertificateSignature); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *AggregateCommit) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.Height)
+	writer.WriteBytes(2, e.AggregationBits)
+	writer.WriteBytes(3, e.CertificateSignature)
+	return writer.Result()
 }
 
 func (e *AggregateCommit) Decode(data []byte) error {
@@ -601,58 +523,24 @@ func (e *AggregateCommit) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *signingBlockHeader) Encode() ([]byte, error) {
+func (e *signingBlockHeader) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.Version); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Timestamp); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.PreviousBlockID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(5, e.GeneratorAddress); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(6, e.TransactionRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(7, e.AssetRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(8, e.EventRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(9, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(10, e.MaxHeightPrevoted); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(11, e.MaxHeightGenerated); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(12, e.ValidatorsHash); err != nil {
-		return nil, err
-	}
+	writer.WriteUInt32(1, e.Version)
+	writer.WriteUInt32(2, e.Timestamp)
+	writer.WriteUInt32(3, e.Height)
+	writer.WriteBytes(4, e.PreviousBlockID)
+	writer.WriteBytes(5, e.GeneratorAddress)
+	writer.WriteBytes(6, e.TransactionRoot)
+	writer.WriteBytes(7, e.AssetRoot)
+	writer.WriteBytes(8, e.EventRoot)
+	writer.WriteBytes(9, e.StateRoot)
+	writer.WriteUInt32(10, e.MaxHeightPrevoted)
+	writer.WriteUInt32(11, e.MaxHeightGenerated)
+	writer.WriteBytes(12, e.ValidatorsHash)
 	if e.AggregateCommit != nil {
-		if err := writer.WriteEncodable(13, e.AggregateCommit); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(13, e.AggregateCommit)
 	}
-	return writer.Result(), nil
-}
-
-func (e *signingBlockHeader) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *signingBlockHeader) Decode(data []byte) error {
@@ -867,23 +755,11 @@ func (e *signingBlockHeader) DecodeStrictFromReader(reader *codec.Reader) error 
 	return nil
 }
 
-func (e *BlockAsset) Encode() ([]byte, error) {
+func (e *BlockAsset) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Module); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Data); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *BlockAsset) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteString(1, e.Module)
+	writer.WriteBytes(2, e.Data)
+	return writer.Result()
 }
 
 func (e *BlockAsset) Decode(data []byte) error {

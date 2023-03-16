@@ -59,22 +59,16 @@ func createRandomBlock(height uint32) *Block {
 			},
 		},
 	}
-	if err := block.Init(); err != nil {
-		panic(err)
-	}
+	block.Init()
 
 	txIDs := make([][]byte, len(block.Transactions))
 	for i, tx := range block.Transactions {
 		txIDs[i] = tx.ID
 	}
 	block.Header.TransactionRoot = rmt.CalculateRoot(txIDs)
-	assertRoot, err := BlockAssets(block.Assets).GetRoot()
-	if err != nil {
-		panic(err)
-	}
+	assertRoot := BlockAssets(block.Assets).GetRoot()
+
 	block.Header.AssetRoot = assertRoot
-	if err := block.Init(); err != nil {
-		panic(err)
-	}
+	block.Init()
 	return block
 }

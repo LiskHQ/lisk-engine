@@ -11,12 +11,9 @@ const (
 )
 
 // NewGenesisBlock returns a valid genesis block but without validatorsHash and stateRoot.
-func NewGenesisBlock(height, timestamp uint32, previoudBlockID codec.Hex, assets BlockAssets) (*Block, error) {
+func NewGenesisBlock(height, timestamp uint32, previoudBlockID codec.Hex, assets BlockAssets) *Block {
 	assets.Sort()
-	assetRoot, err := assets.GetRoot()
-	if err != nil {
-		return nil, err
-	}
+	assetRoot := assets.GetRoot()
 	return &Block{
 		Header: &BlockHeader{
 			Version:            GenesisBlockVersion,
@@ -37,5 +34,5 @@ func NewGenesisBlock(height, timestamp uint32, previoudBlockID codec.Hex, assets
 		},
 		Assets:       assets,
 		Transactions: []*Transaction{},
-	}, nil
+	}
 }

@@ -20,8 +20,7 @@ func TestCalculateFeePriority(t *testing.T) {
 		Params:          crypto.RandomBytes(100),
 		Signatures:      []codec.Hex{crypto.RandomBytes(64)},
 	}
-	err := tx.Init()
-	assert.NoError(t, err)
+	tx.Init()
 	size := tx.Size()
 
 	priority := calculateFeePriority(tx)

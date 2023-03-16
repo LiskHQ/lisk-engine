@@ -6,38 +6,16 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *Certificate) Encode() ([]byte, error) {
+func (e *Certificate) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.BlockID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.Timestamp); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(5, e.ValidatorsHash); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(6, e.AggregationBits); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(7, e.Signature); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *Certificate) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.BlockID)
+	writer.WriteUInt32(2, e.Height)
+	writer.WriteUInt32(3, e.Timestamp)
+	writer.WriteBytes(4, e.StateRoot)
+	writer.WriteBytes(5, e.ValidatorsHash)
+	writer.WriteBytes(6, e.AggregationBits)
+	writer.WriteBytes(7, e.Signature)
+	return writer.Result()
 }
 
 func (e *Certificate) Decode(data []byte) error {
@@ -168,32 +146,14 @@ func (e *Certificate) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *SigningCertificate) Encode() ([]byte, error) {
+func (e *SigningCertificate) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.BlockID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.Timestamp); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.StateRoot); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(5, e.ValidatorsHash); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *SigningCertificate) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.BlockID)
+	writer.WriteUInt32(2, e.Height)
+	writer.WriteUInt32(3, e.Timestamp)
+	writer.WriteBytes(4, e.StateRoot)
+	writer.WriteBytes(5, e.ValidatorsHash)
+	return writer.Result()
 }
 
 func (e *SigningCertificate) Decode(data []byte) error {
@@ -296,29 +256,13 @@ func (e *SigningCertificate) DecodeStrictFromReader(reader *codec.Reader) error 
 	return nil
 }
 
-func (e *SingleCommit) Encode() ([]byte, error) {
+func (e *SingleCommit) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.blockID); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.height); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.validatorAddress); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.certificateSignature); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *SingleCommit) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.blockID)
+	writer.WriteUInt32(2, e.height)
+	writer.WriteBytes(3, e.validatorAddress)
+	writer.WriteBytes(4, e.certificateSignature)
+	return writer.Result()
 }
 
 func (e *SingleCommit) Decode(data []byte) error {

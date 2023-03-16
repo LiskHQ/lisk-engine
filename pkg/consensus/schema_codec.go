@@ -8,20 +8,10 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/labi"
 )
 
-func (e *EventPostBlock) Encode() ([]byte, error) {
+func (e *EventPostBlock) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.Block); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *EventPostBlock) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.Block)
+	return writer.Result()
 }
 
 func (e *EventPostBlock) Decode(data []byte) error {
@@ -68,26 +58,16 @@ func (e *EventPostBlock) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *EventPostSingleCommits) Encode() ([]byte, error) {
+func (e *EventPostSingleCommits) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.SingleCommits {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	return writer.Result(), nil
-}
-
-func (e *EventPostSingleCommits) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EventPostSingleCommits) Decode(data []byte) error {
@@ -142,26 +122,12 @@ func (e *EventPostSingleCommits) DecodeStrictFromReader(reader *codec.Reader) er
 	return nil
 }
 
-func (e *ValidatorsHash) Encode() ([]byte, error) {
+func (e *ValidatorsHash) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytesArray(1, e.Keys); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInts(2, e.Weights); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *ValidatorsHash) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytesArray(1, e.Keys)
+	writer.WriteUInts(2, e.Weights)
+	writer.WriteUInt(3, e.CertificateThreshold)
+	return writer.Result()
 }
 
 func (e *ValidatorsHash) Decode(data []byte) error {
@@ -236,32 +202,18 @@ func (e *ValidatorsHash) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *NextValidatorParams) Encode() ([]byte, error) {
+func (e *NextValidatorParams) Encode() []byte {
 	writer := codec.NewWriter()
 	{
 		for _, val := range e.NextValidators {
 			if val != nil {
-				if err := writer.WriteEncodable(1, val); err != nil {
-					return nil, err
-				}
+				writer.WriteEncodable(1, val)
 			}
 		}
 	}
-	if err := writer.WriteUInt(2, e.PrecommitThreshold); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt(3, e.CertificateThreshold); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *NextValidatorParams) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt(2, e.PrecommitThreshold)
+	writer.WriteUInt(3, e.CertificateThreshold)
+	return writer.Result()
 }
 
 func (e *NextValidatorParams) Decode(data []byte) error {

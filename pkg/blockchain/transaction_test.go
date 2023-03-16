@@ -24,11 +24,9 @@ func TestTransactionValidate(t *testing.T) {
 		SenderPublicKey: pk,
 		Params:          crypto.RandomBytes(100),
 	}
-	signature, err := validTx.GetSignature(networkID, sk)
-	assert.NoError(t, err)
+	signature := validTx.GetSignature(networkID, sk)
 	validTx.Signatures = []codec.Hex{signature}
-	err = validTx.Init()
-	assert.NoError(t, err)
+	validTx.Init()
 
 	assert.Equal(t, codec.Lisk32(address), validTx.SenderAddress())
 
@@ -70,11 +68,9 @@ func TestFrozenTransaction(t *testing.T) {
 		SenderPublicKey: pk,
 		Params:          crypto.RandomBytes(100),
 	}
-	signature, err := validTx.GetSignature(networkID, sk)
-	assert.NoError(t, err)
+	signature := validTx.GetSignature(networkID, sk)
 	validTx.Signatures = []codec.Hex{signature}
-	err = validTx.Init()
-	assert.NoError(t, err)
+	validTx.Init()
 
 	frozen := validTx.Freeze()
 	assert.Equal(t, validTx.Module, frozen.Module())
@@ -85,10 +81,8 @@ func TestFrozenTransaction(t *testing.T) {
 	assert.Equal(t, validTx.Fee, frozen.Fee())
 	assert.Equal(t, validTx.size, frozen.Size())
 
-	signing, err := frozen.SigningBytes()
-	assert.NoError(t, err)
-	validSigning, err := validTx.SigningBytes()
-	assert.NoError(t, err)
+	signing := frozen.SigningBytes()
+	validSigning := validTx.SigningBytes()
 
 	assert.Equal(t, validSigning, signing)
 }
@@ -111,7 +105,7 @@ func TestTransactionCodec(t *testing.T) {
 		},
 	}
 
-	encoded := validTx.MustEncode()
+	encoded := validTx.Encode()
 
 	signingTx := &SigningTransaction{}
 	err := signingTx.Decode(encoded)
@@ -119,7 +113,7 @@ func TestTransactionCodec(t *testing.T) {
 
 	// This should not panic
 	signingTx.MustDecode(encoded)
-	signingTx.MustEncode()
+	signingTx.Encode()
 }
 
 func FuzzTransactionCodec(f *testing.F) {
@@ -128,8 +122,7 @@ func FuzzTransactionCodec(f *testing.F) {
 		tx := &Transaction{}
 		err := tx.DecodeStrict(randomBytes)
 		if err == nil {
-			_, err := tx.Encode()
-			assert.NoError(t, err)
+			tx.Encode()
 		}
 	})
 }

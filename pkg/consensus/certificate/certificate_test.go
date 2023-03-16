@@ -33,17 +33,15 @@ func TestCertificateSign(t *testing.T) {
 	})
 
 	newCert := &Certificate{}
-	err := newCert.Decode(certificate.MustEncode())
+	err := newCert.Decode(certificate.Encode())
 	assert.NoError(t, err)
 
 	keys := crypto.BLSKeyGen([]byte(newPassphrase()))
 	networkID := crypto.RandomBytes(32)
 
-	err = certificate.Sign(networkID, keys.PrivateKey)
-	assert.NoError(t, err)
+	certificate.Sign(networkID, keys.PrivateKey)
 
-	valid, err := certificate.Verify(networkID, certificate.Signature, keys.PublicKey)
-	assert.NoError(t, err)
+	valid := certificate.Verify(networkID, certificate.Signature, keys.PublicKey)
 	assert.Equal(t, valid, true)
 
 	assert.True(t, Certificate{
@@ -90,9 +88,9 @@ func TestSingleCommit(t *testing.T) {
 		addr := crypto.GetAddress(publicKey)
 		keys := crypto.BLSKeyGen([]byte(pass))
 
-		commits[i], _ = NewSingleCommit(header, codec.Lisk32(addr), networkID, keys.PrivateKey)
+		commits[i] = NewSingleCommit(header, codec.Lisk32(addr), networkID, keys.PrivateKey)
 		newcommit := &SingleCommit{}
-		err = newcommit.Decode(commits[i].MustEncode())
+		err = newcommit.Decode(commits[i].Encode())
 		assert.NoError(t, err)
 	}
 
@@ -109,8 +107,7 @@ func TestSingleCommit(t *testing.T) {
 		Signature:       aggCommit.CertificateSignature,
 	}
 
-	valid, err := cert.VerifyAggregateCertificateSignature(keypairs.BLSKeys(), []uint64{1, 1, 1}, 2, networkID)
-	assert.NoError(t, err)
+	valid := cert.VerifyAggregateCertificateSignature(keypairs.BLSKeys(), []uint64{1, 1, 1}, 2, networkID)
 	assert.Equal(t, true, valid)
 }
 

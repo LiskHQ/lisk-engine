@@ -428,38 +428,27 @@ func (d *DataAccess) getLastBlock() (*Block, error) {
 	return d.GetBlock(ids[0].Value())
 }
 
-func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, finalizedHeight uint32, removeTemp bool) error {
+func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, finalizedHeight uint32, removeTemp bool) {
 	height := bytes.FromUint32(block.Header.Height)
-	encodedBlockHeader, err := block.Header.Encode()
-	if err != nil {
-		return err
-	}
+	encodedBlockHeader := block.Header.Encode()
+
 	batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block.Header.ID), encodedBlockHeader)
 	batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), height), block.Header.ID)
 	if len(block.Transactions) > 0 {
 		idsBytes := make([][]byte, len(block.Transactions))
 		for i, tx := range block.Transactions {
-			encodedTx, err := tx.Encode()
-			if err != nil {
-				return err
-			}
+			encodedTx := tx.Encode()
 			batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixTxIDToTx), tx.ID), encodedTx)
 			idsBytes[i] = tx.ID
 		}
 		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToTxs), block.Header.ID), bytes.Join(idsBytes...))
 	}
 	if len(events) > 0 {
-		eventBytes, err := encodableListToBytes(events)
-		if err != nil {
-			return err
-		}
+		eventBytes := encodableListToBytes(events)
 		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), height), eventBytes)
 	}
 	if len(block.Assets) > 0 {
-		assetBytes, err := encodableListToBytes(block.Assets)
-		if err != nil {
-			return err
-		}
+		assetBytes := encodableListToBytes(block.Assets)
 		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToAssets), block.Header.ID), assetBytes)
 	}
 	batch.Set(DBPrefixToBytes(dbPrefixFinalizedHeight), bytes.FromUint32(finalizedHeight))
@@ -474,9 +463,6 @@ func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, f
 				bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToEvents), bytes.FromUint32(uint32(minEventDeleteHeight))),
 				-1, false,
 			)
-			if err != nil {
-				return err
-			}
 			for _, kv := range kvs {
 				batch.Del(kv.Key())
 			}
@@ -485,15 +471,12 @@ func (d *DataAccess) saveBlock(batch *db.Batch, block *Block, events []*Event, f
 	if removeTemp {
 		batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixTemp), height))
 	}
-	return nil
 }
 
-func (d *DataAccess) removeBlock(batch *db.Batch, block *Block, saveTemp bool) error {
+func (d *DataAccess) removeBlock(batch *db.Batch, block *Block, saveTemp bool) {
 	height := bytes.FromUint32(block.Header.Height)
-	encodedBlock, err := block.Encode()
-	if err != nil {
-		return err
-	}
+	encodedBlock := block.Encode()
+
 	batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockIDToBlockHeader), block.Header.ID))
 	batch.Del(bytes.Join(DBPrefixToBytes(dbPrefixBlockHeightToBlockID), height))
 	if len(block.Transactions) > 0 {
@@ -509,20 +492,16 @@ func (d *DataAccess) removeBlock(batch *db.Batch, block *Block, saveTemp bool) e
 	if saveTemp {
 		batch.Set(bytes.Join(DBPrefixToBytes(dbPrefixTemp), height), encodedBlock)
 	}
-	return nil
 }
 
 type bytesList struct {
 	items [][]byte `fieldNumber:"1"`
 }
 
-func encodableListToBytes[T codec.EncodeDecodable](assets []T) ([]byte, error) {
+func encodableListToBytes[T codec.EncodeDecodable](assets []T) []byte {
 	items := make([][]byte, len(assets))
 	for i, asset := range assets {
-		encoded, err := asset.Encode()
-		if err != nil {
-			return nil, err
-		}
+		encoded := asset.Encode()
 		items[i] = encoded
 	}
 	list := &bytesList{

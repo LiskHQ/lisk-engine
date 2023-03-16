@@ -258,7 +258,7 @@ func TestStateStoreRevert(t *testing.T) {
 			},
 		},
 	}
-	data.Set(diffKey, diff.MustEncode())
+	data.Set(diffKey, diff.Encode())
 	for _, key := range diff.Added {
 		data.Set(key, crypto.RandomBytes(100))
 	}

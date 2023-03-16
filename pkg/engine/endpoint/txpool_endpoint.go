@@ -88,10 +88,7 @@ func (a *txpoolEndpoint) HandlePostTransaction(w router.EndpointResponseWriter, 
 		w.Error(err)
 		return
 	}
-	if err := req.Transaction.Init(); err != nil {
-		w.Error(err)
-		return
-	}
+	req.Transaction.Init()
 	// validate using state machine
 	result, err := a.abi.VerifyTransaction(&labi.VerifyTransactionRequest{
 		ContextID:   []byte{},

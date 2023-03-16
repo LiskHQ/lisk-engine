@@ -138,9 +138,7 @@ func (d *RegularMerkleTree) Append(value []byte) error {
 	}
 	d.appendPath = append([][]byte{currentHash}, topPath...)
 	d.size++
-	if err := d.saveInfo(); err != nil {
-		return err
-	}
+	d.saveInfo()
 	return nil
 }
 
@@ -237,9 +235,7 @@ func (d *RegularMerkleTree) Update(idxs []uint64, updateData [][]byte) error {
 		return errors.New("root must exist")
 	}
 	d.root = nextRoot
-	if err := d.saveInfo(); err != nil {
-		return err
-	}
+	d.saveInfo()
 	return nil
 }
 
@@ -285,18 +281,14 @@ func (d *RegularMerkleTree) loadInfo() error {
 	return nil
 }
 
-func (d *RegularMerkleTree) saveInfo() error {
+func (d *RegularMerkleTree) saveInfo() {
 	info := &info{
 		root:       d.root,
 		size:       d.size,
 		appendPath: d.appendPath,
 	}
-	infoByte, err := info.Encode()
-	if err != nil {
-		return err
-	}
+	infoByte := info.Encode()
 	d.db.Set([]byte{storePrefixInfo}, infoByte)
-	return nil
 }
 
 func (d *RegularMerkleTree) getIndexes(queryHashes [][]byte) ([]uint64, error) {

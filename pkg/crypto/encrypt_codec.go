@@ -6,29 +6,13 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
 )
 
-func (e *KDFParams) Encode() ([]byte, error) {
+func (e *KDFParams) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteUInt32(1, e.Parallelism); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(2, e.Iterations); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteUInt32(3, e.MemorySize); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(4, e.Salt); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *KDFParams) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteUInt32(1, e.Parallelism)
+	writer.WriteUInt32(2, e.Iterations)
+	writer.WriteUInt32(3, e.MemorySize)
+	writer.WriteBytes(4, e.Salt)
+	return writer.Result()
 }
 
 func (e *KDFParams) Decode(data []byte) error {
@@ -117,23 +101,11 @@ func (e *KDFParams) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *CipherParams) Encode() ([]byte, error) {
+func (e *CipherParams) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteBytes(1, e.IV); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.Tag); err != nil {
-		return nil, err
-	}
-	return writer.Result(), nil
-}
-
-func (e *CipherParams) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	writer.WriteBytes(1, e.IV)
+	writer.WriteBytes(2, e.Tag)
+	return writer.Result()
 }
 
 func (e *CipherParams) Decode(data []byte) error {
@@ -194,42 +166,20 @@ func (e *CipherParams) DecodeStrictFromReader(reader *codec.Reader) error {
 	return nil
 }
 
-func (e *EncryptedMessage) Encode() ([]byte, error) {
+func (e *EncryptedMessage) Encode() []byte {
 	writer := codec.NewWriter()
-	if err := writer.WriteString(1, e.Version); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(2, e.CipherText); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteBytes(3, e.Mac); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteString(4, e.KDF); err != nil {
-		return nil, err
-	}
+	writer.WriteString(1, e.Version)
+	writer.WriteBytes(2, e.CipherText)
+	writer.WriteBytes(3, e.Mac)
+	writer.WriteString(4, e.KDF)
 	if e.KDFParams != nil {
-		if err := writer.WriteEncodable(5, e.KDFParams); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(5, e.KDFParams)
 	}
-	if err := writer.WriteString(6, e.Cipher); err != nil {
-		return nil, err
-	}
+	writer.WriteString(6, e.Cipher)
 	if e.CipherParams != nil {
-		if err := writer.WriteEncodable(7, e.CipherParams); err != nil {
-			return nil, err
-		}
+		writer.WriteEncodable(7, e.CipherParams)
 	}
-	return writer.Result(), nil
-}
-
-func (e *EncryptedMessage) MustEncode() []byte {
-	encoded, err := e.Encode()
-	if err != nil {
-		panic(err)
-	}
-	return encoded
+	return writer.Result()
 }
 
 func (e *EncryptedMessage) Decode(data []byte) error {
