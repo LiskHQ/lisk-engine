@@ -12,6 +12,7 @@ import (
 	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/network"
+	ma "github.com/multiformats/go-multiaddr"
 
 	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
@@ -154,8 +155,16 @@ func (conn *Connection) Stop() error {
 // ApplyPenalty updates the score of the given PeerID and blocks the peer if the
 // score exceeded. Also disconnected the peer immediately.
 func (conn *Connection) ApplyPenalty(pid PeerID, score int) {
-	if err := conn.addPenalty(pid, score); err != nil {
-		conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+	for _, c := range conn.Peer.host.Network().ConnsToPeer(pid) {
+		addr := c.RemoteMultiaddr().String() + "/p2p/" + pid.String()
+		maddr, err := ma.NewMultiaddr(addr)
+		if err != nil {
+			conn.logger.Warningf("Failed to create a new multiaddr: %s", err)
+			return
+		}
+		if err := conn.addPenalty(maddr, score); err != nil {
+			conn.logger.Errorf("Failed to apply penalty to peer %s: %v", pid, err)
+		}
 	}
 }
 

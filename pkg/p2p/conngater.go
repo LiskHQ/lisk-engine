@@ -11,7 +11,6 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/control"
 	"github.com/libp2p/go-libp2p/core/network"
-
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 
@@ -27,7 +26,7 @@ var (
 	errConnGaterIsNotrunning = errors.New("failed to add new peer, start needs to be called first")
 )
 
-// peerInfo keeps information of each peer ID in the peerScore of the connectionGater.
+// peerInfo keeps information of each peer IP address in the peerScore of the connectionGater.
 type peerInfo struct {
 	score      int
 	expiration int64
@@ -40,12 +39,12 @@ func newPeerInfo(expiration int64, score int) *peerInfo {
 	}
 }
 
-// connectionGater extendis the BasicConnectionGater of the libp2p to use expire
-// time to remove peer ID from peerScore.
+// connectionGater extends the BasicConnectionGater of the libp2p to use expire
+// time to remove peer IP address from peerScore.
 type connectionGater struct {
 	mutex *sync.RWMutex
 
-	peerScore    map[PeerID]*peerInfo
+	peerScore    map[string]*peerInfo
 	blockedAddrs map[string]struct{}
 
 	logger        log.Logger
@@ -64,7 +63,7 @@ func newConnGater(logger log.Logger, expiration, itervalCheck time.Duration) (*c
 		mutex:  new(sync.RWMutex),
 		logger: logger,
 
-		peerScore:    make(map[PeerID]*peerInfo),
+		peerScore:    make(map[string]*peerInfo),
 		blockedAddrs: make(map[string]struct{}),
 
 		expiration:    expiration,
@@ -72,8 +71,8 @@ func newConnGater(logger log.Logger, expiration, itervalCheck time.Duration) (*c
 	}, nil
 }
 
-// addPenalty will update the score of given peer ID.
-func (cg *connectionGater) addPenalty(pid PeerID, score int) (int, error) {
+// addPenalty will update the score of given peer IP address.
+func (cg *connectionGater) addPenalty(addr ma.Multiaddr, score int) (int, error) {
 	if !cg.isStarted {
 		return 0, errConnGaterIsNotrunning
 	}
@@ -81,20 +80,26 @@ func (cg *connectionGater) addPenalty(pid PeerID, score int) (int, error) {
 	cg.mutex.Lock()
 	defer cg.mutex.Unlock()
 
+	ip, err := manet.ToIP(addr)
+	if err != nil {
+		cg.logger.Warningf("Error converting multiaddr to IP addr: %s", err)
+		return 0, err
+	}
+
 	newScore := score
-	if info, ok := cg.peerScore[pid]; ok {
+	if info, ok := cg.peerScore[ip.String()]; ok {
 		newScore = info.score + score
 		info.score = newScore
 	} else {
-		cg.peerScore[pid] = newPeerInfo(0, newScore)
+		cg.peerScore[ip.String()] = newPeerInfo(-1, newScore)
 	}
 
 	if newScore >= MaxPenaltyScore {
 		exTime := time.Now().Unix() + int64(cg.expiration.Seconds())
-		if info, ok := cg.peerScore[pid]; ok {
+		if info, ok := cg.peerScore[ip.String()]; ok {
 			info.expiration = exTime
 		} else {
-			cg.peerScore[pid] = newPeerInfo(exTime, 0)
+			cg.peerScore[ip.String()] = newPeerInfo(exTime, 0)
 		}
 		return newScore, nil
 	}
@@ -102,15 +107,16 @@ func (cg *connectionGater) addPenalty(pid PeerID, score int) (int, error) {
 	return newScore, nil
 }
 
-// listBlockedPeers return a list of blocked peers.
-func (cg *connectionGater) listBlockedPeers() []PeerID {
+// listBannedPeers return a list of banned peers.
+func (cg *connectionGater) listBannedPeers() []net.IP {
 	cg.mutex.RLock()
 	defer cg.mutex.RUnlock()
 
-	result := make([]PeerID, 0, len(cg.peerScore))
+	result := make([]net.IP, 0, len(cg.peerScore))
 	for p, info := range cg.peerScore {
-		if info.expiration != 0 {
-			result = append(result, p)
+		if info.expiration != -1 {
+			ip := net.ParseIP(p)
+			result = append(result, ip)
 		}
 	}
 
@@ -118,7 +124,7 @@ func (cg *connectionGater) listBlockedPeers() []PeerID {
 }
 
 // start runs a new goroutine to check the expiration time based on
-// intervaliCheck, it will be run automatically.
+// interval. If the expiration time is reached, the peer will be removed (unbanned)
 func (cg *connectionGater) start(ctx context.Context, wg *sync.WaitGroup) {
 	if !cg.isStarted {
 		t := time.NewTicker(cg.intervalCheck)
@@ -130,7 +136,7 @@ func (cg *connectionGater) start(ctx context.Context, wg *sync.WaitGroup) {
 				select {
 				case <-t.C:
 					for p, info := range cg.peerScore {
-						if time.Now().Unix() > info.expiration {
+						if info.expiration != -1 && time.Now().Unix() > info.expiration {
 							cg.mutex.Lock()
 							delete(cg.peerScore, p)
 							cg.mutex.Unlock()
@@ -199,15 +205,29 @@ func (cg *connectionGater) optionWithBlacklist(bl []string) (libp2p.Option, erro
 	return libp2p.ConnectionGater(cg), nil
 }
 
+// isPeerConnectionAllowed returns true if the peer is allowed to connect (inbound or outbound direction).
+func (cg *connectionGater) isPeerConnectionAllowed(addr ma.Multiaddr) bool {
+	cg.mutex.RLock()
+	defer cg.mutex.RUnlock()
+
+	ip, err := manet.ToIP(addr)
+	if err != nil {
+		cg.logger.Warningf("Error converting multiaddr to IP addr: %s", err)
+		return true
+	}
+
+	_, block := cg.blockedAddrs[ip.String()]
+	info, ban := cg.peerScore[ip.String()]
+
+	return !block && (!(ban && info.expiration != -1))
+}
+
 // InterceptPeerDial tests whether we're permitted to Dial the specified peer.
 //
 // This is called by the network.Network implementation when dialling a peer.
 func (cg *connectionGater) InterceptPeerDial(pid PeerID) (allow bool) {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
-
-	info, block := cg.peerScore[pid]
-	return !(block && info.expiration != 0)
+	// We can ignore this because we won't filter peers by ID, but we will filter peers by IP.
+	return true
 }
 
 // InterceptAddrDial tests whether we're permitted to dial the specified
@@ -216,18 +236,7 @@ func (cg *connectionGater) InterceptPeerDial(pid PeerID) (allow bool) {
 // This is called by the network.Network implementation after it has
 // resolved the peer's addrs, and prior to dialling each.
 func (cg *connectionGater) InterceptAddrDial(pid PeerID, addr ma.Multiaddr) bool {
-	// we have already filtered blocked peers in InterceptPeerDial, so we just check the IP
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
-
-	ip, err := manet.ToIP(addr)
-	if err != nil {
-		cg.logger.Warningf("error converting multiaddr to IP addr: %s", err)
-		return true
-	}
-
-	_, block := cg.blockedAddrs[ip.String()]
-	return !block
+	return cg.isPeerConnectionAllowed(addr)
 }
 
 // InterceptAccept tests whether an incipient inbound connection is allowed.
@@ -235,19 +244,8 @@ func (cg *connectionGater) InterceptAddrDial(pid PeerID, addr ma.Multiaddr) bool
 // This is called by the upgrader, or by the transport directly (e.g. QUIC,
 // Bluetooth), straight after it has accepted a connection from its socket.
 func (cg *connectionGater) InterceptAccept(cma network.ConnMultiaddrs) bool {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
-
-	a := cma.RemoteMultiaddr()
-
-	ip, err := manet.ToIP(a)
-	if err != nil {
-		cg.logger.Warningf("error converting multiaddr to IP addr: %s", err)
-		return true
-	}
-
-	_, block := cg.blockedAddrs[ip.String()]
-	return !block
+	addr := cma.RemoteMultiaddr()
+	return cg.isPeerConnectionAllowed(addr)
 }
 
 // InterceptSecured tests whether a given connection, now authenticated,
@@ -261,13 +259,8 @@ func (cg *connectionGater) InterceptSecured(dir network.Direction, p PeerID, cma
 		// we have already filtered those in InterceptPeerDial/InterceptAddrDial
 		return true
 	}
-
-	// we have already filtered addrs in InterceptAccept, so we just check the peer ID
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
-
-	info, block := cg.peerScore[p]
-	return !(block && info.expiration != 0)
+	addr := cma.RemoteMultiaddr()
+	return cg.isPeerConnectionAllowed(addr)
 }
 
 // InterceptUpgraded tests whether a fully capable connection is allowed.

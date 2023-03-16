@@ -20,6 +20,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	ma "github.com/multiformats/go-multiaddr"
 
 	lskcrypto "github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
@@ -261,13 +262,16 @@ func (p *Peer) BlacklistedPeers() []AddrInfo {
 	blacklistedPeers := make([]peer.AddrInfo, 0)
 
 	for _, knownPeer := range p.knownPeers() {
-		// Check if the peer ID is blacklisted in connectionGater.
+		// Check if the peer IP is blacklisted in connectionGater.
 		peerFound := false
-		for _, id := range p.connGater.listBlockedPeers() {
-			if knownPeer.ID == id {
-				blacklistedPeers = append(blacklistedPeers, knownPeer)
-				peerFound = true
-				break
+		for _, ip := range p.connGater.listBannedPeers() {
+			for _, addr := range knownPeer.Addrs {
+				ipKnownPeer := extractIP(addr)
+				if ipKnownPeer == ip.String() {
+					blacklistedPeers = append(blacklistedPeers, knownPeer)
+					peerFound = true
+					break
+				}
 			}
 		}
 		if peerFound {
@@ -388,25 +392,33 @@ func (p *Peer) peerSource(ctx context.Context, numPeers int) <-chan peer.AddrInf
 	return peerChan
 }
 
-// addPenalty will update the score of the given peer ID in connGater.
-// The peer will block if the socre exceeded in MaxPenaltyScore and then disconnected the peer immediately.
-func (p *Peer) addPenalty(pid PeerID, score int) error {
-	newScore, err := p.connGater.addPenalty(pid, score)
+// addPenalty will update the score of the given peer IP in connGater.
+// The peer will block if the score exceeded in MaxPenaltyScore and then disconnected the peer immediately.
+func (p *Peer) addPenalty(addr ma.Multiaddr, score int) error {
+	newScore, err := p.connGater.addPenalty(addr, score)
 	if err != nil {
 		return err
 	}
 	if newScore >= MaxPenaltyScore {
-		return p.Disconnect(pid)
+		addrInfo, err := AddrInfoFromMultiAddr(addr.String())
+		if err != nil {
+			return err
+		}
+		return p.Disconnect(addrInfo.ID)
 	}
 
 	return nil
 }
 
-// blockPeer blocks the given peer ID and immediately try to close the connection.
-func (p *Peer) blockPeer(pid PeerID) error {
-	_, err := p.connGater.addPenalty(pid, MaxPenaltyScore)
+// blockPeer blocks the given peer IP and immediately try to close the connection.
+func (p *Peer) blockPeer(addr ma.Multiaddr) error {
+	_, err := p.connGater.addPenalty(addr, MaxPenaltyScore)
 	if err != nil {
 		return err
 	}
-	return p.Disconnect(pid)
+	addrInfo, err := AddrInfoFromMultiAddr(addr.String())
+	if err != nil {
+		return err
+	}
+	return p.Disconnect(addrInfo.ID)
 }

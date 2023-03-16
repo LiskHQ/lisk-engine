@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	ma "github.com/multiformats/go-multiaddr"
+
 	"github.com/LiskHQ/lisk-engine/pkg/log"
 )
 
@@ -78,7 +80,7 @@ func (rl *rateLimit) increaseCounter(rpcName string, peerID PeerID) {
 }
 
 // checkLimit checks if the rate limit for a specific RPC message has been reached and applies a penalty if needed.
-func (rl *rateLimit) checkLimit(rpcName string, peerID PeerID) error {
+func (rl *rateLimit) checkLimit(rpcName string, peerID PeerID, peerAddr ma.Multiaddr) error {
 	if rl.peer == nil {
 		return errors.New("cannot check rate limits because rate limiter is not started")
 	}
@@ -89,7 +91,13 @@ func (rl *rateLimit) checkLimit(rpcName string, peerID PeerID) error {
 
 	if msgCounter.counters[peerID] > msgCounter.limit {
 		rl.logger.Debugf("Peer %s sent too many messages of type %s, applying penalty", peerID, rpcName)
-		if err := rl.peer.addPenalty(peerID, msgCounter.penalty); err != nil {
+		addr := peerAddr.String() + "/p2p/" + peerID.String()
+		maddr, err := ma.NewMultiaddr(addr)
+		if err != nil {
+			rl.logger.Warningf("Failed to create a new multiaddr: %s", err)
+			return err
+		}
+		if err := rl.peer.addPenalty(maddr, msgCounter.penalty); err != nil {
 			rl.logger.Errorf("Failed to apply penalty to peer %s: %v", peerID, err)
 			return err
 		}

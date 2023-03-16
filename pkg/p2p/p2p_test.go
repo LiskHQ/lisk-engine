@@ -157,7 +157,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 	assert.Equal(len(node1.ConnectedPeers()), 0)
 
 	err = node1.Connect(ctx, *p2AddrInfo)
-	assert.Containsf(err.Error(), "gater disallow", "Connection should be rejected by ConnectionGater")
+	assert.Containsf(err.Error(), "no good addresses", "Connection should be rejected by ConnectionGater")
 }
 
 func TestP2P_Stop(t *testing.T) {
