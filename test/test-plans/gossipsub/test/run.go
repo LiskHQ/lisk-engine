@@ -80,13 +80,13 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 			ChainID: []byte{0x04, 0x00, 0x01, 0x02},
 		}
 
-		// Don't listen yet, we need to set up networking first
-		conn := *p2p.NewConnection(&cfg)
 		logger, err := log.NewDefaultProductionLogger()
 		if err != nil {
 			panic(err)
 		}
-		if err := conn.Start(logger, nil); err != nil {
+		// Don't listen yet, we need to set up networking first
+		conn := *p2p.NewConnection(logger, &cfg)
+		if err := conn.Start(nil); err != nil {
 			panic(err)
 		}
 		conns[i] = conn

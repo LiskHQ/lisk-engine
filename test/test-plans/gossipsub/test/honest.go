@@ -81,7 +81,6 @@ type PubsubNode struct {
 	shutdown func()
 	runenv   *runtime.RunEnv
 	conn     p2p.Connection
-	ps       *pubsub.PubSub
 
 	lk     sync.RWMutex
 	topics map[string]*topicState
@@ -103,6 +102,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, c p2p.Connection
 
 	// TODO remove GetHost and use p2p.Gossipsub
 	ps, err := pubsub.NewGossipSub(ctx, c.GetHost(), opts...)
+	c.SetPubSub(ps)
 
 	if err != nil {
 		return nil, fmt.Errorf("error making new gossipsub: %s", err)
@@ -115,7 +115,6 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, c p2p.Connection
 		shutdown: cancel,
 		runenv:   runenv,
 		conn:     c,
-		ps:       ps,
 		topics:   make(map[string]*topicState),
 	}
 
@@ -218,7 +217,8 @@ func (p *PubsubNode) joinTopic(t TopicConfig, runtime time.Duration) {
 		// already joined, ignore
 		return
 	}
-	topic, err := p.ps.Join(t.Id)
+	// TODO Gossipsub and Pubsub should be remove
+	topic, err := p.conn.Gossipsub().Pubsub().Join(t.Id)
 	if err != nil {
 		p.log("error joining topic %s: %s", t.Id, err)
 		return
