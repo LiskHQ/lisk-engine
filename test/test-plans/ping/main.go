@@ -47,13 +47,13 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	}
 
 	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
-	host := p2p.NewConnection(&cfg)
-	// init a logger to use it for Host
 	logger, err := log.NewDefaultProductionLogger()
 	if err != nil {
 		panic(err)
 	}
-	if err := host.Start(logger, nil); err != nil {
+	host := p2p.NewConnection(logger, &cfg)
+	// init a logger to use it for Host
+	if err := host.Start(nil); err != nil {
 		panic(err)
 	}
 
