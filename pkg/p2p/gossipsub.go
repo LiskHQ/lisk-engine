@@ -39,6 +39,11 @@ type GossipSub struct {
 	version           string
 }
 
+// TODO Pubsub should be remove or refactor
+func (gs GossipSub) Pubsub() *pubsub.PubSub {
+	return gs.ps
+}
+
 // newGossipSub makes a new GossipSub struct.
 func newGossipSub(logger log.Logger, chainID []byte, version string) *GossipSub {
 	return &GossipSub{

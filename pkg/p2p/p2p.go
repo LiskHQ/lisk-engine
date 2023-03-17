@@ -17,6 +17,7 @@ import (
 
 	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
 const stopTimeout = time.Second * 5      // P2P service stop timeout in seconds.
@@ -63,6 +64,21 @@ func (conn *Connection) Info() *AddrInfo {
 // TODO Listen should be remove or refactor
 func (conn *Connection) Listen(addrs []ma.Multiaddr) error {
 	return conn.Peer.host.Network().Listen(addrs...)
+}
+
+// TODO SetPubSub should be remove or refactor
+func (conn *Connection) SetPubSub(ps *pubsub.PubSub) {
+	conn.ps = ps
+}
+
+// TODO GetPubSub should be remove or refactor
+func (conn *Connection) GetPubsub() *pubsub.PubSub {
+	return conn.Pubsub()
+}
+
+// TODO Gossipsub should be remove or refactor
+func (conn *Connection) Gossipsub() *GossipSub {
+	return conn.GossipSub
 }
 
 // Version returns network version set for the protocol.
