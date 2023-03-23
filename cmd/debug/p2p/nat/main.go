@@ -32,13 +32,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := p2p.Config{
-		AllowIncomingConnections: true,
-		EnableNATService:         true,
-		EnableUsingRelayService:  true,
-		EnableRelayService:       true,
-		EnableHolePunching:       true,
-		Version:                  "1.0",
-		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
+		EnableNATService:        true,
+		EnableUsingRelayService: true,
+		EnableRelayService:      true,
+		EnableHolePunching:      true,
+		Version:                 "1.0",
+		ChainID:                 []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
 	conn := p2p.NewConnection(&cfg)

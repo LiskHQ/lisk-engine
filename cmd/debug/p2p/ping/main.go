@@ -23,11 +23,10 @@ func main() {
 	defer cancel()
 
 	cfg := p2p.Config{
-		AllowIncomingConnections: true,
-		EnableNATService:         true,
-		EnableUsingRelayService:  true,
-		EnableRelayService:       true,
-		EnableHolePunching:       true,
+		EnableNATService:        true,
+		EnableUsingRelayService: true,
+		EnableRelayService:      true,
+		EnableHolePunching:      true,
 	}
 
 	conn := p2p.NewConnection(&cfg)

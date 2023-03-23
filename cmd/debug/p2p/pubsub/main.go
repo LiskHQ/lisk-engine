@@ -39,11 +39,10 @@ func main() {
 	ip4tcp := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port)
 
 	cfg := p2p.Config{
-		Addresses:                []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
-		AllowIncomingConnections: true,
-		SeedPeers:                []string{},
-		Version:                  "2.0",
-		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
+		Addresses: []string{ip6quic, ip4quic, ip6tcp, ip4tcp},
+		SeedPeers: []string{},
+		Version:   "2.0",
+		ChainID:   []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
 	conn := p2p.NewConnection(&cfg)

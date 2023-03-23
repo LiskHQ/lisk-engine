@@ -16,7 +16,7 @@ func TestRateLimit_RPCMessageCounter_BanPeer(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	node1 := NewConnection(cfg)

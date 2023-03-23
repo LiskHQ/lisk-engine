@@ -92,7 +92,7 @@ func TestPeer_Connect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
@@ -111,7 +111,7 @@ func TestPeer_Disconnect(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
@@ -135,9 +135,9 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg1 := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg1 := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg1.insertDefault()
-	cfg2 := &Config{AllowIncomingConnections: false, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg2 := &Config{}
 	_ = cfg2.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg1)
@@ -167,7 +167,7 @@ func TestPeer_New_ConnectionManager(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := Config{AllowIncomingConnections: true,
+	cfg := Config{
 		Addresses:           []string{testIPv4TCP, testIPv4UDP},
 		MinNumOfConnections: 2,
 		MaxNumOfConnections: 4}
@@ -222,7 +222,7 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	ip4quic := fmt.Sprintf("/ip4/127.0.0.1/udp/%d/quic", 12345)
 	ip4tcp := fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", 12345)
-	cfg := &Config{Addresses: []string{ip4quic, ip4tcp}, AllowIncomingConnections: true}
+	cfg := &Config{Addresses: []string{ip4quic, ip4tcp}}
 	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
 	p, err := newPeer(context.Background(), wg, logger, []byte{}, cfg)
@@ -242,7 +242,7 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	cfg1 := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg1 := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg1.insertDefault()
 
 	// create peer1, will be used for blacklisting via gossipsub
@@ -299,7 +299,7 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
@@ -320,7 +320,7 @@ func TestPeer_Ping(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	wg := &sync.WaitGroup{}
 	p1, _ := newPeer(ctx, wg, logger, []byte{}, cfg)
@@ -342,7 +342,7 @@ func TestPeer_PeerSource(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	// Peer 1
