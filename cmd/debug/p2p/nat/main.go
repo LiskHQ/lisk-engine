@@ -31,7 +31,11 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	ip4quic := "/ip4/0.0.0.0/udp/0/quic"
+	ip4tcp := "/ip4/0.0.0.0/tcp/0"
+
 	cfg := p2p.Config{
+		Addresses:               []string{ip4quic, ip4tcp},
 		EnableNATService:        true,
 		EnableUsingRelayService: true,
 		EnableRelayService:      true,
