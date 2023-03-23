@@ -263,7 +263,7 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -297,7 +297,7 @@ func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -324,7 +324,7 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -359,7 +359,7 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -395,7 +395,7 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -448,7 +448,7 @@ func TestMessageProtocol_sendMessage(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	tmr := TestMessageReceive{done: make(chan any)}
 
@@ -486,7 +486,7 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	defer cancel()
 
 	logger, _ := log.NewDefaultProductionLogger()
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	wg := &sync.WaitGroup{}

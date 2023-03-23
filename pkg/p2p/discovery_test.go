@@ -106,7 +106,7 @@ func TestDiscovery_NextValidPeer_ConnectedPeers(t *testing.T) {
 	logger, _ := log.NewDefaultProductionLogger()
 	wg := &sync.WaitGroup{}
 
-	cfg := &Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
 	// Create two peers

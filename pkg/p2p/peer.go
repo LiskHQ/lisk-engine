@@ -102,15 +102,10 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 		opts = append(opts, libp2p.Identity(priv))
 	}
 
-	switch cfg.AllowIncomingConnections {
-	case true:
-		if len(cfg.Addresses) == 0 {
-			opts = append(opts, libp2p.NoListenAddrs)
-		} else {
-			opts = append(opts, libp2p.ListenAddrStrings(cfg.Addresses...))
-		}
-	case false:
+	if len(cfg.Addresses) == 0 {
 		opts = append(opts, libp2p.NoListenAddrs)
+	} else {
+		opts = append(opts, libp2p.ListenAddrStrings(cfg.Addresses...))
 	}
 
 	connGater, err := newConnGater(logger, expireTimeOfConnGater, intervalCheckOfConnGater)

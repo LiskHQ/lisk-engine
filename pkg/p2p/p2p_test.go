@@ -90,8 +90,7 @@ func TestP2P_NewP2P(t *testing.T) {
 	p2p := NewConnection(cfg)
 	assert.NotNil(p2p)
 	assert.Equal("1.0", p2p.cfg.Version)
-	assert.Equal([]string{"/ip4/0.0.0.0/tcp/0", "/ip4/0.0.0.0/udp/0/quic"}, p2p.cfg.Addresses)
-	assert.Equal(false, p2p.cfg.AllowIncomingConnections)
+	assert.Equal([]string{}, p2p.cfg.Addresses)
 	assert.Equal(false, p2p.cfg.EnableNATService)
 	assert.Equal(false, p2p.cfg.EnableUsingRelayService)
 	assert.Equal(false, p2p.cfg.EnableRelayService)
@@ -127,10 +126,7 @@ func TestP2P_AddPenalty(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := &Config{
-		AllowIncomingConnections: true,
-		Addresses:                []string{testIPv4TCP, testIPv4UDP},
-	}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	node1 := NewConnection(cfg)
 	node2 := NewConnection(cfg)
@@ -165,10 +161,7 @@ func TestP2P_BanPeer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := &Config{
-		AllowIncomingConnections: true,
-		Addresses:                []string{testIPv4TCP, testIPv4UDP},
-	}
+	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	node1 := NewConnection(cfg)
 	node2 := NewConnection(cfg)
@@ -228,7 +221,7 @@ func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := Config{AllowIncomingConnections: true, Addresses: []string{testIPv4TCP, testIPv4UDP}}
+	cfg := Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 	p2p := NewConnection(&cfg)
 	p2p.dropConnTimeout = 1 * time.Second // Set drop random connection timeout to 1s to speed up the test
@@ -270,10 +263,7 @@ func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	logger, _ := logger.NewDefaultProductionLogger()
 
 	// Create two new peers
-	cfg1 := Config{
-		AllowIncomingConnections: true,
-		Addresses:                []string{testIPv4TCP, testIPv4UDP},
-	}
+	cfg1 := Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg1.insertDefault()
 
 	wg := &sync.WaitGroup{}
@@ -286,9 +276,8 @@ func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 
 	// Create a p2p node with fixed peers
 	cfg2 := Config{
-		AllowIncomingConnections: true,
-		Addresses:                []string{testIPv4TCP, testIPv4UDP},
-		FixedPeers:               []string{p1Addrs[0], p1Addrs[1]},
+		Addresses:  []string{testIPv4TCP, testIPv4UDP},
+		FixedPeers: []string{p1Addrs[0], p1Addrs[1]},
 	}
 
 	_ = cfg2.insertDefault()

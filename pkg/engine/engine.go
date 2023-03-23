@@ -235,20 +235,19 @@ func (e *Engine) Stop() {
 
 func (e *Engine) init() error {
 	e.p2pConn = p2p.NewConnection(&p2p.Config{
-		Version:                  NetworkVersion,
-		ChainID:                  e.config.Genesis.ChainID,
-		Addresses:                e.config.Network.Addresses,
-		EnableHolePunching:       e.config.Network.EnableHolePunching,
-		AllowIncomingConnections: e.config.Network.AllowIncomingConnections,
-		EnableNATService:         e.config.Network.EnableNATService,
-		EnableUsingRelayService:  e.config.Network.EnableUsingRelayService,
-		EnableRelayService:       e.config.Network.EnableRelayService,
-		SeedPeers:                e.config.Network.SeedPeers,
-		FixedPeers:               e.config.Network.FixedPeers,
-		BlacklistedIPs:           e.config.Network.BlacklistedIPs,
-		MinNumOfConnections:      e.config.Network.MinNumOfConnections,
-		MaxNumOfConnections:      e.config.Network.MaxNumOfConnections,
-		IsSeedPeer:               e.config.Network.IsSeedPeer,
+		Version:                 NetworkVersion,
+		ChainID:                 e.config.Genesis.ChainID,
+		Addresses:               e.config.Network.Addresses,
+		EnableHolePunching:      e.config.Network.EnableHolePunching,
+		EnableNATService:        e.config.Network.EnableNATService,
+		EnableUsingRelayService: e.config.Network.EnableUsingRelayService,
+		EnableRelayService:      e.config.Network.EnableRelayService,
+		SeedPeers:               e.config.Network.SeedPeers,
+		FixedPeers:              e.config.Network.FixedPeers,
+		BlacklistedIPs:          e.config.Network.BlacklistedIPs,
+		MinNumOfConnections:     e.config.Network.MinNumOfConnections,
+		MaxNumOfConnections:     e.config.Network.MaxNumOfConnections,
+		IsSeedPeer:              e.config.Network.IsSeedPeer,
 	})
 	e.chain = blockchain.NewChain(&blockchain.ChainConfig{
 		MaxBlockCache:         e.config.System.GetMaxBlokckCache(),

@@ -31,14 +31,17 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	ip4quic := "/ip4/0.0.0.0/udp/0/quic"
+	ip4tcp := "/ip4/0.0.0.0/tcp/0"
+
 	cfg := p2p.Config{
-		AllowIncomingConnections: true,
-		EnableNATService:         true,
-		EnableUsingRelayService:  true,
-		EnableRelayService:       true,
-		EnableHolePunching:       true,
-		Version:                  "1.0",
-		ChainID:                  []byte{0x04, 0x00, 0x01, 0x02},
+		Addresses:               []string{ip4quic, ip4tcp},
+		EnableNATService:        true,
+		EnableUsingRelayService: true,
+		EnableRelayService:      true,
+		EnableHolePunching:      true,
+		Version:                 "1.0",
+		ChainID:                 []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
 	conn := p2p.NewConnection(&cfg)
