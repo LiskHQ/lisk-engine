@@ -171,7 +171,7 @@ func newPeer(ctx context.Context, wg *sync.WaitGroup, logger log.Logger, seed []
 		autoRelayOptions = append(autoRelayOptions, autorelay.WithPeerSource(func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
 			return p.peerSource(ctx, numPeers)
 		}))
-		opts = append(opts, libp2p.EnableAutoRelay(autoRelayOptions...))
+		opts = append(opts, libp2p.EnableAutoRelayWithStaticRelays(nil, autoRelayOptions...))
 	} else {
 		// Relay is enabled by default, so we need to disable it explicitly.
 		opts = append(opts, libp2p.DisableRelay())

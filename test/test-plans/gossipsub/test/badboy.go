@@ -225,7 +225,7 @@ func (bb *BadBoy) regraft(p p2p.PeerID, topic string) {
 		ok := bb.sendCtl(p, &pb.RPC{
 			Control: &pb.ControlMessage{
 				Graft: []*pb.ControlGraft{
-					&pb.ControlGraft{TopicID: &topic}}}})
+					{TopicID: &topic}}}})
 		if ok {
 			bb.graft(p, topic)
 		}

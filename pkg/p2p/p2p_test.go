@@ -168,14 +168,14 @@ func TestP2P_BanPeer(t *testing.T) {
 
 	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
-	node1 := NewConnection(cfg)
-	node2 := NewConnection(cfg)
 	logger, _ := logger.NewDefaultProductionLogger()
+	node1 := NewConnection(logger, cfg)
+	node2 := NewConnection(logger, cfg)
 	node1.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 	node2.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
-	err := node1.Start(logger, []byte{})
+	err := node1.Start([]byte{})
 	assert.Nil(err)
-	err = node2.Start(logger, []byte{})
+	err = node2.Start([]byte{})
 	assert.Nil(err)
 
 	err = node2.Publish(ctx, testTopic1, testMessageData)

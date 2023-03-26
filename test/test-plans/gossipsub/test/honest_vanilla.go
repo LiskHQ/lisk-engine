@@ -1,3 +1,4 @@
+//go:build !hardened_api
 // +build !hardened_api
 
 package main
