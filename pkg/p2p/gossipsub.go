@@ -39,11 +39,6 @@ type GossipSub struct {
 	version           string
 }
 
-// TODO Pubsub should be remove or refactor
-func (gs GossipSub) Pubsub() *pubsub.PubSub {
-	return gs.ps
-}
-
 // newGossipSub makes a new GossipSub struct.
 func newGossipSub(logger log.Logger, chainID []byte, version string) *GossipSub {
 	return &GossipSub{
@@ -302,4 +297,9 @@ func (gs *GossipSub) Publish(ctx context.Context, topicName string, data []byte)
 
 func (gs *GossipSub) formatTopic(name string) string {
 	return fmt.Sprintf("/%s/%s/%s", codec.Hex(gs.chainID).String(), gs.version, name)
+}
+
+// TODO Pubsub should be remove or refactor
+func (gs GossipSub) Pubsub() *pubsub.PubSub {
+	return gs.ps
 }

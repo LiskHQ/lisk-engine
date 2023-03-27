@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ipfs/kubo/core/bootstrap"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -17,7 +18,6 @@ import (
 
 	collection "github.com/LiskHQ/lisk-engine/pkg/collection"
 	"github.com/LiskHQ/lisk-engine/pkg/log"
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
 const stopTimeout = time.Second * 5      // P2P service stop timeout in seconds.
@@ -142,7 +142,6 @@ func (conn *Connection) Start(seed []byte) error {
 		return err
 	}
 	conn.logger.Infof("P2P connection successfully started. Listening to: %v", addrs)
-	conn.logger.Infof("P2P connection successfully started")
 	return nil
 }
 
