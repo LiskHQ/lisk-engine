@@ -10,9 +10,7 @@ import (
 	"time"
 
 	"github.com/ipfs/kubo/core/bootstrap"
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/event"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	ma "github.com/multiformats/go-multiaddr"
 
@@ -49,36 +47,6 @@ func NewConnection(logger log.Logger, cfg *Config) *Connection {
 		MessageProtocol: newMessageProtocol(cfg.ChainID, cfg.Version),
 		GossipSub:       newGossipSub(logger, cfg.ChainID, cfg.Version),
 	}
-}
-
-// TODO GetHost should be remove
-func (conn *Connection) GetHost() host.Host {
-	return conn.Peer.host
-}
-
-// TODO Info should be remove or refactor
-func (conn *Connection) Info() *AddrInfo {
-	return host.InfoFromHost(conn.Peer.host)
-}
-
-// TODO Listen should be remove or refactor
-func (conn *Connection) Listen(addrs []ma.Multiaddr) error {
-	return conn.Peer.host.Network().Listen(addrs...)
-}
-
-// TODO SetPubSub should be remove or refactor
-func (conn *Connection) SetPubSub(ps *pubsub.PubSub) {
-	conn.ps = ps
-}
-
-// TODO GetPubSub should be remove or refactor
-func (conn *Connection) GetPubsub() *pubsub.PubSub {
-	return conn.Pubsub()
-}
-
-// TODO Gossipsub should be remove or refactor
-func (conn *Connection) Gossipsub() *GossipSub {
-	return conn.GossipSub
 }
 
 // Version returns network version set for the protocol.
