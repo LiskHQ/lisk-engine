@@ -3,6 +3,7 @@ package blockchain
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -96,6 +97,7 @@ func (d *DataAccess) GetBlockHeader(id []byte) (*BlockHeader, error) {
 func (d *DataAccess) GetBlockHeaders(ids [][]byte) ([]*BlockHeader, error) {
 	eg := new(errgroup.Group)
 	headers := make([]*BlockHeader, len(ids))
+	mutex := new(sync.Mutex)
 	hasEmpty := false
 	for i, id := range ids {
 		i, id := i, id // https://golang.org/doc/faq#closures_and_goroutines
@@ -105,7 +107,9 @@ func (d *DataAccess) GetBlockHeaders(ids [][]byte) ([]*BlockHeader, error) {
 				if !errors.Is(err, db.ErrDataNotFound) {
 					return err
 				}
+				mutex.Lock()
 				hasEmpty = true
+				mutex.Unlock()
 				return nil
 			}
 			headers[i] = header
@@ -131,6 +135,7 @@ func (d *DataAccess) GetBlockHeaders(ids [][]byte) ([]*BlockHeader, error) {
 func (d *DataAccess) GetBlockHeadersByHeights(heights []uint32) ([]*BlockHeader, error) {
 	eg := new(errgroup.Group)
 	headers := make([]*BlockHeader, len(heights))
+	mutex := new(sync.Mutex)
 	hasEmpty := false
 	for i, height := range heights {
 		i, height := i, height // https://golang.org/doc/faq#closures_and_goroutines
@@ -140,7 +145,9 @@ func (d *DataAccess) GetBlockHeadersByHeights(heights []uint32) ([]*BlockHeader,
 				if !errors.Is(err, db.ErrDataNotFound) {
 					return err
 				}
+				mutex.Lock()
 				hasEmpty = true
+				mutex.Unlock()
 				return nil
 			}
 			headers[i] = header
@@ -248,6 +255,7 @@ func (d *DataAccess) GetTransaction(id []byte) (*Transaction, error) {
 func (d *DataAccess) GetTransactions(ids [][]byte) ([]*Transaction, error) {
 	eg := new(errgroup.Group)
 	txs := make([]*Transaction, len(ids))
+	mutex := new(sync.Mutex)
 	hasEmpty := false
 	for i, id := range ids {
 		i, id := i, id // https://golang.org/doc/faq#closures_and_goroutines
@@ -257,7 +265,9 @@ func (d *DataAccess) GetTransactions(ids [][]byte) ([]*Transaction, error) {
 				if !errors.Is(err, db.ErrDataNotFound) {
 					return err
 				}
+				mutex.Lock()
 				hasEmpty = true
+				mutex.Unlock()
 				return nil
 			}
 			txs[i] = tx
