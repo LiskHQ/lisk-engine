@@ -239,7 +239,7 @@ class ConfigPanel(object):
                 hearbeat_delay=widgets.Text(description='Initial heartbeat delay', value='100ms'),
                 validate_queue_size=widgets.IntText(description='Size of validation queue', value=32),
                 outbound_queue_size=widgets.IntText(description='Size of outbound RPC queue', value=32),
-                score_inspect_period=widgets.Text(description='Interval to dump peer scores', value='5s'),
+                score_inspect_period=widgets.Text(description='Interval to dump peer scores(Inspect)', value='5s'),
                 full_traces=widgets.Checkbox(description='Capture full event traces)', value=False),
                 degree=widgets.IntText(description='D: target mesh degree', value=6),
                 degree_lo=widgets.IntText(description='D_lo: mesh degree low bound', value=5),
