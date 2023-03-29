@@ -10,7 +10,7 @@ lengine:
 
 test:
 	@echo "Test packages"
-	@go test -coverprofile=coverage.out -cover $(PKGS)
+	@go test -race -shuffle=on -coverprofile=coverage.out -cover $(PKGS)
 
 test.coverage: test
 	go tool cover -func=coverage.out
