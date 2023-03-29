@@ -7,11 +7,27 @@ import (
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/p2p/net/swarm"
+
 	ma "github.com/multiformats/go-multiaddr"
 )
 
 func (conn *Connection) GetHost() host.Host {
 	return conn.Peer.host
+}
+
+func (conn *Connection) ConnsToPeer(pid PeerID) []network.Conn {
+	return conn.Peer.host.Network().ConnsToPeer(pid)
+}
+
+func (conn *Connection) SwarmBackoff(pid PeerID) bool {
+	sw, ok := conn.Peer.host.Network().(*swarm.Swarm)
+	if ok {
+		sw.Backoff().Clear(pid)
+	}
+
+	return ok
 }
 
 func (conn *Connection) Info() *AddrInfo {
