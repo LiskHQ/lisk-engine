@@ -135,13 +135,13 @@ func (cg *connectionGater) start(ctx context.Context, wg *sync.WaitGroup) {
 			for {
 				select {
 				case <-t.C:
+					cg.mutex.Lock()
 					for p, info := range cg.peerScore {
 						if info.expiration != -1 && time.Now().Unix() > info.expiration {
-							cg.mutex.Lock()
 							delete(cg.peerScore, p)
-							cg.mutex.Unlock()
 						}
 					}
+					cg.mutex.Unlock()
 				case <-ctx.Done():
 					return
 				}
@@ -154,16 +154,16 @@ func (cg *connectionGater) start(ctx context.Context, wg *sync.WaitGroup) {
 // blockAddr adds an IP address to the set of blocked addresses.
 // Note: active connections to the IP address are not automatically closed.
 func (cg *connectionGater) blockAddr(ip net.IP) {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
+	cg.mutex.Lock()
+	defer cg.mutex.Unlock()
 
 	cg.blockedAddrs[ip.String()] = struct{}{}
 }
 
 // unblockAddr removes an IP address from the set of blocked addresses.
 func (cg *connectionGater) unblockAddr(ip net.IP) {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
+	cg.mutex.Lock()
+	defer cg.mutex.Unlock()
 
 	delete(cg.blockedAddrs, ip.String())
 }
