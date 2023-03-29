@@ -26,15 +26,14 @@ func (conn *Connection) Join(topic string) (*pubsub.Topic, error) {
 	return conn.ps.Join(topic)
 }
 
-func (conn *Connection) NewGossipSub(ctx context.Context, topics []string, options ...pubsub.Option) error {
-	return conn.startWithOption(ctx, &conn.wg, conn.Peer, conn.cfg, topics, options...)
+func (conn *Connection) NewGossipSub(ctx context.Context, options ...pubsub.Option) error {
+	return conn.startWithOption(ctx, &conn.wg, conn.Peer, conn.cfg, options...)
 }
 
 func (gs *GossipSub) startWithOption(ctx context.Context,
 	wg *sync.WaitGroup,
 	p *Peer,
 	cfg *Config,
-	topics []string,
 	options ...pubsub.Option,
 ) error {
 	seedNodes, err := parseAddresses(cfg.SeedPeers)
@@ -51,6 +50,10 @@ func (gs *GossipSub) startWithOption(ctx context.Context,
 		bootstrappers[info.ID] = struct{}{}
 	}
 
+	topics := make([]string, 0, maxAllowedTopics)
+	for t := range gs.eventHandlers {
+		topics = append(topics, t)
+	}
 	options = append(options,
 		pubsub.WithDirectPeers(fixedNodes),
 		pubsub.WithMessageIdFn(getMessageID),
@@ -78,10 +81,10 @@ func (gs *GossipSub) startWithOption(ctx context.Context,
 	gs.peer = p
 	gs.ps = gossipSub
 
-	// err = gs.createSubscriptionHandlers(ctx, wg)
-	// if err != nil {
-	// 	return err
-	// }
+	err = gs.createSubscriptionHandlers(ctx, wg)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
