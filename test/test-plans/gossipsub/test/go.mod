@@ -3,7 +3,7 @@ module github.com/LiskHQ/lisk-engine/test-plans/gossipsub/test
 go 1.19
 
 require (
-	github.com/LiskHQ/lisk-engine v0.0.0-20230329093620-9599b2dbbbe2
+	github.com/LiskHQ/lisk-engine v0.0.0-20230329142142-aa961c4f5395
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/libp2p/go-libp2p v0.26.2

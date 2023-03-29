@@ -86,6 +86,18 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 		}
 		// Don't listen yet, we need to set up networking first
 		conn := *p2p.NewConnection(logger, &cfg)
+		// TODO define a validator and check it
+		validator := func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
+			return p2p.ValidationAccept
+		}
+
+		for _, t := range params.topics {
+			if err := conn.RegisterEventHandler(t.Id, func(event *p2p.Event) {
+			}, validator); err != nil {
+				panic(err)
+			}
+		}
+
 		if err := conn.Start(nil); err != nil {
 			panic(err)
 		}

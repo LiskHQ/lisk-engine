@@ -59,16 +59,6 @@ type HonestNodeConfig struct {
 	OpportunisticGraftTicks int
 }
 
-// topicsIDs returns list of topics
-func (hnc *HonestNodeConfig) topicsIDs() []string {
-	topics := make([]string, len(hnc.Topics))
-	for _, tc := range hnc.Topics {
-		topics = append(topics, tc.Id)
-	}
-
-	return topics
-}
-
 type InspectParams struct {
 	// The callback function that is called with the peer scores
 	Inspect func(map[p2p.PeerID]float64)
@@ -79,23 +69,17 @@ type InspectParams struct {
 type topicState struct {
 	cfg       TopicConfig
 	nMessages int64
-	topic     *pubsub.Topic
-	sub       *pubsub.Subscription
 	pubTicker *time.Ticker
 	done      chan struct{}
 }
 
 type PubsubNode struct {
-	cfg      HonestNodeConfig
-	ctx      context.Context
-	shutdown func()
-	runenv   *runtime.RunEnv
-	conn     p2p.Connection
-
-	lk     sync.RWMutex
-	topics map[string]*topicState
-
-	pubwg sync.WaitGroup
+	cfg    HonestNodeConfig
+	ctx    context.Context
+	runenv *runtime.RunEnv
+	conn   p2p.Connection
+	mutex  sync.RWMutex
+	pubwg  sync.WaitGroup
 }
 
 // NewPubsubNode prepares the given Host to act as an honest pubsub node using the provided HonestNodeConfig.
@@ -111,19 +95,16 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, conn p2p.Connect
 	pubsub.GossipSubHeartbeatInterval = cfg.Heartbeat.Interval
 
 	// call RegisterEventHandler per topics
-	err = conn.NewGossipSub(ctx, cfg.topicsIDs(), opts...)
+	err = conn.NewGossipSub(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("error making new gossipsub: %s", err)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
 	p := PubsubNode{
-		cfg:      cfg,
-		ctx:      ctx,
-		shutdown: cancel,
-		runenv:   runenv,
-		conn:     conn,
-		topics:   make(map[string]*topicState),
+		cfg:    cfg,
+		ctx:    ctx,
+		runenv: runenv,
+		conn:   conn,
 	}
 
 	return &p, nil
@@ -137,15 +118,6 @@ func (p *PubsubNode) log(msg string, args ...interface{}) {
 }
 
 func (p *PubsubNode) Run(runtime time.Duration, waitForReadyStateThenConnectAsync func(context.Context) error) error {
-	defer func() {
-		// end subscription goroutines before exit
-		for _, ts := range p.topics {
-			ts.done <- struct{}{}
-		}
-
-		p.shutdown()
-	}()
-
 	// Wait for all nodes to be in the ready state (including attack nodes)
 	// then start connecting (asynchronously)
 	if err := waitForReadyStateThenConnectAsync(p.ctx); err != nil {
@@ -208,8 +180,8 @@ func (p *PubsubNode) Run(runtime time.Duration, waitForReadyStateThenConnectAsyn
 }
 
 func (p *PubsubNode) joinTopic(t TopicConfig, runtime time.Duration) {
-	p.lk.Lock()
-	defer p.lk.Unlock()
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
 	publishInterval := time.Duration(float64(t.MessageRate.Interval) / t.MessageRate.Quantity)
 	totalMessages := int64(runtime / publishInterval)
@@ -220,31 +192,6 @@ func (p *PubsubNode) joinTopic(t TopicConfig, runtime time.Duration) {
 	} else {
 		p.log("joining topic %s as a lurker", t.Id)
 	}
-
-	if _, ok := p.topics[t.Id]; ok {
-		// already joined, ignore
-		return
-	}
-	topic, err := p.conn.Join(t.Id)
-	if err != nil {
-		p.log("error joining topic %s: %s", t.Id, err)
-		return
-	}
-	sub, err := topic.Subscribe()
-	if err != nil {
-		p.log("error subscribing to topic %s: %s", t.Id, err)
-		return
-	}
-
-	ts := topicState{
-		cfg:       t,
-		topic:     topic,
-		sub:       sub,
-		nMessages: totalMessages,
-		done:      make(chan struct{}, 1),
-	}
-	p.topics[t.Id] = &ts
-	go p.consumeTopic(&ts)
 
 	if !p.cfg.Publisher {
 		return
@@ -260,6 +207,11 @@ func (p *PubsubNode) joinTopic(t TopicConfig, runtime time.Duration) {
 		}
 
 		p.runenv.RecordMessage("Starting publisher with %s publish interval", publishInterval)
+		ts := topicState{
+			cfg:       t,
+			nMessages: totalMessages,
+			done:      make(chan struct{}, 1),
+		}
 		ts.pubTicker = time.NewTicker(publishInterval)
 		p.publishLoop(&ts)
 	}()
@@ -283,7 +235,7 @@ func (p *PubsubNode) sendMsg(seq int64, ts *topicState) {
 		p.log("error making message for topic %s: %s", ts.cfg.Id, err)
 		return
 	}
-	err = ts.topic.Publish(p.ctx, msg)
+	err = p.conn.Publish(p.ctx, ts.cfg.Id, msg)
 	if err != nil && err != context.Canceled {
 		p.log("error publishing to %s: %s", ts.cfg.Id, err)
 		return
@@ -307,28 +259,6 @@ func (p *PubsubNode) publishLoop(ts *topicState) {
 				ts.pubTicker.Stop()
 				return
 			}
-		}
-	}
-}
-
-func (p *PubsubNode) consumeTopic(ts *topicState) {
-	for {
-		msg, err := ts.sub.Next(p.ctx)
-		if err != nil && err != context.Canceled {
-			p.log("error reading from %s: %s", ts.cfg.Id, err)
-			return
-		}
-		if msg != nil {
-			p.log("got message on topic %s from %s\n", ts.cfg.Id, msg.ReceivedFrom.Pretty())
-		}
-
-		select {
-		case <-ts.done:
-			return
-		case <-p.ctx.Done():
-			return
-		default:
-			continue
 		}
 	}
 }
