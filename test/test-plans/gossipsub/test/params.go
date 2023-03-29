@@ -155,6 +155,8 @@ func parseDuration(val string) time.Duration {
 }
 
 func parseParams(runenv *runtime.RunEnv) testParams {
+	// TODO add maxAllowedTopic as a config paramter and then send it to
+	// p2p.Connection or p2p.NewGossipSub
 	np := NetworkParams{
 		latency:     durationParam(runenv, "t_latency"),
 		latencyMax:  durationParam(runenv, "t_latency_max"),

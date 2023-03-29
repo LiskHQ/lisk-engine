@@ -57,6 +57,14 @@ github.com/LiskHQ/lisk-engine v0.0.0-20230317111245-e2285c6aeed5 h1:mCJxTRDB6VO1
 github.com/LiskHQ/lisk-engine v0.0.0-20230317111245-e2285c6aeed5/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
 github.com/LiskHQ/lisk-engine v0.0.0-20230317115752-be4afb5174ac h1:QSCDroOVbLgZKePScbvTIZqIpex8vskUC0dJY03zSKQ=
 github.com/LiskHQ/lisk-engine v0.0.0-20230317115752-be4afb5174ac/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
+github.com/LiskHQ/lisk-engine v0.0.0-20230328092226-9bbab2c0577c h1:4Agnfe/fxHyOUJLqRxQgKAmt/ObUUhaTrpYVC/P3Cxg=
+github.com/LiskHQ/lisk-engine v0.0.0-20230328092226-9bbab2c0577c/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
+github.com/LiskHQ/lisk-engine v0.0.0-20230328092839-194453f77494 h1:CQjauLEycqSqICBe9UTDyWZLnUVkUmpWhr/X4keRL3M=
+github.com/LiskHQ/lisk-engine v0.0.0-20230328092839-194453f77494/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
+github.com/LiskHQ/lisk-engine v0.0.0-20230328093436-ae453b0b718e h1:SNNy0Nb3b17mxIaZOtXpRTWxcLVP7WqyAWd2CWzVrPk=
+github.com/LiskHQ/lisk-engine v0.0.0-20230328093436-ae453b0b718e/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
+github.com/LiskHQ/lisk-engine v0.0.0-20230329093620-9599b2dbbbe2 h1:upqPc0cSTJrEDiGdtfJ3J50ZFDWqWl38e5OPzg3PV20=
+github.com/LiskHQ/lisk-engine v0.0.0-20230329093620-9599b2dbbbe2/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
 github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5/go.mod h1:tTuCMEN+UleMWgg9dVx4Hu52b1bJo+59jBh3ajtinzw=
 github.com/Microsoft/hcsshim v0.8.7/go.mod h1:OHd7sQqRFrYd3RmSgbgji+ctCwkbq2wbEYNSzOYtcBQ=
 github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
