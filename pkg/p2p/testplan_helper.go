@@ -22,10 +22,6 @@ func (conn *Connection) Listen(addrs []ma.Multiaddr) error {
 	return conn.Peer.host.Network().Listen(addrs...)
 }
 
-func (conn *Connection) Join(topic string) (*pubsub.Topic, error) {
-	return conn.ps.Join(topic)
-}
-
 func (conn *Connection) NewGossipSub(ctx context.Context, options ...pubsub.Option) error {
 	return conn.startWithOption(ctx, &conn.wg, conn.Peer, conn.cfg, options...)
 }
@@ -69,9 +65,9 @@ func (gs *GossipSub) startWithOption(ctx context.Context,
 	// We want to enable peer exchange for all peers and not only for seed peers.
 	options = append(options, pubsub.WithPeerExchange(true))
 
-	// // We want to provide a custom discovery mechanism.
-	// d := Discovery{peer: p}
-	// options = append(options, pubsub.WithDiscovery(d))
+	// We want to provide a custom discovery mechanism.
+	d := Discovery{peer: p}
+	options = append(options, pubsub.WithDiscovery(d))
 
 	gossipSub, err := pubsub.NewGossipSub(ctx, p.host, options...)
 	if err != nil {
