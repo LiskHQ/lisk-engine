@@ -150,7 +150,7 @@ func TestRouterSubscribe(t *testing.T) {
 
 	go func() {
 		<-time.After(1 * time.Millisecond)
-		err = router.Publish("base_event1", &blockchain.Transaction{Nonce: 100})
+		err := router.Publish("base_event1", &blockchain.Transaction{Nonce: 100})
 		assert.NoError(t, err)
 		err = router.Publish("base_event2", &blockchain.Transaction{Nonce: 200})
 		assert.NoError(t, err)
