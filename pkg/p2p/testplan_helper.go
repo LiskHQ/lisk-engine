@@ -14,35 +14,6 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-func (conn *Connection) SetStreamHandler(protocolID protocol.ID, hander network.StreamHandler) {
-	conn.Peer.host.SetStreamHandler(protocolID, hander)
-}
-
-func (conn *Connection) NewStream(ctx context.Context, pid PeerID, pids ...protocol.ID) (network.Stream, error) {
-	return conn.Peer.host.NewStream(ctx, pid, pids...)
-}
-
-func (conn *Connection) ConnsToPeer(pid PeerID) []network.Conn {
-	return conn.Peer.host.Network().ConnsToPeer(pid)
-}
-
-func (conn *Connection) SwarmBackoff(pid PeerID) bool {
-	sw, ok := conn.Peer.host.Network().(*swarm.Swarm)
-	if ok {
-		sw.Backoff().Clear(pid)
-	}
-
-	return ok
-}
-
-func (conn *Connection) Info() *AddrInfo {
-	return host.InfoFromHost(conn.Peer.host)
-}
-
-func (conn *Connection) Listen(addrs []ma.Multiaddr) error {
-	return conn.Peer.host.Network().Listen(addrs...)
-}
-
 func (conn *Connection) NewGossipSub(ctx context.Context, options ...pubsub.Option) error {
 	return conn.startWithOption(ctx, &conn.wg, conn.Peer, conn.cfg, options...)
 }
@@ -104,4 +75,33 @@ func (gs *GossipSub) startWithOption(ctx context.Context,
 	}
 
 	return nil
+}
+
+func (conn *Connection) SetStreamHandler(protocolID protocol.ID, hander network.StreamHandler) {
+	conn.Peer.host.SetStreamHandler(protocolID, hander)
+}
+
+func (conn *Connection) NewStream(ctx context.Context, pid PeerID, pids ...protocol.ID) (network.Stream, error) {
+	return conn.Peer.host.NewStream(ctx, pid, pids...)
+}
+
+func (conn *Connection) ConnsToPeer(pid PeerID) []network.Conn {
+	return conn.Peer.host.Network().ConnsToPeer(pid)
+}
+
+func (conn *Connection) SwarmBackoff(pid PeerID) bool {
+	sw, ok := conn.Peer.host.Network().(*swarm.Swarm)
+	if ok {
+		sw.Backoff().Clear(pid)
+	}
+
+	return ok
+}
+
+func (conn *Connection) Info() *AddrInfo {
+	return host.InfoFromHost(conn.Peer.host)
+}
+
+func (conn *Connection) Listen(addrs []ma.Multiaddr) error {
+	return conn.Peer.host.Network().Listen(addrs...)
 }

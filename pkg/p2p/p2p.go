@@ -49,11 +49,6 @@ func NewConnection(logger log.Logger, cfg *Config) *Connection {
 	}
 }
 
-// Version returns network version set for the protocol.
-func (conn *Connection) Version() string {
-	return conn.cfg.Version
-}
-
 // Start the P2P and all other related services and handlers.
 func (conn *Connection) Start(seed []byte) error {
 	conn.logger.Infof("Starting P2P module")
@@ -151,6 +146,11 @@ func (conn *Connection) Stop() error {
 
 	conn.logger.Infof("P2P connection successfully stopped")
 	return nil
+}
+
+// Version returns network version set for the protocol.
+func (conn *Connection) Version() string {
+	return conn.cfg.Version
 }
 
 // ApplyPenalty updates the score of the given PeerID (all its IP addresses) and bans the peer if the
