@@ -53,10 +53,10 @@ var (
 	BadBoySeenCacheDuration = 120 * time.Second
 )
 
-func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, c p2p.Connection, seq int64, params SybilParams) (*BadBoy, error) {
+func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, conn p2p.Connection, seq int64, params SybilParams) (*BadBoy, error) {
 	bb := &BadBoy{
 		ctx:    ctx,
-		conn:   c,
+		conn:   conn,
 		runenv: runenv,
 		seq:    seq,
 		params: params,
@@ -69,8 +69,7 @@ func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, c p2p.Connection, se
 		attacking: params.attackDelay == 0,
 	}
 
-	// TODO remove SetStreamHandler and use p2p
-	c.GetHost().SetStreamHandler(gossipSubID, bb.handleIncoming)
+	conn.SetStreamHandler(gossipSubID, bb.handleIncoming)
 	return bb, nil
 }
 
@@ -282,8 +281,7 @@ func (bb *BadBoy) handleOutgoing(s network.Stream, ch chan *pb.RPC) {
 }
 
 func (bb *BadBoy) openOutputStream(p p2p.PeerID) error {
-	// TODO NewStream should remove and use p2p.Connection
-	s, err := bb.conn.GetHost().NewStream(bb.ctx, p, gossipSubID)
+	s, err := bb.conn.NewStream(bb.ctx, p, gossipSubID)
 	if err != nil {
 		return err
 	}

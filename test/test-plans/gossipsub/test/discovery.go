@@ -12,7 +12,6 @@ import (
 	"github.com/LiskHQ/lisk-engine/pkg/p2p"
 
 	"github.com/avast/retry-go"
-	swarm "github.com/libp2p/go-libp2p/p2p/net/swarm"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/testground/sdk-go/runtime"
@@ -329,8 +328,7 @@ func (s *SyncDiscovery) ConnectTopology(ctx context.Context, delay time.Duration
 				if err != nil {
 					s.runenv.RecordMessage("error connecting libp2p host: %s", err)
 				}
-				// TODO remove GetHost to use p2p.Connection
-				conns := s.conn.GetHost().Network().ConnsToPeer(p.Info.ID)
+				conns := s.conn.ConnsToPeer(p.Info.ID)
 				for _, conn := range conns {
 					s.runenv.RecordMessage("%s-%d-%d connected to %s-%d-%d. local addr: %s remote addr: %s\n",
 						s.nodeType, s.nodeTypeSeq, s.nodeIdx, p.NType, p.NodeTypeSeq, p.NodeIdx,
@@ -363,10 +361,8 @@ func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p p2p.AddrInfo) er
 
 			// clear the libp2p dial backoff for this peer, otherwise the swarm will ignore our
 			// dial attempt and immediately return a "dial backoff" error
-			// TODO remove GetHost
-			if sw, ok := s.conn.GetHost().Network().(*swarm.Swarm); ok {
+			if s.conn.SwarmBackoff(p.ID) {
 				s.runenv.RecordMessage("clearing swarm dial backoff for peer %s", p.ID.Pretty())
-				sw.Backoff().Clear(p.ID)
 			}
 		}),
 	)

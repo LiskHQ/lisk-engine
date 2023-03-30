@@ -76,7 +76,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 	conns := make([]p2p.Connection, params.nodesPerContainer)
 	for i := 0; i < params.nodesPerContainer; i++ {
 		cfg := p2p.Config{
-			Version: "2.0",
+			Version: "1.0",
 			ChainID: []byte{0x04, 0x00, 0x01, 0x02},
 		}
 
@@ -86,6 +86,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 		}
 		// Don't listen yet, we need to set up networking first
 		conn := *p2p.NewConnection(logger, &cfg)
+
 		// TODO define a validator and check it
 		validator := func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
 			return p2p.ValidationAccept
@@ -247,7 +248,8 @@ func (t *testInstance) startHonest(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("error opening peer score output file at %s: %s", outpath, err)
 		}
-		defer file.Close()
+		// TODO find a solution to close file, defer close makes error because
+		// it will be done sooner than the thread of the GossipSub.
 		t.RecordMessage("recording peer scores to %s", outpath)
 		enc := json.NewEncoder(file)
 		type entry struct {

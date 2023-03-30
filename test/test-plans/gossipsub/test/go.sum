@@ -69,6 +69,10 @@ github.com/LiskHQ/lisk-engine v0.0.0-20230329135109-92a72b104053 h1:zSo2yBZR+k8P
 github.com/LiskHQ/lisk-engine v0.0.0-20230329135109-92a72b104053/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
 github.com/LiskHQ/lisk-engine v0.0.0-20230329142142-aa961c4f5395 h1:YkaHnDDHL1A3XwvCp1n1mZelHmLMJEpbu88yfyLsuhM=
 github.com/LiskHQ/lisk-engine v0.0.0-20230329142142-aa961c4f5395/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
+github.com/LiskHQ/lisk-engine v0.0.0-20230329144449-aea6c7a69d3f h1:YW6yGQH2lpi7iDl9Tljep0fpHt3UpoND9xyASXW3v7E=
+github.com/LiskHQ/lisk-engine v0.0.0-20230329144449-aea6c7a69d3f/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
+github.com/LiskHQ/lisk-engine v0.0.0-20230330094007-d0f6aedf9b71 h1:IvG9G6+E9QKo5bkHqgSB+8poM8e5yJbI11TilyDQdBw=
+github.com/LiskHQ/lisk-engine v0.0.0-20230330094007-d0f6aedf9b71/go.mod h1:COa+kKtqojLTdl8G1r2D/w3Qp7ppVjZJVV/TJlq20v0=
 github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5/go.mod h1:tTuCMEN+UleMWgg9dVx4Hu52b1bJo+59jBh3ajtinzw=
 github.com/Microsoft/hcsshim v0.8.7/go.mod h1:OHd7sQqRFrYd3RmSgbgji+ctCwkbq2wbEYNSzOYtcBQ=
 github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
