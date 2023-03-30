@@ -8,13 +8,18 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/p2p/net/swarm"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-func (conn *Connection) GetHost() host.Host {
-	return conn.Peer.host
+func (conn *Connection) SetStreamHandler(protocolID protocol.ID, hander network.StreamHandler) {
+	conn.Peer.host.SetStreamHandler(protocolID, hander)
+}
+
+func (conn *Connection) NewStream(ctx context.Context, pid PeerID, pids ...protocol.ID) (network.Stream, error) {
+	return conn.Peer.host.NewStream(ctx, pid, pids...)
 }
 
 func (conn *Connection) ConnsToPeer(pid PeerID) []network.Conn {
