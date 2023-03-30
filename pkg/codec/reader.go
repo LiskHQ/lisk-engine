@@ -430,7 +430,7 @@ func readUint(data []byte, offset int) (uint64, int, error) {
 		}
 		bit := uint64(data[index])
 		index++
-		if index == 10+index && bit > 0x01 {
+		if index == offset+10 && bit > 0x01 {
 			return 0, 0, ErrOutOfRange
 		}
 		result |= (bit & uint64(rest8Bit)) << shift
