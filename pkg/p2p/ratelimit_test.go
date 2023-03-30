@@ -68,4 +68,7 @@ func TestRateLimit_RPCMessageCounter_BanPeer(t *testing.T) {
 	assert.Nil(err)
 	_, err = node2.request(ctx, node1.ID(), testRPC, []byte(testRequestData))
 	assert.NotNil(err)
+
+	node1.Stop()
+	node2.Stop()
 }

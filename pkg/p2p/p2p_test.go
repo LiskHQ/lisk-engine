@@ -119,6 +119,8 @@ func TestP2P_Start(t *testing.T) {
 	assert.NotNil(p2p.MessageProtocol)
 	assert.NotNil(p2p.Peer.peerbook)
 	assert.NotNil(p2p.bootCloser)
+
+	p2p.Stop()
 }
 
 func TestP2P_AddPenalty(t *testing.T) {
@@ -154,6 +156,9 @@ func TestP2P_AddPenalty(t *testing.T) {
 
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Containsf(err.Error(), "no good addresses", "Connection should be rejected by ConnectionGater")
+
+	node1.Stop()
+	node2.Stop()
 }
 
 func TestP2P_BanPeer(t *testing.T) {
@@ -187,6 +192,9 @@ func TestP2P_BanPeer(t *testing.T) {
 
 	err = node1.Connect(ctx, *p2AddrInfo)
 	assert.Containsf(err.Error(), "no good addresses", "Connection should be rejected by ConnectionGater")
+
+	node1.Stop()
+	node2.Stop()
 }
 
 func TestP2P_Stop(t *testing.T) {
@@ -213,6 +221,8 @@ func TestP2P_Stop(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatalf("timeout occurs, P2P stop is not working")
 	}
+
+	p2p.Stop()
 }
 
 func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
@@ -252,6 +262,10 @@ func TestP2P_ConnectionsHandler_DropRandomPeer(t *testing.T) {
 
 	// Check if the number of connected peers is lower than the one we have connected
 	assert.Equal(1, len(p2p.ConnectedPeers()))
+
+	p1.close()
+	p2.close()
+	p2p.Stop()
 }
 
 func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
@@ -304,4 +318,8 @@ func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	assert.Equal(1, len(p2p.ConnectedPeers()))
 	// And that the remaining peer is the one we have fixed
 	assert.Equal(p1.ID(), p2p.ConnectedPeers()[0])
+
+	p1.close()
+	p2.close()
+	p2p.Stop()
 }

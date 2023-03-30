@@ -144,6 +144,7 @@ func (conn *Connection) Stop() error {
 	case <-time.After(stopTimeout):
 		return errors.New("P2P connection failed to stop")
 	}
+
 	if err := conn.Peer.close(); err != nil {
 		conn.logger.Error("Fail to close peer")
 	}

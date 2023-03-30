@@ -49,6 +49,8 @@ func TestDiscovery_NextValidPeer(t *testing.T) {
 	assert.Equal(0, peerIndex)
 	peerIndex = d.nextValidPeer(peers, peerIndex)
 	assert.Equal(-1, peerIndex)
+
+	peer.close()
 }
 
 func TestDiscovery_NextValidPeer_SkipOurself(t *testing.T) {
@@ -95,6 +97,8 @@ func TestDiscovery_NextValidPeer_SkipOurself(t *testing.T) {
 	assert.Equal(0, peerIndex)
 	peerIndex = d.nextValidPeer(peers, peerIndex)
 	assert.Equal(-1, peerIndex)
+
+	p.close()
 }
 
 func TestDiscovery_NextValidPeer_ConnectedPeers(t *testing.T) {
@@ -165,4 +169,8 @@ func TestDiscovery_NextValidPeer_ConnectedPeers(t *testing.T) {
 	assert.Equal(0, peerIndex)
 	peerIndex = d.nextValidPeer(peers, peerIndex)
 	assert.Equal(-1, peerIndex)
+
+	p.close()
+	p1.close()
+	p2.close()
 }

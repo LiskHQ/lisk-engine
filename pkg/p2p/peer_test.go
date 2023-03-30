@@ -28,6 +28,8 @@ func TestPeer_New(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(p.host)
 	assert.NotNil(p.peerbook)
+
+	p.close()
 }
 
 func TestPeer_NewStaticPeerID(t *testing.T) {
@@ -71,6 +73,11 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 	assert.Nil(err)
 
 	assert.NotEqual(p3.ID().Pretty(), p4.ID().Pretty())
+
+	p1.close()
+	p2.close()
+	p3.close()
+	p4.close()
 }
 
 func TestPeer_Close(t *testing.T) {
@@ -83,6 +90,8 @@ func TestPeer_Close(t *testing.T) {
 	p, _ := newPeer(context.Background(), wg, logger, []byte{}, cfg)
 	err := p.close()
 	assert.Nil(err)
+
+	p.close()
 }
 
 func TestPeer_Connect(t *testing.T) {
@@ -103,6 +112,9 @@ func TestPeer_Connect(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 	assert.Equal(p2.ID(), p1.ConnectedPeers()[0])
+
+	p1.close()
+	p2.close()
 }
 func TestPeer_Disconnect(t *testing.T) {
 	assert := assert.New(t)
@@ -126,6 +138,9 @@ func TestPeer_Disconnect(t *testing.T) {
 	err = p1.Disconnect(p2.ID())
 	assert.Nil(err)
 	assert.Equal(0, len(p1.ConnectedPeers()))
+
+	p1.close()
+	p2.close()
 }
 
 func TestPeer_DisallowIncomingConnections(t *testing.T) {
@@ -158,6 +173,9 @@ func TestPeer_DisallowIncomingConnections(t *testing.T) {
 	assert.Equal(p1.ID(), p2.ConnectedPeers()[0])
 	err = p2.Disconnect(p1.ID())
 	assert.Nil(err)
+
+	p1.close()
+	p2.close()
 }
 
 func TestPeer_New_ConnectionManager(t *testing.T) {
@@ -214,6 +232,12 @@ func TestPeer_New_ConnectionManager(t *testing.T) {
 
 	// Check that the number of connected peers is equal to the max number of connections
 	assert.Equal(2, len(p.ConnectedPeers()))
+
+	p.close()
+	p1.close()
+	p2.close()
+	p3.close()
+	p4.close()
 }
 
 func TestPeer_TestP2PAddrs(t *testing.T) {
@@ -231,6 +255,8 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 	addrs, err := p.MultiAddress()
 	assert.Nil(err)
 	assert.Equal(len(addrs), 2)
+
+	p.close()
 }
 
 func TestPeer_BlacklistedPeers(t *testing.T) {
@@ -290,6 +316,11 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 
 	idx = slices.IndexFunc(peers, func(s peer.AddrInfo) bool { return strings.Contains(s.ID.String(), p3.ID().String()) })
 	assert.NotEqual(-1, idx)
+
+	p.close()
+	p1.close()
+	p2.close()
+	p3.close()
 }
 
 func TestPeer_PingMultiTimes(t *testing.T) {
@@ -311,6 +342,9 @@ func TestPeer_PingMultiTimes(t *testing.T) {
 	rtt, err := p1.PingMultiTimes(ctx, p2.ID())
 	assert.Nil(err)
 	assert.Equal(numOfPingMessages, len(rtt))
+
+	p1.close()
+	p2.close()
 }
 
 func TestPeer_Ping(t *testing.T) {
@@ -331,6 +365,9 @@ func TestPeer_Ping(t *testing.T) {
 	_ = p1.Connect(ctx, *p2AddrInfo)
 	_, err := p1.Ping(ctx, p2.ID())
 	assert.Nil(err)
+
+	p1.close()
+	p2.close()
 }
 
 func TestPeer_PeerSource(t *testing.T) {
@@ -387,4 +424,9 @@ func TestPeer_PeerSource(t *testing.T) {
 	addr := <-ch
 	assert.NotNil(addr)
 	assert.Equal(0, len(addr.Addrs))
+
+	p.close()
+	p1.close()
+	p2.close()
+	p3.close()
 }
