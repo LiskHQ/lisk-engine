@@ -47,9 +47,14 @@ notebook instead of just closing the tab.
 
 #### Testground
 
-You'll need to have the [testground](https://github.com/testground/testground) binary built and accessible
-on your `$PATH`. As of the time of writing, we're running from `master`, however releases after v0.5.0 should
-be compatible.
+You'll need to have the [testground](https://github.com/testground/testground#getting-started) binary built and accessible
+on your `$PATH`. As of the time of writing, we're running from `master`.
+
+Default `testground` home is deprecated. Please change it with the following command or use your own path:
+```bash
+echo "export TESTGROUND_HOME='your-home-path/testground'" >> ~/.bashrc
+source ~/.bashrc
+```
 
 After running `testground list` for the first time, you should have a `~/testground` directory. You can change this
 to another location by setting the `TESTGROUND_HOME` environment variable.
@@ -114,6 +119,7 @@ the notebook state using the `Kernel Menu > Restart and Run All` command.
 
 For the private repo you need to setup `ssh key` and `git` in your local machine or docker, please follow the instructions based on your choice [here](https://github.com/LiskHQ/lisk-engine/blob/main/test/test-plans/ping/README.md#running-tests).
 **Important:** You have to change the commit version please run the following command after your setup:
+//TODO commit version should remove after merge with main branch.
 ```bash
 go get -v github.com/LiskHQ/lisk-engine/pkg/p2p@50c946f4fab0a587da98b567608d9ff145fc68f7
 ```

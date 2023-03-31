@@ -4,7 +4,7 @@ This test plan is a simple usage of `testground` for `lisk-engine/pkg/p2p`.
 
 ## Installation & Setup
 
-Please follow the instructions to install `testground` [here](https://docs.testground.ai/v/master/table-of-contents/getting-started) and run the example of the `testcase` to prepare Docker container for current `testplan`. Make sure that you have `testground-goproxy` in your Docker container. 
+Please follow the instructions to install `testground` [here](https://github.com/testground/testground#getting-started) and run the example of the `testcase` to prepare Docker container for current `testplan`. Make sure that you have `testground-goproxy` in your Docker container. 
 
 ### Requirements
 After installing the `testground` you need to have running `testground daemon` by the following command:
