@@ -136,6 +136,13 @@ func TestReadUInt(t *testing.T) {
 			result:      372036854775807,
 		},
 		{
+			input:       "08ffffffffffffffffff02", // invalid range
+			fieldNumber: 1,
+			strict:      false,
+			result:      0,
+			err:         "out of range",
+		},
+		{
 			input:       "08ffffc9a4d9cb54",
 			fieldNumber: 2,
 			strict:      true,
@@ -199,6 +206,13 @@ func TestReadInt(t *testing.T) {
 			err:         "",
 		},
 		{
+			input:       "08ffffffffffffffffff02", // invalid range
+			fieldNumber: 1,
+			strict:      false,
+			result:      0,
+			err:         "out of range",
+		},
+		{
 			input:       "08fdffffffffffff1f",
 			fieldNumber: 2,
 			result:      -9007199254740991,
@@ -242,6 +256,13 @@ func TestReadInt32(t *testing.T) {
 			result:      -9007199254740991,
 			strict:      false,
 			err:         "",
+		},
+		{
+			input:       "08ffffffffffffffffff02", // invalid range
+			fieldNumber: 1,
+			strict:      false,
+			result:      0,
+			err:         "out of range",
 		},
 		{
 			input:       "08fdffffffffffff1f",
