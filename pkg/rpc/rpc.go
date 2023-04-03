@@ -53,7 +53,9 @@ func (s *RPCServer) ListenAndServe() error {
 			}
 		}()
 	}
-	if s.wsServer != nil {
+	// Start WS server only if HTTP server is not available. Otherwise WS server is started within HTTP server (they
+	// share the same port).
+	if s.httpServer == nil && s.wsServer != nil {
 		go func() {
 			if err := s.wsServer.ListenAndServe(); err != nil {
 				s.Close()

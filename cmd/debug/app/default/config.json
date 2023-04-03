@@ -3,7 +3,7 @@
 		"dataPath": "./"
 	},
 	"rpc": {
-		"modes": ["http"]
+		"modes": ["http", "ws"]
 	},
 	"genesis": {
 		"block": {
@@ -26,7 +26,6 @@
 			"/ip4/0.0.0.0/tcp/7667"
 		],
 		"seedPeers": [],
-		"allowIncomingConnections": true,
 		"isSeedPeer": false 
 	},
 	"transactionPool": {

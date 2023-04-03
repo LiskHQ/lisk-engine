@@ -82,7 +82,7 @@ func (s *wsJSONRPCServer) handleUpgrade(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		s.logger.Errorf("Fail to upgrade connection with %s", err)
 	}
-	socket := newWSSocket(s.logger, conn)
+	socket := newWSSocket(s.logger, conn, s.invoker)
 	s.connections[r.RemoteAddr] = socket
 	go socket.dispatch()
 }
@@ -106,10 +106,11 @@ type wsSocket struct {
 	topics    []string
 }
 
-func newWSSocket(logger log.Logger, conn *websocket.Conn) *wsSocket {
+func newWSSocket(logger log.Logger, conn *websocket.Conn, invoker Invoker) *wsSocket {
 	return &wsSocket{
 		conn:      conn,
 		logger:    logger,
+		invoker:   invoker,
 		topics:    []string{},
 		receiver:  make(chan wsMessage, 1),
 		publisher: make(chan wsSendingMessage),
