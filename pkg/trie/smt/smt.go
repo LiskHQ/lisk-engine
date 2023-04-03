@@ -6,7 +6,6 @@ package smt
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -119,13 +118,13 @@ func (t *trie) Prove(db DBReader, queryKeys [][]byte) (*Proof, error) {
 	if err != nil {
 		return nil, err
 	}
-	mutex := new(sync.Mutex)
 	queryProofs := make(QueryProofs, len(queryKeys))
 	eg := new(errgroup.Group)
 	for i, key := range queryKeys {
 		i, key := i, key // https://golang.org/doc/faq#closures_and_goroutines
 		eg.Go(func() error {
-			queryProof, err := t.generateQueryProof(mutex, db, root, key, 0)
+			newRoot := root.clone()
+			queryProof, err := t.generateQueryProof(db, newRoot, key, 0)
 			if err != nil {
 				return err
 			}
@@ -396,7 +395,7 @@ func (t *trie) updateNode(db DBReadWriter, keyBins, valueBins [][][]byte, length
 	)
 }
 
-func (t *trie) generateQueryProof(mutex *sync.Mutex, db DBReader, currentSubtree *subTree, queryKey []byte, height int) (*QueryProof, error) {
+func (t *trie) generateQueryProof(db DBReader, currentSubtree *subTree, queryKey []byte, height int) (*QueryProof, error) {
 	if len(queryKey) != t.keyLength {
 		return nil, fmt.Errorf("query key must have key length %d", t.keyLength)
 	}
@@ -405,8 +404,6 @@ func (t *trie) generateQueryProof(mutex *sync.Mutex, db DBReader, currentSubtree
 	if err != nil {
 		return nil, err
 	}
-
-	mutex.Lock()
 	for i, node := range currentSubtree.nodes {
 		node.index = i
 	}
@@ -437,7 +434,6 @@ func (t *trie) generateQueryProof(mutex *sync.Mutex, db DBReader, currentSubtree
 		[][]byte{},
 		[]bool{},
 	)
-	mutex.Unlock()
 
 	if currentNode.kind == nodeKindEmpty {
 		return newQueryProof(
@@ -466,7 +462,6 @@ func (t *trie) generateQueryProof(mutex *sync.Mutex, db DBReader, currentSubtree
 	}
 
 	lowerQueryProof, err := t.generateQueryProof(
-		mutex,
 		db,
 		lowerSubtree,
 		queryKey,

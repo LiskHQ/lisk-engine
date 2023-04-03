@@ -91,3 +91,15 @@ func (t *subTree) encode() []byte {
 	}
 	return bytes.Join(result...)
 }
+
+func (t *subTree) clone() *subTree {
+	nodes := make([]*node, len(t.nodes))
+	for i, n := range t.nodes {
+		nodes[i] = n.clone()
+	}
+	return &subTree{
+		structure: t.structure,
+		root:      t.root,
+		nodes:     nodes,
+	}
+}

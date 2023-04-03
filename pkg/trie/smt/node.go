@@ -82,3 +82,13 @@ func newTempNode() *node {
 		index: 0,
 	}
 }
+
+func (n *node) clone() *node {
+	return &node{
+		kind:  n.kind,
+		hash:  n.hash,
+		data:  n.data,
+		key:   n.key,
+		index: n.index,
+	}
+}
