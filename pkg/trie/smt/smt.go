@@ -123,7 +123,8 @@ func (t *trie) Prove(db DBReader, queryKeys [][]byte) (*Proof, error) {
 	for i, key := range queryKeys {
 		i, key := i, key // https://golang.org/doc/faq#closures_and_goroutines
 		eg.Go(func() error {
-			queryProof, err := t.generateQueryProof(db, root, key, 0)
+			newRoot := root.clone()
+			queryProof, err := t.generateQueryProof(db, newRoot, key, 0)
 			if err != nil {
 				return err
 			}

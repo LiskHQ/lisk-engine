@@ -120,10 +120,12 @@ func (b *Router) Invoke(ctx context.Context, endpoint string, data []byte) rpc.E
 	b.mutex.RLocker().Lock()
 	_, pathExist := b.endpoints[path]
 	if !pathExist {
+		b.mutex.RLocker().Unlock()
 		return rpc.NewEndpointResponse(nil, fmt.Errorf("endpoint %s at %s does not exist", target, path))
 	}
 	handler, actionExist := b.endpoints[path][target]
 	if !actionExist {
+		b.mutex.RLocker().Unlock()
 		return rpc.NewEndpointResponse(nil, fmt.Errorf("endpoint %s at %s does not exist", target, path))
 	}
 	b.mutex.RLocker().Unlock()

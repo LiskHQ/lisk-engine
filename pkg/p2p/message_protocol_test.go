@@ -78,6 +78,8 @@ func TestMessageProtocol_Start(t *testing.T) {
 	mp.start(ctx, logger, p)
 	assert.Equal(logger, mp.logger)
 	assert.Equal(p, mp.peer)
+
+	p.close()
 }
 
 func TestMessageProtocol_OnRequest(t *testing.T) {
@@ -121,6 +123,8 @@ func TestMessageProtocol_OnRequest(t *testing.T) {
 
 			idx = slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, tt.want) })
 			assert.NotEqual(-1, idx)
+
+			p.close()
 		})
 	}
 }
@@ -143,7 +147,9 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	assert.Nil(err)
 	mp.start(ctx, &loggerTest, p)
 	ch := make(chan *Response, 1)
+	mp.resMu.Lock()
 	mp.resCh[testReqMsgID] = ch
+	mp.resMu.Unlock()
 
 	stream := testStream{}
 	reqMsg := newResponseMessage(testReqMsgID, testRPC, []byte(testResponseData), errors.New(testError))
@@ -163,6 +169,8 @@ func TestMessageProtocol_OnResponse(t *testing.T) {
 	assert.Equal(1, len(mp.resCh))
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received") })
 	assert.NotEqual(-1, idx)
+
+	p.close()
 }
 
 func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
@@ -191,6 +199,8 @@ func TestMessageProtocol_OnResponseUnknownRequestID(t *testing.T) {
 
 	idx := slices.IndexFunc(loggerTest.logs, func(s string) bool { return strings.Contains(s, "Response message received for unknown request ID") })
 	assert.NotEqual(-1, idx)
+
+	p.close()
 }
 
 func TestMessageProtocol_RegisterRPCHandler(t *testing.T) {
@@ -236,6 +246,8 @@ func TestMessageProtocol_RegisterRPCHandlerMessageProtocolRunning(t *testing.T) 
 
 	_, exist := mp.rpcHandlers[testRPC]
 	assert.False(exist)
+
+	p.close()
 }
 
 func TestMessageProtocol_RegisterRPCHandlerAlreadyRegistered(t *testing.T) {
@@ -288,6 +300,9 @@ func TestMessageProtocol_SendRequestMessage(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(p2.ID(), response.PeerID())
 	assert.Contains(string(response.Data()), "Average RTT with you:")
+
+	p1.close()
+	p2.close()
 }
 
 func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
@@ -315,6 +330,9 @@ func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
 
 	_, err = mp1.request(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.ErrorContains(err, "protocol not supported")
+
+	p1.close()
+	p2.close()
 }
 
 func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
@@ -350,6 +368,9 @@ func TestMessageProtocol_SendRequestMessageRPCHandlerError(t *testing.T) {
 	assert.Equal(p2.ID(), response.PeerID())
 	assert.Equal([]byte{}, response.Data())
 	assert.Contains(response.Error().Error(), "Test RPC handler error!")
+
+	p1.close()
+	p2.close()
 }
 
 func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
@@ -386,6 +407,9 @@ func TestMessageProtocol_SendRequestMessageTimeout(t *testing.T) {
 	response, err := mp1.request(ctx, p2.ID(), testRPC, []byte(testRequestData))
 	assert.Nil(response)
 	assert.Equal("timeout", err.Error())
+
+	p1.close()
+	p2.close()
 }
 
 func TestMessageProtocol_SendResponseMessage(t *testing.T) {
@@ -414,7 +438,9 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	err := p1.Connect(ctx, *p2AddrInfo)
 	assert.Nil(err)
 	ch := make(chan *Response, 1)
+	mp2.resMu.Lock()
 	mp2.resCh[testReqMsgID] = ch
+	mp2.resMu.Unlock()
 	err = mp1.respond(ctx, p2.ID(), testReqMsgID, testProcedure, []byte(testResponseData), errors.New(testError))
 	assert.Nil(err)
 
@@ -427,6 +453,9 @@ func TestMessageProtocol_SendResponseMessage(t *testing.T) {
 	case <-time.After(testTimeout):
 		t.Fatalf("timeout occurs, response message was not received")
 	}
+
+	p1.close()
+	p2.close()
 }
 
 type TestMessageReceive struct {
@@ -477,6 +506,9 @@ func TestMessageProtocol_sendMessage(t *testing.T) {
 	}
 
 	assert.Contains(tmr.msg, testRequestData)
+
+	p1.close()
+	p2.close()
 }
 
 func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
@@ -509,4 +541,7 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
 	err := mp.send(ctx, p2.ID(), messageProtocolReqID(testChainID, testVersion), msg)
 	assert.ErrorContains(err, "protocol not supported")
+
+	p1.close()
+	p2.close()
 }

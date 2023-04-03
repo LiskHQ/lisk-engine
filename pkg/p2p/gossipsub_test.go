@@ -70,6 +70,8 @@ func TestGossipSub_Start(t *testing.T) {
 	assert.True(exist)
 	_, exist = gs.subscriptions[gs.formatTopic(testTopic1)]
 	assert.True(exist)
+
+	p.close()
 }
 
 func TestGossipSub_CreateSubscriptionHandlers(t *testing.T) {
@@ -172,6 +174,8 @@ func TestGossipSub_RegisterEventHandlerGossipSubRunning(t *testing.T) {
 	assert.False(exist)
 	_, exist = gs.eventHandlers[testEvent]
 	assert.False(exist)
+
+	p.close()
 }
 
 func TestGossipSub_RegisterEventHandlerAlreadyRegistered(t *testing.T) {
@@ -225,6 +229,8 @@ func TestGossipSub_Publish(t *testing.T) {
 	// check the validation nofify once
 	err = gs.Publish(ctx, testTopic1, testMessageInvalid)
 	assert.Nil(err)
+
+	p.close()
 }
 
 func TestGossipSub_PublishTopicNotFound(t *testing.T) {
@@ -287,4 +293,8 @@ func TestGossipSub_BelowMinimumNumberOfConnections(t *testing.T) {
 
 	// Check if the number of connected peers is two as we should have been connected to two peers
 	assert.Equal(2, len(gs.peer.ConnectedPeers()))
+
+	p.close()
+	p1.close()
+	p2.close()
 }
