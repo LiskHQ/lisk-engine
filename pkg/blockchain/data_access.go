@@ -3,7 +3,6 @@ package blockchain
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -96,31 +95,23 @@ func (d *DataAccess) GetBlockHeader(id []byte) (*BlockHeader, error) {
 // GetBlockHeaders returns all block header with id if exist.
 func (d *DataAccess) GetBlockHeaders(ids [][]byte) ([]*BlockHeader, error) {
 	eg := new(errgroup.Group)
-	headers := make([]*BlockHeader, len(ids))
-	mutex := new(sync.Mutex)
-	hasEmpty := false
-	for i, id := range ids {
-		i, id := i, id // https://golang.org/doc/faq#closures_and_goroutines
+	headers := make([]*BlockHeader, 0, len(ids))
+	for _, id := range ids {
+		id := id // https://golang.org/doc/faq#closures_and_goroutines
 		eg.Go(func() error {
 			header, err := d.GetBlockHeader(id)
 			if err != nil {
 				if !errors.Is(err, db.ErrDataNotFound) {
 					return err
 				}
-				mutex.Lock()
-				hasEmpty = true
-				mutex.Unlock()
 				return nil
 			}
-			headers[i] = header
+			headers = append(headers, header)
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
-	}
-	if !hasEmpty {
-		return headers, nil
 	}
 	nonNilHeaders := []*BlockHeader{}
 	for _, h := range headers {
@@ -134,31 +125,23 @@ func (d *DataAccess) GetBlockHeaders(ids [][]byte) ([]*BlockHeader, error) {
 // GetBlockHeadersByHeights returns all block header with heights.
 func (d *DataAccess) GetBlockHeadersByHeights(heights []uint32) ([]*BlockHeader, error) {
 	eg := new(errgroup.Group)
-	headers := make([]*BlockHeader, len(heights))
-	mutex := new(sync.Mutex)
-	hasEmpty := false
-	for i, height := range heights {
-		i, height := i, height // https://golang.org/doc/faq#closures_and_goroutines
+	headers := make([]*BlockHeader, 0, len(heights))
+	for _, height := range heights {
+		height := height // https://golang.org/doc/faq#closures_and_goroutines
 		eg.Go(func() error {
 			header, err := d.GetBlockHeaderByHeight(height)
 			if err != nil {
 				if !errors.Is(err, db.ErrDataNotFound) {
 					return err
 				}
-				mutex.Lock()
-				hasEmpty = true
-				mutex.Unlock()
 				return nil
 			}
-			headers[i] = header
+			headers = append(headers, header)
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
-	}
-	if !hasEmpty {
-		return headers, nil
 	}
 	nonNilHeaders := []*BlockHeader{}
 	for _, h := range headers {
@@ -254,31 +237,23 @@ func (d *DataAccess) GetTransaction(id []byte) (*Transaction, error) {
 // GetTransaction return transaction by id.
 func (d *DataAccess) GetTransactions(ids [][]byte) ([]*Transaction, error) {
 	eg := new(errgroup.Group)
-	txs := make([]*Transaction, len(ids))
-	mutex := new(sync.Mutex)
-	hasEmpty := false
-	for i, id := range ids {
-		i, id := i, id // https://golang.org/doc/faq#closures_and_goroutines
+	txs := make([]*Transaction, 0, len(ids))
+	for _, id := range ids {
+		id := id // https://golang.org/doc/faq#closures_and_goroutines
 		eg.Go(func() error {
 			tx, err := d.getTransaction(id)
 			if err != nil {
 				if !errors.Is(err, db.ErrDataNotFound) {
 					return err
 				}
-				mutex.Lock()
-				hasEmpty = true
-				mutex.Unlock()
 				return nil
 			}
-			txs[i] = tx
+			txs = append(txs, tx)
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
-	}
-	if !hasEmpty {
-		return txs, nil
 	}
 	nonNilTxs := []*Transaction{}
 	for _, tx := range txs {
