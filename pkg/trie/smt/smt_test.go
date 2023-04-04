@@ -171,6 +171,55 @@ func TestGenerateProofFixture(t *testing.T) {
 	}
 }
 
+func TestGenerateInvalidProofFixture(t *testing.T) {
+	updateFixture := &fixture{}
+	err := loadFixture("./fixtures/smt_invalid_proof_fixtures.json", updateFixture)
+	assert.NoError(t, err)
+
+	for _, testCase := range updateFixture.TestCases {
+		t.Log(testCase.Description)
+		database, _ := db.NewInMemoryDB()
+		smt := NewTrie([]byte{}, 32)
+		keys := make([][]byte, len(testCase.Input.Keys)+len(testCase.Input.DeleteKeys))
+		values := make([][]byte, len(testCase.Input.Values)+len(testCase.Input.DeleteKeys))
+		for i, key := range testCase.Input.Keys {
+			keys[i] = key
+			values[i] = testCase.Input.Values[i]
+		}
+		for i, deleteKey := range testCase.Input.DeleteKeys {
+			keys[i+len(testCase.Input.Keys)] = deleteKey
+			values[i+len(testCase.Input.Keys)] = []byte{}
+		}
+		keys, values = UniqueAndSort(keys, values)
+
+		root, err := smt.Update(database, keys, values)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte(testCase.Output.MerkleRoot), root)
+
+		queryKeys := make([][]byte, len(testCase.Input.QueryKeys))
+		for i, k := range testCase.Input.QueryKeys {
+			queryKeys[i] = k
+		}
+
+		// Create a proof with invalid sibling hashes
+		proof := &Proof{
+			SiblingHashes: testCase.Output.Proof.SiblingHashes,
+		}
+		proof.Queries = make([]*QueryProof, len(testCase.Output.Proof.Queries))
+		for i, q := range testCase.Output.Proof.Queries {
+			proof.Queries[i] = &QueryProof{
+				Bitmap: q.Bitmap,
+				Key:    q.Key,
+				Value:  q.Value,
+			}
+		}
+
+		verified, err := Verify(queryKeys, proof, testCase.Output.MerkleRoot, 32)
+		assert.NotNil(t, err)
+		assert.False(t, verified)
+	}
+}
+
 func TestGenerateProofJumboFixture(t *testing.T) {
 	updateFixture := fixture{}
 	err := loadEncodedFixture("./fixtures/smt_jumbo_fixtures.json.encoded", &updateFixture)
