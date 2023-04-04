@@ -164,8 +164,9 @@ func TestGenerateProofFixture(t *testing.T) {
 			q.Bitmap = append(q.Bitmap, 0)
 			zeroAppendedProof.Queries[i] = q
 		}
-		verified, err = Verify(queryKeys, zeroAppendedProof, root, 32)
-		assert.NoError(t, err)
+		verified, _ = Verify(queryKeys, zeroAppendedProof, root, 32)
+		// Assert for NoError check can't be done here because the error is not nil in some cases
+		// but the verification is still correct and must be false
 		assert.False(t, verified)
 	}
 }
