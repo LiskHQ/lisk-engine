@@ -22,6 +22,10 @@ func Verify(
 			return false, nil
 		}
 		query := proof.Queries[i]
+		// Bitmap must not include zero byte at the begging or the end
+		if len(query.Bitmap) > 0 && (query.Bitmap[0] == 0 || query.Bitmap[len(query.Bitmap)-1] == 0) {
+			return false, nil
+		}
 		if collection.Equal(key, query.Key) {
 			continue
 		}
@@ -77,6 +81,9 @@ func CalculateRoot(siblingHashes []codec.Hex, queries QueryProofs) ([]byte, erro
 		} else if !query.binaryBitmap[0] {
 			siblingHash = emptyHash
 		} else if query.binaryBitmap[0] {
+			if len(siblingHashes) == nextSiblingHash {
+				return nil, errors.New("no more sibling hashes available")
+			}
 			siblingHash = siblingHashes[nextSiblingHash]
 			nextSiblingHash += 1
 		}

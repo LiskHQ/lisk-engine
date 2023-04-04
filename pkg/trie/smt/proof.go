@@ -27,6 +27,21 @@ func (p *Proof) Copy() *Proof {
 	}
 }
 
+func (p *Proof) clone() *Proof {
+	siblingHashes := make([]codec.Hex, len(p.SiblingHashes))
+	for i, sh := range p.SiblingHashes {
+		siblingHashes[i] = bytes.Copy(sh)
+	}
+	queries := make([]*QueryProof, len(p.Queries))
+	for i, q := range p.Queries {
+		queries[i] = q.copy()
+	}
+	return &Proof{
+		SiblingHashes: siblingHashes,
+		Queries:       queries,
+	}
+}
+
 // QueryProof holds a query for the proof.
 type QueryProof struct {
 	Key            codec.Hex `json:"key" fieldNumber:"1"`

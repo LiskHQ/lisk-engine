@@ -148,6 +148,25 @@ func TestGenerateProofFixture(t *testing.T) {
 		verified, err := Verify(queryKeys, proof, root, 32)
 		assert.NoError(t, err)
 		assert.True(t, verified)
+
+		// Modified bitmap should fail (prepend 0 and append 0)
+		zeroPrependedProof := proof.clone()
+		for i, q := range zeroPrependedProof.Queries {
+			q.Bitmap = append([]byte{0}, q.Bitmap...)
+			zeroPrependedProof.Queries[i] = q
+		}
+		verified, err = Verify(queryKeys, zeroPrependedProof, root, 32)
+		assert.NoError(t, err)
+		assert.False(t, verified)
+
+		zeroAppendedProof := proof.clone()
+		for i, q := range zeroAppendedProof.Queries {
+			q.Bitmap = append(q.Bitmap, 0)
+			zeroAppendedProof.Queries[i] = q
+		}
+		verified, err = Verify(queryKeys, zeroAppendedProof, root, 32)
+		assert.NoError(t, err)
+		assert.False(t, verified)
 	}
 }
 
