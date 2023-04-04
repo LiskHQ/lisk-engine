@@ -53,7 +53,7 @@ type Peer struct {
 	connGater *connectionGater
 }
 
-// Only set Peerstore TTLs once
+// Only set Peerstore TTLs once.
 var ttlPeerstoreSet = false
 
 var connMgrOptions = []connmgr.Option{
