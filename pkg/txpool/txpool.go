@@ -257,8 +257,6 @@ func (t *TransactionPool) Add(tx *blockchain.Transaction) bool {
 }
 
 func (t *TransactionPool) Remove(id []byte) bool {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	return t.remove(id)
 }
 
@@ -269,12 +267,16 @@ func (t *TransactionPool) Subscribe(topic string) <-chan interface{} {
 func (t *TransactionPool) evictUnprocessable() bool {
 	feeMinHeap := FeeMinHeap{}
 	heap.Init(&feeMinHeap)
+
+	t.mutex.RLocker().Lock()
 	for _, list := range t.perAccount {
 		unprocessables := list.GetUnprocessables()
 		for _, tx := range unprocessables {
 			heap.Push(&feeMinHeap, tx)
 		}
 	}
+	t.mutex.RLocker().Unlock()
+
 	if len(feeMinHeap) == 0 {
 		return false
 	}
@@ -286,6 +288,8 @@ func (t *TransactionPool) evictUnprocessable() bool {
 func (t *TransactionPool) evictProcessable() bool {
 	feeMinHeap := FeeMinHeap{}
 	heap.Init(&feeMinHeap)
+
+	t.mutex.RLocker().Lock()
 	for _, list := range t.perAccount {
 		processables := list.GetProcessables()
 		if len(processables) > 0 {
@@ -293,6 +297,8 @@ func (t *TransactionPool) evictProcessable() bool {
 			heap.Push(&feeMinHeap, tx)
 		}
 	}
+	t.mutex.RLocker().Unlock()
+
 	if len(feeMinHeap) == 0 {
 		return false
 	}
@@ -302,6 +308,8 @@ func (t *TransactionPool) evictProcessable() bool {
 }
 
 func (t *TransactionPool) remove(id []byte) bool {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	existingTx, exist := t.allTransactions[string(id)]
 	if !exist {
 		return false
@@ -322,9 +330,8 @@ func (t *TransactionPool) remove(id []byte) bool {
 }
 
 func (t *TransactionPool) reorg() {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	var wg sync.WaitGroup
+	t.mutex.RLocker().Lock()
 	for _, list := range t.perAccount {
 		wg.Add(1)
 		go func(list *addressTransactions) {
@@ -374,6 +381,7 @@ func (t *TransactionPool) reorg() {
 			}
 		}(list)
 	}
+	t.mutex.RLocker().Unlock()
 	wg.Wait()
 }
 

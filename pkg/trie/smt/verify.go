@@ -17,11 +17,23 @@ func Verify(
 	if len(queryKeys) != len(proof.Queries) {
 		return false, nil
 	}
+	// Create a map of query keys to check if all keys are unique
+	queries := map[string]QueryProof{}
 	for i, key := range queryKeys {
 		if len(key) != keyLength {
 			return false, nil
 		}
 		query := proof.Queries[i]
+		duplicateQuery, exists := queries[query.Key.String()]
+		if exists && (!collection.Equal(duplicateQuery.Bitmap, query.Bitmap) ||
+			!collection.Equal(duplicateQuery.Value, query.Value)) {
+			return false, errors.New("duplicate query")
+		}
+		queries[query.Key.String()] = *query.copy()
+		// Bitmap must not include zero byte at the begging
+		if len(query.Bitmap) > 0 && query.Bitmap[0] == 0 {
+			return false, nil
+		}
 		if collection.Equal(key, query.Key) {
 			continue
 		}
@@ -72,11 +84,27 @@ func CalculateRoot(siblingHashes []codec.Hex, queries QueryProofs) ([]byte, erro
 		var siblingHash []byte
 		if len(queries) > 0 && query.isSiblingOf(queries[0]) { //nolint:gocritic // prefer if/else
 			sibling := queries[0]
+			// We are merging two branches.
+			// Check that the bitmap at the merging point is consistent with the nodes type.
+			isSiblingEmpty := bytes.Equal(sibling.hash, emptyHash)
+			if (isSiblingEmpty && query.binaryBitmap[0]) || (!isSiblingEmpty && !query.binaryBitmap[0]) {
+				return nil, errors.New("bitmap is not consistent with the nodes type")
+			}
+			isQueryEmpty := bytes.Equal(query.hash, emptyHash)
+			if (isQueryEmpty && sibling.binaryBitmap[0]) || (!isQueryEmpty && !sibling.binaryBitmap[0]) {
+				return nil, errors.New("bitmap is not consistent with the nodes type")
+			}
+			if !bytes.Equal(bytes.FromBools(query.binaryBitmap[1:]), bytes.FromBools(sibling.binaryBitmap[1:])) {
+				return nil, errors.New("nodes do not share common path")
+			}
 			queries = queries[1:]
 			siblingHash = sibling.hash
 		} else if !query.binaryBitmap[0] {
 			siblingHash = emptyHash
 		} else if query.binaryBitmap[0] {
+			if len(siblingHashes) == nextSiblingHash {
+				return nil, errors.New("no more sibling hashes available")
+			}
 			siblingHash = siblingHashes[nextSiblingHash]
 			nextSiblingHash += 1
 		}
