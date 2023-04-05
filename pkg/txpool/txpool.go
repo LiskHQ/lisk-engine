@@ -257,8 +257,6 @@ func (t *TransactionPool) Add(tx *blockchain.Transaction) bool {
 }
 
 func (t *TransactionPool) Remove(id []byte) bool {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	return t.remove(id)
 }
 
@@ -332,16 +330,9 @@ func (t *TransactionPool) remove(id []byte) bool {
 }
 
 func (t *TransactionPool) reorg() {
-	// Clone map to avoid memory race condition
-	t.mutex.RLocker().Lock()
-	perAccount := make(map[string]*addressTransactions)
-	for k, v := range t.perAccount {
-		perAccount[k] = v
-	}
-	t.mutex.RLocker().Unlock()
-
 	var wg sync.WaitGroup
-	for _, list := range perAccount {
+	t.mutex.RLocker().Lock()
+	for _, list := range t.perAccount {
 		wg.Add(1)
 		go func(list *addressTransactions) {
 			defer wg.Done()
@@ -390,6 +381,7 @@ func (t *TransactionPool) reorg() {
 			}
 		}(list)
 	}
+	t.mutex.RLocker().Unlock()
 	wg.Wait()
 }
 
