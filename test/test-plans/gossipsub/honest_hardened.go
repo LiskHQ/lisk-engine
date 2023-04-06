@@ -92,7 +92,7 @@ func scoreParamsOption(params ScoreParams) pubsub.Option {
 	}
 
 	fmt.Printf("peer score params: %v\nthresholds: %v\n", psp, pst)
-	// TODO add getMessageID from config params if it is ture then make an option for pubsub by WithMessageIdFn
+	// TODO add getMessageID from config params if it is true then make an option for pubsub by WithMessageIdFn
 	return pubsub.WithPeerScore(&psp, &pst)
 }
 

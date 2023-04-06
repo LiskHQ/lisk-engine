@@ -62,7 +62,7 @@ testground plan import --from your-path/lisk-engine/test/test-plans/gossipsub --
 ```
 
 ## Running Tests
-You can modify the parameters in `composition.toml` to make your own config, after the please run the following commands to run the test-plan:
+You can modify the parameters in `composition.toml` to make your own config. After the please run the following commands to run the test-plan:
 ```bash
 testground run composition -f your-path/lisk-engine/test/test-plans/gossipsub/composition.toml  --collect -o path-to-output
 ```
