@@ -77,14 +77,14 @@ type PubsubNode struct {
 	cfg    HonestNodeConfig
 	ctx    context.Context
 	runenv *runtime.RunEnv
-	conn   p2p.Connection
+	conn   p2p.ExtendedConnection
 	mutex  sync.RWMutex
 	pubwg  sync.WaitGroup
 }
 
 // NewPubsubNode prepares the given Host to act as an honest pubsub node using the provided HonestNodeConfig.
 // The returned PubsubNode will not start immediately; call Run to begin the test behavior.
-func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, conn p2p.Connection, cfg HonestNodeConfig) (*PubsubNode, error) {
+func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, conn p2p.ExtendedConnection, cfg HonestNodeConfig) (*PubsubNode, error) {
 	opts, err := pubsubOptions(cfg)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func NewPubsubNode(runenv *runtime.RunEnv, ctx context.Context, conn p2p.Connect
 	pubsub.GossipSubHeartbeatInterval = cfg.Heartbeat.Interval
 
 	// call RegisterEventHandler per topics
-	err = conn.NewGossipSub(ctx, opts...)
+	err = conn.StartGossipSub(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("error making new gossipsub: %s", err)
 	}

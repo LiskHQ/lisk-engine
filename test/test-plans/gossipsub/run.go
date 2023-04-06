@@ -50,7 +50,7 @@ type testInstance struct {
 	*runtime.RunEnv
 	params testParams
 
-	conn           p2p.Connection
+	conn           p2p.ExtendedConnection
 	seq            int64
 	nodeTypeSeq    int64
 	nodeIdx        int
@@ -73,7 +73,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 
 	// Create the connections, but don't listen yet (we need to set up the data
 	// network before listening)
-	conns := make([]p2p.Connection, params.nodesPerContainer)
+	conns := make([]p2p.ExtendedConnection, params.nodesPerContainer)
 	for i := 0; i < params.nodesPerContainer; i++ {
 		cfg := p2p.Config{
 			Version: "1.0",
@@ -85,7 +85,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 			panic(err)
 		}
 		// Don't listen yet, we need to set up networking first
-		conn := *p2p.NewConnection(logger, &cfg)
+		conn := *p2p.NewExtendedConnection(logger, &cfg)
 
 		// TODO define a validator and check it
 		validator := func(ctx context.Context, msg *p2p.Message) p2p.ValidationResult {
@@ -209,7 +209,7 @@ func RunSimulation(ctx context.Context, initCtx *run.InitContext, runenv *runtim
 	return errgrp.Wait()
 }
 
-func getNodeTypeSeqNum(ctx context.Context, client *sync.DefaultClient, conn p2p.Connection, nodeType NodeType) (int64, error) {
+func getNodeTypeSeqNum(ctx context.Context, client *sync.DefaultClient, conn p2p.ExtendedConnection, nodeType NodeType) (int64, error) {
 	topic := sync.NewTopic("node-type-"+string(nodeType), &p2p.AddrInfo{})
 	return client.Publish(ctx, topic, conn.Info())
 }

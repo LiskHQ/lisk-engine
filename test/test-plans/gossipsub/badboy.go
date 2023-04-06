@@ -23,7 +23,7 @@ import (
 
 type BadBoy struct {
 	ctx    context.Context
-	conn   p2p.Connection
+	conn   p2p.ExtendedConnection
 	runenv *runtime.RunEnv
 	seq    int64
 	params SybilParams
@@ -53,7 +53,7 @@ var (
 	BadBoySeenCacheDuration = 120 * time.Second
 )
 
-func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, conn p2p.Connection, seq int64, params SybilParams) (*BadBoy, error) {
+func NewBadBoy(ctx context.Context, runenv *runtime.RunEnv, conn p2p.ExtendedConnection, seq int64, params SybilParams) (*BadBoy, error) {
 	bb := &BadBoy{
 		ctx:    ctx,
 		conn:   conn,

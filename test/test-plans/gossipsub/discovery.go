@@ -38,7 +38,7 @@ type PeerRegistration struct {
 // you to connect the local peers to a subset of the test peers, using a Topology
 // to control the peer selection.
 type SyncDiscovery struct {
-	conn           p2p.Connection
+	conn           p2p.ExtendedConnection
 	runenv         *runtime.RunEnv
 	peerSubscriber *PeerSubscriber
 	topology       Topology
@@ -251,11 +251,11 @@ func (ps *PeerSubscriber) waitForPeers(ctx context.Context) ([]PeerRegistration,
 	return ps.peers, nil
 }
 
-func NewSyncDiscovery(c p2p.Connection, runenv *runtime.RunEnv, peerSubscriber *PeerSubscriber,
+func NewSyncDiscovery(conn p2p.ExtendedConnection, runenv *runtime.RunEnv, peerSubscriber *PeerSubscriber,
 	topology Topology, nodeType NodeType, nodeTypeSeq int64, nodeIdx int, isPublisher bool) (*SyncDiscovery, error) {
 
 	return &SyncDiscovery{
-		conn:           c,
+		conn:           conn,
 		runenv:         runenv,
 		peerSubscriber: peerSubscriber,
 		topology:       topology,
@@ -361,7 +361,7 @@ func (s *SyncDiscovery) connectWithRetry(ctx context.Context, p p2p.AddrInfo) er
 
 			// clear the libp2p dial backoff for this peer, otherwise the swarm will ignore our
 			// dial attempt and immediately return a "dial backoff" error
-			if s.conn.SwarmBackoff(p.ID) {
+			if s.conn.SwarmClear(p.ID) {
 				s.runenv.RecordMessage("clearing swarm dial backoff for peer %s", p.ID.Pretty())
 			}
 		}),

@@ -41,7 +41,7 @@ Please follow the below steps to prepare your machine to run the `testcase`:
 6. Now you can run the following commands to fetch the private repository of the `lisk-engine`:
 	```bash
 	export GOPRIVATE=*
-	go get -v github.com/LiskHQ/lisk-engine/pkg/p2p@588e3233e36c58bfba78829d10fa4f8af865e5db
+	go get -v github.com/LiskHQ/lisk-engine/pkg/p2p@040fbea90b89ccce8fcdc95ba3ec301386020bec
 	```
 7. After fetching the `pkg` you should turn `git config` to use `https`, for this you can remove the `~/.gitconfig` or comment the lines that you recently added it, put `;` at the beginning of the each lines.
 
