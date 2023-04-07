@@ -35,40 +35,36 @@ type Connection struct {
 }
 
 // NewConnection creates a new P2P instance.
-func NewConnection(cfg *Config) *Connection {
+func NewConnection(logger log.Logger, cfg *Config) *Connection {
 	if err := cfg.insertDefault(); err != nil {
 		// if there is an error on configuration, it should not start the package.
 		panic(err)
 	}
 	return &Connection{
+		logger:          logger,
 		cfg:             cfg,
 		dropConnTimeout: dropConnTimeout,
 		MessageProtocol: newMessageProtocol(cfg.ChainID, cfg.Version),
-		GossipSub:       newGossipSub(cfg.ChainID, cfg.Version),
+		GossipSub:       newGossipSub(logger, cfg.ChainID, cfg.Version),
 	}
 }
 
-// Version returns network version set for the protocol.
-func (conn *Connection) Version() string {
-	return conn.cfg.Version
-}
-
 // Start the P2P and all other related services and handlers.
-func (conn *Connection) Start(logger log.Logger, seed []byte) error {
-	logger.Infof("Starting P2P module")
+func (conn *Connection) Start(seed []byte) error {
+	conn.logger.Infof("Starting P2P module")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	peer, err := newPeer(ctx, &conn.wg, logger, seed, conn.cfg)
+	peer, err := newPeer(ctx, &conn.wg, conn.logger, seed, conn.cfg)
 	if err != nil {
 		cancel()
 		return err
 	}
-	peer.peerbook.init(logger)
+	peer.peerbook.init(conn.logger)
 
-	conn.MessageProtocol.start(ctx, logger, peer)
+	conn.MessageProtocol.start(ctx, conn.logger, peer)
 
 	sk := newScoreKeeper()
-	err = conn.GossipSub.start(ctx, &conn.wg, logger, peer, sk, conn.cfg)
+	err = conn.GossipSub.start(ctx, &conn.wg, peer, sk, conn.cfg)
 	if err != nil {
 		cancel()
 		return err
@@ -88,7 +84,6 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 		return err
 	}
 
-	conn.logger = logger
 	conn.cancel = cancel
 	conn.Peer = peer
 	conn.bootCloser = bootCloser
@@ -109,7 +104,7 @@ func (conn *Connection) Start(logger log.Logger, seed []byte) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("P2P connection successfully started. Listening to: %v", addrs)
+	conn.logger.Infof("P2P connection successfully started. Listening to: %v", addrs)
 	return nil
 }
 
@@ -151,6 +146,11 @@ func (conn *Connection) Stop() error {
 
 	conn.logger.Infof("P2P connection successfully stopped")
 	return nil
+}
+
+// Version returns network version set for the protocol.
+func (conn *Connection) Version() string {
+	return conn.cfg.Version
 }
 
 // ApplyPenalty updates the score of the given PeerID (all its IP addresses) and bans the peer if the

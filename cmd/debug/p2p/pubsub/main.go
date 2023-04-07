@@ -45,7 +45,7 @@ func main() {
 		ChainID:   []byte{0x04, 0x00, 0x01, 0x02},
 	}
 
-	conn := p2p.NewConnection(&cfg)
+	conn := p2p.NewConnection(log.DefaultLogger, &cfg)
 
 	ch := make(chan *ChatMessage, ChatRoomBufSize)
 	var validator p2p.Validator
@@ -70,7 +70,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := conn.Start(log.DefaultLogger, nil); err != nil {
+	if err := conn.Start(nil); err != nil {
 		panic(err)
 	}
 

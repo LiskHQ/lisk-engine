@@ -19,21 +19,21 @@ func TestRateLimit_RPCMessageCounter_BanPeer(t *testing.T) {
 	cfg := &Config{Addresses: []string{testIPv4TCP, testIPv4UDP}}
 	_ = cfg.insertDefault()
 
-	node1 := NewConnection(cfg)
+	node1 := NewConnection(logger, cfg)
 	testHandler := func(w ResponseWriter, req *Request) {}
 	node1.RegisterRPCHandler(testRPC, testHandler, WithRPCMessageCounter(5, 25))
 	node1.MessageProtocol.timeout = time.Millisecond * 10 // Decrease the interval to speed up the test
-	err := node1.Start(logger, []byte{})
+	err := node1.Start([]byte{})
 	assert.Nil(err)
 	node1Addrs, _ := node1.MultiAddress()
 	node1AddrInfo, _ := AddrInfoFromMultiAddr(node1Addrs[0])
 	node1.connGater.intervalCheck = time.Millisecond * 25 // Decrease the interval to speed up the test
 
-	node2 := NewConnection(cfg)
+	node2 := NewConnection(logger, cfg)
 	node2.RegisterRPCHandler(testRPC, func(w ResponseWriter, req *Request) {
 		w.Write([]byte("Average RTT with you:"))
 	}, WithRPCMessageCounter(5, 25))
-	err = node2.Start(logger, []byte{})
+	err = node2.Start([]byte{})
 	assert.Nil(err)
 	node2Addrs, _ := node2.MultiAddress()
 	node2AddrInfo, _ := AddrInfoFromMultiAddr(node2Addrs[0])

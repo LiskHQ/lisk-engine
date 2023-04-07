@@ -289,11 +289,11 @@ func TestPeer_BlacklistedPeers(t *testing.T) {
 	cfg2 := &Config{BlacklistedIPs: []string{"127.0.0.1"}} // blacklisting peer2
 	p, _ := newPeer(ctx, wg, logger, []byte{}, cfg2)
 
-	gs := newGossipSub(testChainID, testVersion)
+	gs := newGossipSub(logger, testChainID, testVersion)
 	_ = gs.RegisterEventHandler(testTopic1, func(event *Event) {}, nil)
 
 	sk := newScoreKeeper()
-	err := gs.start(ctx, wg, logger, p, sk, cfg2)
+	err := gs.start(ctx, wg, p, sk, cfg2)
 	assert.Nil(err)
 
 	_ = p.host.Connect(ctx, *p1AddrInfo) // Connect directly using host to avoid check regarding blacklisted IP address

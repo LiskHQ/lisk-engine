@@ -329,7 +329,7 @@ func TestMessageProtocol_SendRequestMessage_differentVersion(t *testing.T) {
 	assert.NoError(err)
 
 	_, err = mp1.request(ctx, p2.ID(), testRPC, []byte(testRequestData))
-	assert.ErrorContains(err, "protocol not supported")
+	assert.ErrorContains(err, "protocols not supported")
 
 	p1.close()
 	p2.close()
@@ -540,7 +540,7 @@ func TestMessageProtocol_sendMessage_differentVersion(t *testing.T) {
 	_ = p1.Connect(ctx, *p2AddrInfo)
 	msg := newRequestMessage(p1.ID(), testProcedure, []byte(testRequestData))
 	err := mp.send(ctx, p2.ID(), messageProtocolReqID(testChainID, testVersion), msg)
-	assert.ErrorContains(err, "protocol not supported")
+	assert.ErrorContains(err, "protocols not supported")
 
 	p1.close()
 	p2.close()
