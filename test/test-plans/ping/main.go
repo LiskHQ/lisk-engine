@@ -51,9 +51,9 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	if err != nil {
 		panic(err)
 	}
-	host := p2p.NewConnection(logger, &cfg)
+	host := p2p.NewConnection(&cfg)
 	// init a logger to use it for Host
-	if err := host.Start(nil); err != nil {
+	if err := host.Start(logger, nil); err != nil {
 		panic(err)
 	}
 
