@@ -51,7 +51,7 @@ For the private repo you need to setup `ssh key` and `git` in your local machine
 **Important:** You have to change the commit version please run the following command after your setup:
 //TODO commit version should remove after merge with main branch.
 ```bash
-go get -v github.com/LiskHQ/lisk-engine/pkg/p2p@040fbea90b89ccce8fcdc95ba3ec301386020bec
+go get -v github.com/LiskHQ/lisk-engine
 ```
 
 #### Import testplan
