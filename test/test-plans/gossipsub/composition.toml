@@ -24,10 +24,6 @@ instances = { count = 8 }
 
   [groups.build]
   selectors = ['hardened_api']
-  dependencies = [
-    { module = "github.com/libp2p/go-libp2p-pubsub", version = "829f9026a3dcf12b268efad6a140dd99446cf17b" }
-  ]
-
   [groups.run.test_params]
   t_heartbeat = "1s"
   t_heartbeat_initial_delay = "100ms"
@@ -74,10 +70,6 @@ instances = { count = 2 }
 
   [groups.build]
   selectors = ['hardened_api']
-  dependencies = [
-    { module = "github.com/libp2p/go-libp2p-pubsub", version = "829f9026a3dcf12b268efad6a140dd99446cf17b" }
-  ]
-
   [groups.run.test_params]
   t_heartbeat = "1s"
   t_heartbeat_initial_delay = "100ms"
@@ -120,10 +112,6 @@ instances = { count = 2 }
 
   [groups.build]
   selectors = ['hardened_api']
-  dependencies = [
-    { module = "github.com/libp2p/go-libp2p-pubsub", version = "829f9026a3dcf12b268efad6a140dd99446cf17b" }
-  ]
-
   [groups.run.test_params]
   t_heartbeat = "1s"
   t_heartbeat_initial_delay = "100ms"
