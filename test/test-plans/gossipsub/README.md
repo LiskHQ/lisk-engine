@@ -49,8 +49,8 @@ source ~/.bashrc
 
 You can get the private repo with one of the following options:
 
- 1. Setup `ssh key` and `git` in your local machine or docker, please follow the instructions based on your choice [here](https://github.com/LiskHQ/lisk-engine/blob/main/test/test-plans/ping/README.md#running-tests).
- 2. Use `replace` command in your `mod.go` file, in case of docker run you should provide the path in your docker:
+ 1. Setup `ssh key` and `git` in your local machine or in a Docker. Please follow the instructions based on your choice [here](https://github.com/LiskHQ/lisk-engine/blob/main/test/test-plans/ping/README.md#running-tests).
+ 2. Use `replace` command in your `mod.go` file. In case of using a Docker, a path to the Docker should be provided:
      ```bash
          replace github.com/LiskHQ/lisk-engine v0.0.0 => your-path/lisk-engine/
          go mod tidy
