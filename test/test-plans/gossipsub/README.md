@@ -47,12 +47,14 @@ source ~/.bashrc
 
 #### Private repo setup
 
-For the private repo you need to setup `ssh key` and `git` in your local machine or docker, please follow the instructions based on your choice [here](https://github.com/LiskHQ/lisk-engine/blob/main/test/test-plans/ping/README.md#running-tests).
-**Important:** You have to change the commit version please run the following command after your setup:
-//TODO commit version should remove after merge with main branch.
-```bash
-go get -v github.com/LiskHQ/lisk-engine/pkg/p2p@040fbea90b89ccce8fcdc95ba3ec301386020bec
-```
+You can get the private repo with one of the following options:
+
+ 1. Setup `ssh key` and `git` in your local machine or in a Docker. Please follow the instructions based on your choice [here](https://github.com/LiskHQ/lisk-engine/blob/main/test/test-plans/ping/README.md#running-tests).
+ 2. Use `replace` command in your `mod.go` file. In case of using a Docker, a path to the Docker should be provided:
+     ```bash
+         replace github.com/LiskHQ/lisk-engine v0.0.0 => your-path/lisk-engine/
+         go mod tidy
+     ```
 
 #### Import testplan
 
