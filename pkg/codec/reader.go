@@ -3,6 +3,7 @@ package codec
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 const (
@@ -28,7 +29,7 @@ func NewReader(data []byte) *Reader {
 
 // ReadUInt reads uint if the field number matches.
 func (r *Reader) ReadUInt(fieldNumber int, strict bool) (uint64, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType0)
 	if err != nil {
 		if !r.strictError(err) {
 			return 0, err
@@ -52,7 +53,7 @@ func (r *Reader) ReadUInt32(fieldNumber int, strict bool) (uint32, error) {
 
 // ReadUInts reads []uint if the field number matches.
 func (r *Reader) ReadUInts(fieldNumber int) ([]uint64, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil && !r.strictError(err) {
 		return []uint64{}, err
 	}
@@ -77,7 +78,7 @@ func (r *Reader) ReadUInts(fieldNumber int) ([]uint64, error) {
 
 // ReadUInt32s reads []uint32 if the field number matches.
 func (r *Reader) ReadUInt32s(fieldNumber int) ([]uint32, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil && !r.strictError(err) {
 		return []uint32{}, err
 	}
@@ -102,7 +103,7 @@ func (r *Reader) ReadUInt32s(fieldNumber int) ([]uint32, error) {
 
 // ReadInt reads int if the field number matches.
 func (r *Reader) ReadInt(fieldNumber int, strict bool) (int64, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType0)
 	if err != nil {
 		if !r.strictError(err) {
 			return 0, err
@@ -119,7 +120,7 @@ func (r *Reader) ReadInt(fieldNumber int, strict bool) (int64, error) {
 
 // ReadInt reads int if the field number matches.
 func (r *Reader) ReadInt32(fieldNumber int, strict bool) (int32, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType0)
 	if err != nil {
 		if !r.strictError(err) {
 			return 0, err
@@ -140,7 +141,7 @@ func (r *Reader) ReadInt32(fieldNumber int, strict bool) (int32, error) {
 
 // ReadInts reads []int if the field number matches.
 func (r *Reader) ReadInts(fieldNumber int) ([]int64, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil && !r.strictError(err) {
 		return []int64{}, err
 	}
@@ -165,7 +166,7 @@ func (r *Reader) ReadInts(fieldNumber int) ([]int64, error) {
 
 // ReadBool reads int if the field number matches.
 func (r *Reader) ReadBool(fieldNumber int, strict bool) (bool, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType0)
 	if err != nil {
 		if !r.strictError(err) {
 			return false, err
@@ -182,7 +183,7 @@ func (r *Reader) ReadBool(fieldNumber int, strict bool) (bool, error) {
 
 // ReadBools reads []bool if the field number matches.
 func (r *Reader) ReadBools(fieldNumber int) ([]bool, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil && !r.strictError(err) {
 		return []bool{}, err
 	}
@@ -207,7 +208,7 @@ func (r *Reader) ReadBools(fieldNumber int) ([]bool, error) {
 
 // ReadBytes reads []byte if the field number matches.
 func (r *Reader) ReadBytes(fieldNumber int, strict bool) ([]byte, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil {
 		if !r.strictError(err) {
 			return []byte{}, err
@@ -226,7 +227,7 @@ func (r *Reader) ReadBytes(fieldNumber int, strict bool) ([]byte, error) {
 func (r *Reader) ReadBytesArray(fieldNumber int) ([][]byte, error) {
 	result := [][]byte{}
 	for r.index < r.end {
-		ok, err := r.check(fieldNumber)
+		ok, err := r.check(fieldNumber, wireType2)
 		if err != nil && !r.strictError(err) {
 			return result, err
 		}
@@ -244,7 +245,7 @@ func (r *Reader) ReadBytesArray(fieldNumber int) ([][]byte, error) {
 
 // ReadString reads string if the field number matches.
 func (r *Reader) ReadString(fieldNumber int, strict bool) (string, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil {
 		if !r.strictError(err) {
 			return "", err
@@ -263,7 +264,7 @@ func (r *Reader) ReadString(fieldNumber int, strict bool) (string, error) {
 func (r *Reader) ReadStrings(fieldNumber int) ([]string, error) {
 	result := []string{}
 	for r.index < r.end {
-		ok, err := r.check(fieldNumber)
+		ok, err := r.check(fieldNumber, wireType2)
 		if err != nil && !r.strictError(err) {
 			return result, err
 		}
@@ -281,7 +282,7 @@ func (r *Reader) ReadStrings(fieldNumber int) ([]string, error) {
 
 // ReadDecodable reads struct if the field number matches.
 func (r *Reader) ReadDecodable(fieldNumber int, creator func() DecodableReader, strict bool) (DecodableReader, error) {
-	ok, err := r.check(fieldNumber)
+	ok, err := r.check(fieldNumber, wireType2)
 	if err != nil {
 		if !r.strictError(err) {
 			return nil, err
@@ -314,7 +315,7 @@ func (r *Reader) ReadDecodable(fieldNumber int, creator func() DecodableReader, 
 func (r *Reader) ReadDecodables(fieldNumber int, creator func() DecodableReader) ([]interface{}, error) {
 	result := []interface{}{}
 	for r.index < r.end {
-		ok, err := r.check(fieldNumber)
+		ok, err := r.check(fieldNumber, wireType2)
 		if err != nil && !r.strictError(err) {
 			return result, err
 		}
@@ -349,6 +350,7 @@ func (r *Reader) readUInt() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	r.index += size
 	return result, nil
 }
@@ -402,7 +404,7 @@ func (r *Reader) peekKey() (int, int, error) {
 	return int(result), size, err
 }
 
-func (r *Reader) check(fieldNumber int) (bool, error) {
+func (r *Reader) check(fieldNumber, wireType int) (bool, error) {
 	if r.index >= r.end {
 		return false, ErrFieldNumberNotFound
 	}
@@ -410,12 +412,15 @@ func (r *Reader) check(fieldNumber int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	nextFieldNumber, _, err := readKey(key)
+	nextFieldNumber, nextWireType, err := readKey(key)
 	if err != nil {
 		return false, err
 	}
 	if nextFieldNumber != fieldNumber {
 		return false, ErrUnexpectedFieldNumber
+	}
+	if nextWireType != wireType {
+		return false, ErrInvalidData
 	}
 	r.index += size
 	return true, nil
@@ -435,7 +440,11 @@ func readUint(data []byte, offset int) (uint64, int, error) {
 		}
 		result |= (bit & uint64(rest8Bit)) << shift
 		if (bit & uint64(msg8Bit)) == 0 {
-			return result, index - offset, nil
+			var err error
+			if !isVarintShortestForm(result, index-offset) {
+				err = ErrUnnecessaryLeadingBytes
+			}
+			return result, index - offset, err
 		}
 	}
 	return 0, 0, ErrNoTerminate
@@ -443,4 +452,12 @@ func readUint(data []byte, offset int) (uint64, int, error) {
 
 func (r *Reader) strictError(err error) bool {
 	return errors.Is(err, ErrFieldNumberNotFound) || errors.Is(err, ErrUnexpectedFieldNumber)
+}
+
+func isVarintShortestForm(data uint64, size int) bool {
+	if data == 0 {
+		return size == 1
+	}
+	expectedSize := int(math.Ceil(math.Log2(float64(data)+1) / 7))
+	return expectedSize == size
 }

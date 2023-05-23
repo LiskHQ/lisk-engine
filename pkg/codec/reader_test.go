@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"testing"
 
@@ -38,7 +39,14 @@ func TestReadBool(t *testing.T) {
 			fieldNumber: 1,
 			strict:      false,
 			result:      false,
-			err:         "invalid data",
+			err:         ErrInvalidData.Error(),
+		},
+		{
+			input:       "0a01",
+			fieldNumber: 1,
+			strict:      false,
+			result:      false,
+			err:         ErrInvalidData.Error(),
 		},
 		{
 			input:       "0801",
@@ -84,6 +92,13 @@ func TestReadBytes(t *testing.T) {
 			strict:      true,
 			result:      []byte{225, 26, 17, 54, 71, 56, 34, 88, 19, 248, 110, 168, 82, 20, 64, 14, 93, 176, 141, 110},
 			err:         "",
+		},
+		{
+			input:       "0814e11a11364738225813f86ea85214400e5db08d6e",
+			fieldNumber: 1,
+			strict:      false,
+			result:      []byte{225, 26, 17, 54, 71, 56, 34, 88, 19, 248, 110, 168, 82, 20, 64, 14, 93, 176, 141, 110},
+			err:         ErrInvalidData.Error(),
 		},
 		{
 			input:       "1214e11a11364738225813f86ea85214400e5db08d6e",
@@ -134,6 +149,13 @@ func TestReadUInt(t *testing.T) {
 			fieldNumber: 1,
 			strict:      false,
 			result:      372036854775807,
+		},
+		{
+			input:       "0affffc9a4d9cb54",
+			fieldNumber: 1,
+			strict:      false,
+			result:      0,
+			err:         ErrInvalidData.Error(),
 		},
 		{
 			input:       "08ffffffffffffffffff02", // invalid range
@@ -206,6 +228,13 @@ func TestReadInt(t *testing.T) {
 			err:         "",
 		},
 		{
+			input:       "01fdffffffffffff1f",
+			fieldNumber: 1,
+			result:      0,
+			strict:      false,
+			err:         ErrInvalidData.Error(),
+		},
+		{
 			input:       "08ffffffffffffffffff02", // invalid range
 			fieldNumber: 1,
 			strict:      false,
@@ -256,6 +285,13 @@ func TestReadInt32(t *testing.T) {
 			result:      -9007199254740991,
 			strict:      false,
 			err:         "",
+		},
+		{
+			input:       "0afdffffffffffff1f",
+			fieldNumber: 1,
+			result:      -0,
+			strict:      false,
+			err:         ErrInvalidData.Error(),
 		},
 		{
 			input:       "08ffffffffffffffffff02", // invalid range
@@ -399,6 +435,13 @@ func TestReadString(t *testing.T) {
 			result:      "lisk",
 			strict:      false,
 			err:         "",
+		},
+		{
+			input:       "08046c69736b",
+			fieldNumber: 1,
+			result:      "lisk",
+			strict:      false,
+			err:         ErrInvalidData.Error(),
 		},
 		{
 			input:       "0a046c69736b",
@@ -565,4 +608,41 @@ func TestReadDecodables(t *testing.T) {
 			Amount:  300000,
 		},
 	}, result.vals)
+}
+
+func TestVarintShortestForm(t *testing.T) {
+	cases := []struct {
+		data uint64
+		size int
+	}{
+		{
+			data: 0,
+			size: 1,
+		},
+		{
+			data: 127,
+			size: 1,
+		},
+		{
+			data: 128,
+			size: 2,
+		},
+		{
+			data: 127 * 127,
+			size: 2,
+		},
+	}
+
+	for _, c := range cases {
+		assert.True(t, isVarintShortestForm(c.data, c.size), "Testing %d with size %d", c.data, c.size)
+	}
+}
+
+func FuzzIsVarintShortestForm(f *testing.F) {
+	f.Add(uint64(0))
+	f.Fuzz(func(t *testing.T, val uint64) {
+		vint := make([]byte, binary.MaxVarintLen64)
+		size := binary.PutUvarint(vint, val)
+		assert.True(t, isVarintShortestForm(val, size))
+	})
 }
