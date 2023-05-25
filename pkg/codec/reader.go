@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"unicode/utf8"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
@@ -386,6 +389,12 @@ func (r *Reader) readString() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if !utf8.Valid(result) {
+		return "", errors.New("invalid byte for UTF-8 is included")
+	}
+	if !isNormalizedString(result) {
+		return "", errors.New("UTF-8 is not normalized")
+	}
 	return string(result), nil
 }
 
@@ -460,4 +469,8 @@ func isVarintShortestForm(data uint64, size int) bool {
 	}
 	expectedSize := int(math.Ceil(math.Log2(float64(data)+1) / 7))
 	return expectedSize == size
+}
+
+func isNormalizedString(data []byte) bool {
+	return norm.NFC.IsNormal(data)
 }
