@@ -1,12 +1,14 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tyler-smith/go-bip39"
 
 	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/collection/bytes"
 	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 )
 
@@ -116,13 +118,49 @@ func TestTransactionCodec(t *testing.T) {
 	signingTx.Encode()
 }
 
+func TestEdgeCases(t *testing.T) {
+	mustDecodeHex := func(hexstr string) codec.Hex {
+		res, err := hex.DecodeString(hexstr)
+		if err != nil {
+			panic(err)
+		}
+		return codec.Hex(res)
+	}
+	failingBytes := []struct {
+		Value codec.Hex
+	}{
+		{
+			Value: mustDecodeHex("080010001a302030281430303030303030303030303030303030303030303000"),
+		},
+		{
+			Value: mustDecodeHex("0a001200183020302a00328000"),
+		},
+		{
+			Value: mustDecodeHex("0a0012001830208c002a003200"),
+		},
+		{
+			Value: mustDecodeHex("0a00120018302030aa00003200"),
+		},
+	}
+
+	for _, val := range failingBytes {
+		tx := &Transaction{}
+		err := tx.DecodeStrict(val.Value)
+		assert.Error(t, err)
+	}
+}
+
 func FuzzTransactionCodec(f *testing.F) {
 	f.Add(crypto.RandomBytes(500))
 	f.Fuzz(func(t *testing.T, randomBytes []byte) {
 		tx := &Transaction{}
 		err := tx.DecodeStrict(randomBytes)
 		if err == nil {
-			tx.Encode()
+			encoded := tx.Encode()
+			if !bytes.Equal(encoded, randomBytes) {
+				t.Logf("Failed with %s. encoded to %s", codec.Hex(randomBytes), codec.Hex(encoded))
+				t.Fail()
+			}
 		}
 	})
 }
