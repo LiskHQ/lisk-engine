@@ -634,7 +634,7 @@ func TestVarintShortestForm(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		assert.True(t, isVarintShortestForm(c.data, c.size), "Testing %d with size %d", c.data, c.size)
+		assert.True(t, varintShortestSize(c.data) == c.size, "Testing %d with size %d", c.data, c.size)
 	}
 }
 
@@ -643,6 +643,6 @@ func FuzzIsVarintShortestForm(f *testing.F) {
 	f.Fuzz(func(t *testing.T, val uint64) {
 		vint := make([]byte, binary.MaxVarintLen64)
 		size := binary.PutUvarint(vint, val)
-		assert.True(t, isVarintShortestForm(val, size))
+		assert.True(t, varintShortestSize(val) == size)
 	})
 }

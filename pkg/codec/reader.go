@@ -3,7 +3,6 @@ package codec
 import (
 	"errors"
 	"fmt"
-	"math"
 	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
@@ -450,7 +449,7 @@ func readUint(data []byte, offset int) (uint64, int, error) {
 		result |= (bit & uint64(rest8Bit)) << shift
 		if (bit & uint64(msg8Bit)) == 0 {
 			var err error
-			if !isVarintShortestForm(result, index-offset) {
+			if varintShortestSize(result) != index-offset {
 				err = ErrUnnecessaryLeadingBytes
 			}
 			return result, index - offset, err
@@ -463,12 +462,29 @@ func (r *Reader) strictError(err error) bool {
 	return errors.Is(err, ErrFieldNumberNotFound) || errors.Is(err, ErrUnexpectedFieldNumber)
 }
 
-func isVarintShortestForm(data uint64, size int) bool {
-	if data == 0 {
-		return size == 1
+func varintShortestSize(data uint64) int {
+	switch {
+	case data < (1 << 7):
+		return 1
+	case data < (1 << (7 * 2)):
+		return 2
+	case data < (1 << (7 * 3)):
+		return 3
+	case data < (1 << (7 * 4)):
+		return 4
+	case data < (1 << (7 * 5)):
+		return 5
+	case data < (1 << (7 * 6)):
+		return 6
+	case data < (1 << (7 * 7)):
+		return 7
+	case data < (1 << (7 * 8)):
+		return 8
+	case data < (1 << (7 * 9)):
+		return 9
+	default:
+		return 10
 	}
-	expectedSize := int(math.Ceil(math.Log2(float64(data)+1) / 7))
-	return expectedSize == size
 }
 
 func isNormalizedString(data []byte) bool {
