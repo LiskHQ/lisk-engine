@@ -1,6 +1,10 @@
 package codec
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+
+	"golang.org/x/text/unicode/norm"
+)
 
 // Writer is responsible for writing data in protobuf protocol.
 type Writer struct {
@@ -33,7 +37,7 @@ func (w *Writer) WriteBytesArray(fieldNumber int, data [][]byte) {
 
 // WriteString writes a string to result.
 func (w *Writer) WriteString(fieldNumber int, data string) {
-	w.WriteBytes(fieldNumber, []byte(data))
+	w.WriteBytes(fieldNumber, []byte(norm.NFC.String(data)))
 }
 
 // WriteStrings writes strings to result.

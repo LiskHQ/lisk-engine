@@ -1,9 +1,12 @@
 package codec_test
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
+	"github.com/LiskHQ/lisk-engine/pkg/codec"
+	"github.com/LiskHQ/lisk-engine/pkg/crypto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +44,19 @@ func TestTxDecodeStrict(t *testing.T) {
 			assert.Contains(t, err.Error(), c.err)
 		}
 	}
+}
+
+func FuzzTransactionCodec(f *testing.F) {
+	f.Add(crypto.RandomBytes(500))
+	f.Fuzz(func(t *testing.T, randomBytes []byte) {
+		tx := &Transaction{}
+		err := tx.DecodeStrict(randomBytes)
+		if err == nil {
+			encoded := tx.Encode()
+			if !bytes.Equal(encoded, randomBytes) {
+				t.Logf("Failed with %s. encoded to %s", codec.Hex(randomBytes), codec.Hex(encoded))
+				t.Fail()
+			}
+		}
+	})
 }
