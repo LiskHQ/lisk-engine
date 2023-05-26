@@ -13,7 +13,7 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.9.0
 	github.com/multiformats/go-multiaddr v0.8.0
 	github.com/stretchr/testify v1.8.1
-	github.com/supranational/blst v0.3.4
+	github.com/supranational/blst v0.3.10
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.3.0
 	go.uber.org/ratelimit v0.2.0
