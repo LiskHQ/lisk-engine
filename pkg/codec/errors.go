@@ -15,4 +15,6 @@ var (
 	ErrFieldNumberNotFound = errors.New("expected field number does not exist")
 	// ErrUnreadBytes represents extra bytes not read.
 	ErrUnreadBytes = errors.New("unread bytes exist")
+	// ErrUnnecessaryLeadingBytes represents error for which varint has unnecessary 0x80 byte at the beginning.
+	ErrUnnecessaryLeadingBytes = errors.New("unnecessary leading bytes for varint found")
 )
