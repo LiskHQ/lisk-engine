@@ -256,8 +256,8 @@ github.com/ipfs/go-log v1.0.5/go.mod h1:j0b8ZoR+7+R99LD9jZ6+AJsrzkPbSXbZfGakb5JP
 github.com/ipfs/go-log/v2 v2.1.3/go.mod h1:/8d0SH3Su5Ooc31QlL1WysJhvyOTDCjcCZ9Axpmri6g=
 github.com/ipfs/go-log/v2 v2.5.1 h1:1XdUzF7048prq4aBjDQQ4SL5RxftpRGdXhNRwKSAlcY=
 github.com/ipfs/go-log/v2 v2.5.1/go.mod h1:prSpmC1Gpllc9UYWxDiZDreBYw7zp4Iqp1kOLU9U5UI=
-github.com/ipfs/kubo v0.18.1 h1:mF8n2toZkWRc1JXs4pGknqoDGJ9NfP+upy/a8OS3oNg=
-github.com/ipfs/kubo v0.18.1/go.mod h1:VNKTz0OcX28GvsJQSEAprbMqzlSO19f4esoeDX4ZJLQ=
+github.com/ipfs/kubo v0.19.0 h1:5B58RXikTqs9six7FweQSzo6WvBKiP2MVwYCvJomV7k=
+github.com/ipfs/kubo v0.19.0/go.mod h1:OqX4B1YWKWCvi9T/sKDfTBMAKbVi6yVIXAii6/nr1Dc=
 github.com/jackpal/go-nat-pmp v1.0.2 h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus=
 github.com/jackpal/go-nat-pmp v1.0.2/go.mod h1:QPH045xvCAeXUZOxsnwmrtiCoxIr9eob+4orBN1SBKc=
 github.com/jbenet/go-cienv v0.1.0 h1:Vc/s0QbQtoxX8MwwSLWWh+xNNZvM3Lw7NsTcHrvvhMc=
