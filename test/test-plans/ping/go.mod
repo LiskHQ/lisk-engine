@@ -98,8 +98,7 @@ require (
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/stretchr/testify v1.8.3 // indirect
-	github.com/supranational/blst v0.3.4 // indirect
+	github.com/supranational/blst v0.3.11 // indirect
 	github.com/testground/sync-service v0.1.0 // indirect
 	github.com/testground/testground v0.5.3 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
