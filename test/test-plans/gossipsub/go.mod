@@ -6,7 +6,7 @@ require (
 	github.com/LiskHQ/lisk-engine v0.0.0-20230407072411-4449dc3cea5c
 	github.com/avast/retry-go v2.7.0+incompatible
 	github.com/gogo/protobuf v1.3.2
-	github.com/libp2p/go-libp2p v0.27.0
+	github.com/libp2p/go-libp2p v0.27.8
 	github.com/libp2p/go-libp2p-pubsub v0.9.3
 	github.com/multiformats/go-multiaddr v0.9.0
 	github.com/testground/sdk-go v0.3.0
@@ -85,8 +85,8 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/qtls-go1-19 v0.3.2 // indirect
-	github.com/quic-go/qtls-go1-20 v0.2.2 // indirect
+	github.com/quic-go/qtls-go1-19 v0.3.3 // indirect
+	github.com/quic-go/qtls-go1-20 v0.2.3 // indirect
 	github.com/quic-go/quic-go v0.33.0 // indirect
 	github.com/quic-go/webtransport-go v0.5.2 // indirect
 	github.com/raulk/clock v1.1.0 // indirect
