@@ -244,6 +244,6 @@ func defaultNick(p peer.ID) string {
 
 // shortID returns the last 8 chars of a base58-encoded peer id.
 func shortID(p peer.ID) string {
-	pretty := p.Pretty()
+	pretty := p.String()
 	return pretty[len(pretty)-8:]
 }
