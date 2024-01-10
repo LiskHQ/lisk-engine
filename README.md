@@ -1,10 +1,12 @@
+![Logo](./docs/assets/banner_engine.png)
+
 # lisk-engine
 
 [![Build status](https://github.com/LiskHQ/lisk-engine/actions/workflows/pr.yaml/badge.svg)](https://github.com/LiskHQ/lisk-engine/actions/workflows/pr.yaml)
-![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/liskHQ/lisk-engine)
-![GitHub repo size](https://img.shields.io/github/repo-size/liskhq/lisk-engine)
-![GitHub issues](https://img.shields.io/github/issues-raw/liskhq/lisk-engine)
-![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/liskhq/lisk-engine)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/LiskHQ/lisk-engine)
+![GitHub repo size](https://img.shields.io/github/repo-size/LiskHQ/lisk-engine)
+![GitHub issues](https://img.shields.io/github/issues-raw/LiskHQ/lisk-engine)
+![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LiskHQ/lisk-engine)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 
