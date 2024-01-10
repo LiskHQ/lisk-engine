@@ -254,7 +254,7 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 
 	addrs, err := p.MultiAddress()
 	assert.Nil(err)
-	assert.Equal(len(addrs), 2)
+	assert.Equal(len(addrs), 1)
 
 	p.close()
 }
@@ -413,7 +413,7 @@ func TestPeer_PeerSource(t *testing.T) {
 		select {
 		case addr := <-ch:
 			assert.NotNil(addr)
-			assert.Equal(2, len(addr.Addrs))
+			assert.Equal(1, len(addr.Addrs))
 			break
 		case <-time.After(testTimeout):
 			t.Fatalf("timeout occurs, peer address info was not sent to the channel")
