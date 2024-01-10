@@ -11,7 +11,7 @@
 
 
 ## Requirement
-- Go v1.19 or above
+- Go v1.21 or above
 
 ## Development
 
