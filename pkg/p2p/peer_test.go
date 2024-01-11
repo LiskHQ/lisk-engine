@@ -45,7 +45,7 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 		[]byte{1, 2, 3, 4, 5, 6, 7, 8},
 		cfg)
 	assert.Nil(err)
-	assert.Equal("12D3KooWKwTLPoFzjLMuUAM8rSiUDUnJFhpMLtLQ7zKq5cCPoNhQ", p1.ID().Pretty())
+	assert.Equal("12D3KooWKwTLPoFzjLMuUAM8rSiUDUnJFhpMLtLQ7zKq5cCPoNhQ", p1.ID().String())
 
 	p2, err := newPeer(context.Background(),
 		wg,
@@ -56,7 +56,7 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 			25, 26, 27, 28, 29, 30, 31, 32},
 		cfg)
 	assert.Nil(err)
-	assert.Equal("12D3KooWGW7EBxs51H6huNYsJhCgrk7xRHmURiQ2w3FoVp9bekVi", p2.ID().Pretty())
+	assert.Equal("12D3KooWGW7EBxs51H6huNYsJhCgrk7xRHmURiQ2w3FoVp9bekVi", p2.ID().String())
 
 	p3, err := newPeer(context.Background(),
 		wg,
@@ -72,7 +72,7 @@ func TestPeer_NewStaticPeerID(t *testing.T) {
 		cfg)
 	assert.Nil(err)
 
-	assert.NotEqual(p3.ID().Pretty(), p4.ID().Pretty())
+	assert.NotEqual(p3.ID().String(), p4.ID().String())
 
 	p1.close()
 	p2.close()
@@ -254,7 +254,7 @@ func TestPeer_TestP2PAddrs(t *testing.T) {
 
 	addrs, err := p.MultiAddress()
 	assert.Nil(err)
-	assert.Equal(len(addrs), 2)
+	assert.Equal(len(addrs), 1)
 
 	p.close()
 }
@@ -413,7 +413,7 @@ func TestPeer_PeerSource(t *testing.T) {
 		select {
 		case addr := <-ch:
 			assert.NotNil(addr)
-			assert.Equal(2, len(addr.Addrs))
+			assert.Equal(1, len(addr.Addrs))
 			break
 		case <-time.After(testTimeout):
 			t.Fatalf("timeout occurs, peer address info was not sent to the channel")

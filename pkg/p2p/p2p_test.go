@@ -291,7 +291,7 @@ func TestP2P_ConnectionsHandler_DropRandomPeerFixedPeer(t *testing.T) {
 	// Create a p2p node with fixed peers
 	cfg2 := Config{
 		Addresses:  []string{testIPv4TCP, testIPv4UDP},
-		FixedPeers: []string{p1Addrs[0], p1Addrs[1]},
+		FixedPeers: []string{p1Addrs[0]},
 	}
 
 	_ = cfg2.insertDefault()

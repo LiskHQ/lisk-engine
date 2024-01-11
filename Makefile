@@ -37,7 +37,7 @@ generate.codec:
 	go generate ./...
 
 lint:
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54
 	golangci-lint run
 
 format:
