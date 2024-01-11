@@ -51,7 +51,7 @@ func JoinChatRoom(ctx context.Context, conn *p2p.Connection, ch chan *ChatMessag
 func (cr *ChatRoom) Publish(message string) error {
 	m := ChatMessage{
 		Message:    message,
-		SenderID:   cr.self.Pretty(),
+		SenderID:   cr.self.String(),
 		SenderNick: cr.nick,
 	}
 	msgBytes, err := json.Marshal(m)

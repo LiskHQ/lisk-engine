@@ -251,7 +251,9 @@ func connectionsHandler(ctx context.Context, wg *sync.WaitGroup, conn *Connectio
 				conn.logger.Debugf("Dropping a random connection")
 				rand.Seed(time.Now().UnixNano())
 				rand.Shuffle(len(conns), func(i, j int) { conns[i], conns[j] = conns[j], conns[i] })
+				//nolint:gosec
 				if err := conn.Disconnect(conns[0].RemotePeer()); err != nil {
+					//nolint:gosec
 					conn.logger.Errorf("Failed to close connection to peer %s: %v", conns[0].RemotePeer(), err)
 				}
 			}

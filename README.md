@@ -1,8 +1,17 @@
+![Logo](./docs/assets/banner_engine.png)
+
 # lisk-engine
+
+[![Build status](https://github.com/LiskHQ/lisk-engine/actions/workflows/pr.yaml/badge.svg)](https://github.com/LiskHQ/lisk-engine/actions/workflows/pr.yaml)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/LiskHQ/lisk-engine)
+![GitHub repo size](https://img.shields.io/github/repo-size/LiskHQ/lisk-engine)
+![GitHub issues](https://img.shields.io/github/issues-raw/LiskHQ/lisk-engine)
+![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/LiskHQ/lisk-engine)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 
 ## Requirement
-- Go v1.19 or above
+- Go v1.21 or above
 
 ## Development
 
@@ -38,6 +47,9 @@ make run.lengine PATH_TO_ABI_SERVER PATH_TO_CONFIG
 ## Contributors
 
 https://github.com/LiskHQ/lisk-engine/graphs/contributors
+
+## Disclaimer
+By using the beta release of the Lisk Engine, you acknowledge and agree that you have an adequate understanding of the risks associated with the use of the beta release of the Lisk Engine and that it is provided on an “as is” and “as available” basis, without any representations or warranties of any kind. To the fullest extent permitted by law, in no event shall the Lisk Foundation or other parties involved in the development of the beta release of the Lisk Engine have any liability whatsoever to any person for any direct or indirect loss, liability, cost, claim, expense or damage of any kind, whether in contract or in tort, including negligence, or otherwise, arising out of or related to the use of all or part of the Beta release of the Lisk Engine.
 
 ## License
 

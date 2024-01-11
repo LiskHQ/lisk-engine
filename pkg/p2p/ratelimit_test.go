@@ -64,8 +64,6 @@ func TestRateLimit_RPCMessageCounter_BanPeer(t *testing.T) {
 
 	// Try to connect node2 with node1 and send a request (it should not be possible because node2 is banned)
 	err = node2.Connect(ctx, *node1AddrInfo)
-	assert.Nil(err)
-	_, err = node2.request(ctx, node1.ID(), testRPC, []byte(testRequestData))
 	assert.NotNil(err)
 
 	node1.Stop()
