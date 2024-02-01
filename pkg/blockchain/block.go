@@ -133,9 +133,10 @@ type BlockHeader struct {
 	StateRoot          codec.Hex        `json:"stateRoot" fieldNumber:"9"`
 	MaxHeightPrevoted  uint32           `json:"maxHeightPrevoted" fieldNumber:"10"`
 	MaxHeightGenerated uint32           `json:"maxHeightGenerated" fieldNumber:"11"`
-	ValidatorsHash     codec.Hex        `json:"validatorsHash" fieldNumber:"12"`
-	AggregateCommit    *AggregateCommit `json:"aggregateCommit" fieldNumber:"13"`
-	Signature          codec.Hex        `json:"signature" fieldNumber:"14"`
+	ImpliesMaxPrevotes bool             `json:"impliesMaxPrevotes" fieldNumber:"12"`
+	ValidatorsHash     codec.Hex        `json:"validatorsHash" fieldNumber:"13"`
+	AggregateCommit    *AggregateCommit `json:"aggregateCommit" fieldNumber:"14"`
+	Signature          codec.Hex        `json:"signature" fieldNumber:"15"`
 }
 
 type AggregateCommit struct {
@@ -160,6 +161,7 @@ func (b *BlockHeader) signingBlockHeader() *signingBlockHeader {
 		StateRoot:          b.StateRoot,
 		MaxHeightPrevoted:  b.MaxHeightPrevoted,
 		MaxHeightGenerated: b.MaxHeightGenerated,
+		ImpliesMaxPrevotes: b.ImpliesMaxPrevotes,
 		ValidatorsHash:     b.ValidatorsHash,
 		TransactionRoot:    b.TransactionRoot,
 		AggregateCommit:    b.AggregateCommit,
@@ -307,6 +309,9 @@ func (b *readonlyBlockHeader) MaxHeightPrevoted() uint32 { return b.header.MaxHe
 func (b *readonlyBlockHeader) MaxHeightGenerated() uint32 {
 	return b.header.MaxHeightGenerated
 }
+func (b *readonlyBlockHeader) ImpliesMaxPrevotes() bool {
+	return b.header.ImpliesMaxPrevotes
+}
 func (b *readonlyBlockHeader) ValidatorsHash() []byte            { return b.header.ValidatorsHash }
 func (b *readonlyBlockHeader) AggregateCommit() *AggregateCommit { return b.header.AggregateCommit }
 
@@ -326,8 +331,9 @@ type signingBlockHeader struct {
 	StateRoot          codec.Hex        `fieldNumber:"9"`
 	MaxHeightPrevoted  uint32           `fieldNumber:"10"`
 	MaxHeightGenerated uint32           `fieldNumber:"11"`
-	ValidatorsHash     codec.Hex        `fieldNumber:"12"`
-	AggregateCommit    *AggregateCommit `fieldNumber:"13"`
+	ImpliesMaxPrevotes bool             `fieldNumber:"12"`
+	ValidatorsHash     codec.Hex        `fieldNumber:"13"`
+	AggregateCommit    *AggregateCommit `fieldNumber:"14"`
 }
 
 func (s *signingBlockHeader) Sign(chainID, privateKey []byte) []byte {
@@ -422,6 +428,7 @@ type ReadableBlockHeader interface {
 	AggregateCommit() *AggregateCommit
 	MaxHeightPrevoted() uint32
 	MaxHeightGenerated() uint32
+	ImpliesMaxPrevotes() bool
 }
 
 type ReadableBlockAssets interface {
