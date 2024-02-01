@@ -209,11 +209,12 @@ func (e *BlockHeader) Encode() []byte {
 	writer.WriteBytes(9, e.StateRoot)
 	writer.WriteUInt32(10, e.MaxHeightPrevoted)
 	writer.WriteUInt32(11, e.MaxHeightGenerated)
-	writer.WriteBytes(12, e.ValidatorsHash)
+	writer.WriteBool(12, e.ImpliesMaxPrevotes)
+	writer.WriteBytes(13, e.ValidatorsHash)
 	if e.AggregateCommit != nil {
-		writer.WriteEncodable(13, e.AggregateCommit)
+		writer.WriteEncodable(14, e.AggregateCommit)
 	}
-	writer.WriteBytes(14, e.Signature)
+	writer.WriteBytes(15, e.Signature)
 	return writer.Result()
 }
 
@@ -318,21 +319,28 @@ func (e *BlockHeader) DecodeFromReader(reader *codec.Reader) error {
 		e.MaxHeightGenerated = val
 	}
 	{
-		val, err := reader.ReadBytes(12, false)
+		val, err := reader.ReadBool(12, false)
+		if err != nil {
+			return err
+		}
+		e.ImpliesMaxPrevotes = val
+	}
+	{
+		val, err := reader.ReadBytes(13, false)
 		if err != nil {
 			return err
 		}
 		e.ValidatorsHash = val
 	}
 	{
-		val, err := reader.ReadDecodable(13, func() codec.DecodableReader { return new(AggregateCommit) }, false)
+		val, err := reader.ReadDecodable(14, func() codec.DecodableReader { return new(AggregateCommit) }, false)
 		if err != nil {
 			return err
 		}
 		e.AggregateCommit = val.(*AggregateCommit)
 	}
 	{
-		val, err := reader.ReadBytes(14, false)
+		val, err := reader.ReadBytes(15, false)
 		if err != nil {
 			return err
 		}
@@ -420,21 +428,28 @@ func (e *BlockHeader) DecodeStrictFromReader(reader *codec.Reader) error {
 		e.MaxHeightGenerated = val
 	}
 	{
-		val, err := reader.ReadBytes(12, true)
+		val, err := reader.ReadBool(12, true)
+		if err != nil {
+			return err
+		}
+		e.ImpliesMaxPrevotes = val
+	}
+	{
+		val, err := reader.ReadBytes(13, true)
 		if err != nil {
 			return err
 		}
 		e.ValidatorsHash = val
 	}
 	{
-		val, err := reader.ReadDecodable(13, func() codec.DecodableReader { return new(AggregateCommit) }, true)
+		val, err := reader.ReadDecodable(14, func() codec.DecodableReader { return new(AggregateCommit) }, true)
 		if err != nil {
 			return err
 		}
 		e.AggregateCommit = val.(*AggregateCommit)
 	}
 	{
-		val, err := reader.ReadBytes(14, true)
+		val, err := reader.ReadBytes(15, true)
 		if err != nil {
 			return err
 		}
@@ -536,9 +551,10 @@ func (e *signingBlockHeader) Encode() []byte {
 	writer.WriteBytes(9, e.StateRoot)
 	writer.WriteUInt32(10, e.MaxHeightPrevoted)
 	writer.WriteUInt32(11, e.MaxHeightGenerated)
-	writer.WriteBytes(12, e.ValidatorsHash)
+	writer.WriteBool(12, e.ImpliesMaxPrevotes)
+	writer.WriteBytes(13, e.ValidatorsHash)
 	if e.AggregateCommit != nil {
-		writer.WriteEncodable(13, e.AggregateCommit)
+		writer.WriteEncodable(14, e.AggregateCommit)
 	}
 	return writer.Result()
 }
@@ -644,14 +660,21 @@ func (e *signingBlockHeader) DecodeFromReader(reader *codec.Reader) error {
 		e.MaxHeightGenerated = val
 	}
 	{
-		val, err := reader.ReadBytes(12, false)
+		val, err := reader.ReadBool(12, false)
+		if err != nil {
+			return err
+		}
+		e.ImpliesMaxPrevotes = val
+	}
+	{
+		val, err := reader.ReadBytes(13, false)
 		if err != nil {
 			return err
 		}
 		e.ValidatorsHash = val
 	}
 	{
-		val, err := reader.ReadDecodable(13, func() codec.DecodableReader { return new(AggregateCommit) }, false)
+		val, err := reader.ReadDecodable(14, func() codec.DecodableReader { return new(AggregateCommit) }, false)
 		if err != nil {
 			return err
 		}
@@ -739,14 +762,21 @@ func (e *signingBlockHeader) DecodeStrictFromReader(reader *codec.Reader) error 
 		e.MaxHeightGenerated = val
 	}
 	{
-		val, err := reader.ReadBytes(12, true)
+		val, err := reader.ReadBool(12, true)
+		if err != nil {
+			return err
+		}
+		e.ImpliesMaxPrevotes = val
+	}
+	{
+		val, err := reader.ReadBytes(13, true)
 		if err != nil {
 			return err
 		}
 		e.ValidatorsHash = val
 	}
 	{
-		val, err := reader.ReadDecodable(13, func() codec.DecodableReader { return new(AggregateCommit) }, true)
+		val, err := reader.ReadDecodable(14, func() codec.DecodableReader { return new(AggregateCommit) }, true)
 		if err != nil {
 			return err
 		}

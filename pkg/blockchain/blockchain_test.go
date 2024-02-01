@@ -20,6 +20,7 @@ func createRandomBlock(height uint32) *Block {
 			StateRoot:          crypto.RandomBytes(32),
 			MaxHeightPrevoted:  0,
 			MaxHeightGenerated: 0,
+			ImpliesMaxPrevotes: false,
 			ValidatorsHash:     crypto.RandomBytes(32),
 			AggregateCommit: &AggregateCommit{
 				Height:               height,
