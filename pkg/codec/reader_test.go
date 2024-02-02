@@ -214,6 +214,13 @@ func TestReadInt(t *testing.T) {
 		err         string
 	}{
 		{
+			input:       "08e8e6d7d3ca96fa8cf301",
+			fieldNumber: 1,
+			result:      8758644044142934452,
+			strict:      false,
+			err:         "",
+		},
+		{
 			input:       "0813",
 			fieldNumber: 1,
 			result:      -10,
@@ -644,5 +651,19 @@ func FuzzIsVarintShortestForm(f *testing.F) {
 		vint := make([]byte, binary.MaxVarintLen64)
 		size := binary.PutUvarint(vint, val)
 		assert.True(t, varintShortestSize(val) == size)
+	})
+}
+
+func FuzzIntReadWrite(f *testing.F) {
+	f.Add(int64(-8758644044142934452))
+	f.Add(int64(0))
+	f.Add(int64(8758644044142934452))
+	f.Fuzz(func(t *testing.T, val int64) {
+		writer := NewWriter()
+		writer.writeInt(val)
+		reader := NewReader(writer.Result())
+		result, err := reader.readInt()
+		assert.NoError(t, err)
+		assert.Equal(t, val, result)
 	})
 }

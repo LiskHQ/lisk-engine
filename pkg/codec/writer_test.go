@@ -180,6 +180,11 @@ func TestWriteInt(t *testing.T) {
 		result      string
 	}{
 		{
+			input:       8758644044142934452,
+			result:      "08e8e6d7d3ca96fa8cf301",
+			fieldNumber: 1,
+		},
+		{
 			input:       -10,
 			fieldNumber: 1,
 			result:      "0813",
