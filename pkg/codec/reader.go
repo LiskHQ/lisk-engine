@@ -363,7 +363,7 @@ func (r *Reader) readInt() (int64, error) {
 		return 0, err
 	}
 	if res%2 == 0 {
-		return int64(res) / 2, nil
+		return int64(res / 2), nil
 	}
 	return -1 * int64((res+1)/2), nil
 }
